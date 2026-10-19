@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   MapPin,
@@ -43,6 +43,7 @@ const CheckoutPage = () => {
   const [paymentMethod, setPaymentMethod] = useState('razorpay');
   const [loading, setLoading] = useState(false);
   const [couponInput, setCouponInput] = useState('');
+  const orderPlacedRef = useRef(false);
   const [applyingCoupon, setApplyingCoupon] = useState(false);
 
   // Address Form State
@@ -96,10 +97,10 @@ const CheckoutPage = () => {
 
   // Redirect if cart is empty
   useEffect(() => {
-    if (items.length === 0) {
-      navigate('/cart');
+    if (!orderPlacedRef.current && !loading && items.length === 0) {
+      navigate('/cart', { replace: true });
     }
-  }, [items, navigate]);
+  }, [items, navigate, loading]);
 
   // Available Delivery Methods
   const deliveryMethodsList = [
@@ -253,9 +254,10 @@ const CheckoutPage = () => {
       const order = await orderService.createOrder(orderData);
 
       if (paymentMethod === 'cod') {
+        orderPlacedRef.current = true;
         success('Order placed successfully with Cash on Delivery!');
-        await refreshCart();
-        navigate(`/order-success/${order._id}`);
+        navigate(`/order-success/${order._id}`, { replace: true });
+        refreshCart().catch(console.error);
       } else {
         const paymentInit = await orderService.createPaymentOrder(order._id);
         const verifyRes = await orderService.verifyPayment({
@@ -266,14 +268,17 @@ const CheckoutPage = () => {
         });
 
         if (verifyRes.success) {
+          orderPlacedRef.current = true;
           success('Payment confirmed and order placed successfully!');
-          await refreshCart();
-          navigate(`/order-success/${order._id}`);
+          navigate(`/order-success/${order._id}`, { replace: true });
+          refreshCart().catch(console.error);
         } else {
+          orderPlacedRef.current = false;
           error('Payment verification failed.');
         }
       }
     } catch (err) {
+      orderPlacedRef.current = false;
       error(err.response?.data?.message || 'Failed to place order.');
     } finally {
       setLoading(false);
@@ -368,6 +373,16 @@ const CheckoutPage = () => {
           .checkout-step-line {
             margin: 0 6px !important;
             min-width: 12px !important;
+          }
+          .checkout-section-card {
+            padding: 16px 14px !important;
+            border-radius: 14px !important;
+          }
+          .checkout-addresses-grid {
+            grid-template-columns: 1fr !important;
+          }
+          .checkout-delivery-grid {
+            grid-template-columns: 1fr !important;
           }
         }
         @media (max-width: 480px) {

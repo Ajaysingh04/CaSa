@@ -52,7 +52,7 @@ const CategoryNavbar = ({ categories = [] }) => {
     <nav style={navWrapperStyle}>
       <div className="container" style={navContainerStyle}>
         {/* Horizontal Category Pill Row (Reference Image 2 Style) */}
-        <div style={categoriesScrollStyle}>
+        <div style={categoriesScrollStyle} className="touch-scroll-x">
           {/* All Categories Pill */}
           <Link
             to="/products"

@@ -57,20 +57,44 @@ const OrderConfirmationPage = () => {
   }
 
   return (
-    <div className="container" style={{ padding: '40px 16px 80px', maxWidth: '780px' }}>
-      <div style={confirmationCardStyle} className="card animate-slide-up">
+    <div className="container" style={{ padding: '32px 12px 80px', maxWidth: '780px' }}>
+      <style>{`
+        @media (max-width: 640px) {
+          .confirmation-card-responsive {
+            padding: 24px 16px !important;
+            border-radius: 14px !important;
+          }
+          .confirmation-title-responsive {
+            font-size: 1.35rem !important;
+          }
+          .confirmation-btn-row-responsive {
+            flex-direction: column !important;
+          }
+          .confirmation-meta-box-responsive {
+            grid-template-columns: 1fr 1fr !important;
+            gap: 12px !important;
+            padding: 12px !important;
+          }
+        }
+        @media (max-width: 420px) {
+          .confirmation-meta-box-responsive {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
+      <div style={confirmationCardStyle} className="card confirmation-card-responsive animate-slide-up">
         {/* Success Icon */}
         <div style={successIconBox}>
           <CheckCircle size={44} color="#10b981" />
         </div>
 
-        <h1 style={orderSuccessTitle}>Thank You! Your Order is Placed</h1>
+        <h1 className="confirmation-title-responsive" style={orderSuccessTitle}>Thank You! Your Order is Placed</h1>
         <p style={{ color: '#475569', fontSize: '0.95rem', marginTop: '6px' }}>
           We have sent an order confirmation and tracking details to your registered email.
         </p>
 
         {/* Order Meta Box */}
-        <div style={orderMetaBox}>
+        <div className="confirmation-meta-box-responsive" style={orderMetaBox}>
           <div>
             <span style={{ fontSize: '0.78rem', color: '#64748b' }}>Order Number:</span>
             <div style={{ fontWeight: 800, fontSize: '1.05rem', color: '#0f172a' }}>
@@ -135,7 +159,7 @@ const OrderConfirmationPage = () => {
         </div>
 
         {/* CTA Buttons */}
-        <div style={btnRowStyle}>
+        <div style={btnRowStyle} className="confirmation-btn-row-responsive">
           <Link to={`/orders/${order._id}`} className="btn btn-outline" style={{ flex: 1 }}>
             <Package size={16} /> Track Order Progress
           </Link>

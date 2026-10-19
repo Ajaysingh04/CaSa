@@ -63,9 +63,14 @@ const CartPage = () => {
         <p style={{ color: '#64748b', fontSize: '0.95rem', maxWidth: '420px', marginTop: '8px' }}>
           Looks like you haven't added anything to your cart yet. Explore thousands of authentic products across our 15 departments!
         </p>
-        <Link to="/products" className="btn btn-primary btn-lg" style={{ marginTop: '24px' }}>
-          Start Shopping Deals
-        </Link>
+        <div style={{ display: 'flex', gap: '12px', marginTop: '24px', flexWrap: 'wrap', justifyContent: 'center' }}>
+          <Link to="/products" className="btn btn-primary btn-lg">
+            Start Shopping Deals
+          </Link>
+          <Link to="/orders" className="btn btn-outline btn-lg">
+            View My Orders
+          </Link>
+        </div>
       </div>
     );
   }
