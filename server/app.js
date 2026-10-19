@@ -76,10 +76,10 @@ app.use((req, res, next) => {
 });
 app.use(cookieParser());
 
-// Serverless DB connection middleware (ensures connection is established if MONGODB_URI is provided)
+// Serverless DB connection middleware (ensures connection is established to MongoDB Atlas)
 let isDbConnecting = false;
 app.use(async (req, res, next) => {
-  if (!getDBStatus() && !isDbConnecting && process.env.MONGODB_URI) {
+  if (!getDBStatus() && !isDbConnecting) {
     isDbConnecting = true;
     try {
       await connectDB();

@@ -2,7 +2,7 @@ const app = require('../server/app');
 const { connectDB, getDBStatus } = require('../server/config/db');
 
 module.exports = async (req, res) => {
-  if (!getDBStatus() && process.env.MONGODB_URI) {
+  if (!getDBStatus()) {
     try {
       await connectDB();
     } catch (e) {

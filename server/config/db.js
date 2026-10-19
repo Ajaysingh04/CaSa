@@ -1,39 +1,51 @@
 const mongoose = require('mongoose');
 
-let isConnected = false;
+const DEFAULT_ATLAS_URI = 'mongodb+srv://ajayworkon04_db_user:Rajmishra%40321@cluster0.8annony.mongodb.net/casa?retryWrites=true&w=majority&appName=Cluster0';
+
+// Global cache for serverless environments (prevents connection storms)
+let cached = global._mongooseCache;
+if (!cached) {
+  cached = global._mongooseCache = { conn: null, promise: null };
+}
 
 const connectDB = async () => {
-  // If already connected, reuse connection
+  // If connection is already open, reuse it immediately
   if (mongoose.connection && mongoose.connection.readyState === 1) {
-    isConnected = true;
-    return true;
+    return mongoose.connection;
   }
 
-  const isVercelOrProd = process.env.VERCEL || process.env.NODE_ENV === 'production';
-  const uri = process.env.MONGODB_URI || (!isVercelOrProd ? 'mongodb://127.0.0.1:27017/casa' : null);
+  if (cached.conn) {
+    return cached.conn;
+  }
 
-  if (!uri) {
-    isConnected = false;
-    console.log('ℹ️ Running in resilient In-Memory Store mode (no MONGODB_URI specified for serverless environment).');
-    return false;
+  const uri = process.env.MONGODB_URI || DEFAULT_ATLAS_URI;
+
+  if (!cached.promise) {
+    const opts = {
+      bufferCommands: false,
+      serverSelectionTimeoutMS: 8000,
+    };
+    cached.promise = mongoose.connect(uri, opts).then((mongooseInstance) => {
+      console.log(`✅ [MongoDB Atlas Connected]: ${mongooseInstance.connection.host}`);
+      return mongooseInstance.connection;
+    });
   }
 
   try {
-    const conn = await mongoose.connect(uri, {
-      serverSelectionTimeoutMS: 3000,
-    });
-    isConnected = true;
-    console.log(`✅ [MongoDB Connected]: ${conn.connection.host}`);
-    return true;
+    cached.conn = await cached.promise;
+    return cached.conn;
   } catch (error) {
-    isConnected = false;
-    console.warn(`⚠️ [MongoDB Warning]: Could not connect to MongoDB at "${uri.split('@')[1] || uri}".`);
+    cached.promise = null;
+    console.warn(`⚠️ [MongoDB Warning]: Could not connect to Atlas at "${uri.split('@')[1] || uri}".`);
     console.warn(`   Reason: ${error.message}`);
     console.warn(`   ℹ️ CASA Server is running with the built-in resilient In-Memory Data Store fallback.`);
-    return false;
+    return null;
   }
 };
 
-const getDBStatus = () => isConnected;
+const getDBStatus = () => {
+  return mongoose.connection && mongoose.connection.readyState === 1;
+};
 
 module.exports = { connectDB, getDBStatus };
+
