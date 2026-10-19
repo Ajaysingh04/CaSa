@@ -305,6 +305,30 @@ const AdminDashboardPage = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '26px', paddingBottom: '40px' }}>
+      <style>{`
+        @media (max-width: 640px) {
+          .admin-header-title-responsive h1 {
+            font-size: 1.35rem !important;
+          }
+          .admin-search-box-responsive {
+            width: 100% !important;
+            min-width: 100% !important;
+          }
+          .admin-kpi-grid-responsive {
+            grid-template-columns: 1fr 1fr !important;
+            gap: 10px !important;
+          }
+          .admin-chart-card-responsive {
+            padding: 16px 14px !important;
+            border-radius: 14px !important;
+          }
+        }
+        @media (max-width: 480px) {
+          .admin-kpi-grid-responsive {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
       {/* Top Header Row (Dashboard Title, Live Sync Status, Search, Export Buttons) */}
       <div
         style={{
@@ -315,7 +339,7 @@ const AdminDashboardPage = () => {
           gap: '16px',
         }}
       >
-        <div>
+        <div className="admin-header-title-responsive">
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
             <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em', margin: 0 }}>
               Dashboard Analytics
@@ -355,6 +379,7 @@ const AdminDashboardPage = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           {/* Live Search */}
           <div
+            className="admin-search-box-responsive"
             style={{
               position: 'relative',
               display: 'flex',
@@ -453,9 +478,10 @@ const AdminDashboardPage = () => {
 
       {/* 4 Analytics KPI Cards (High-End SaaS Card Design) */}
       <div
+        className="admin-kpi-grid-responsive"
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))',
           gap: '16px',
         }}
       >

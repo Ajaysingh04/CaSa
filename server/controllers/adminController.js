@@ -30,23 +30,40 @@ exports.getDashboardStats = async (req, res, next) => {
       const totalOrders = await Order.countDocuments();
       const totalUsers = await User.countDocuments({ role: 'user' });
 
-      // Revenue calculation: sum of paid or delivered orders
+      // Revenue calculation: sum of paid or delivered orders (excluding cancelled/refunded)
       const revenueAgg = await Order.aggregate([
         { $match: { orderStatus: { $nin: ['Cancelled', 'Refunded'] } } },
         { $group: { _id: null, totalRevenue: { $sum: '$totalPrice' } } }
       ]);
       const totalRevenue = revenueAgg.length > 0 ? revenueAgg[0].totalRevenue : 0;
 
+      // Real Average Order Value (AOV)
+      const validOrdersCount = await Order.countDocuments({ orderStatus: { $nin: ['Cancelled', 'Refunded'] } });
+      const avgOrderValue = validOrdersCount > 0 
+        ? Math.round(totalRevenue / validOrdersCount) 
+        : (totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0);
+
       // Low stock products (< 15 units)
       const lowStockProducts = await Product.find({ stock: { $lte: 15 }, isActive: true })
         .select('name slug stock price discountPrice images brand categorySlug')
         .limit(10);
 
-      // Recent 5 orders
-      const recentOrders = await Order.find()
+      // Recent 15 orders with populated user or shippingAddress fallback
+      const rawRecentOrders = await Order.find()
         .populate('user', 'name email')
         .sort({ createdAt: -1 })
-        .limit(6);
+        .limit(15);
+
+      const recentOrders = rawRecentOrders.map(o => {
+        const orderObj = o.toObject ? o.toObject() : { ...o };
+        if (!orderObj.user || !orderObj.user.name) {
+          orderObj.user = {
+            name: orderObj.shippingAddress?.fullName || 'Customer',
+            email: orderObj.shippingAddress?.email || 'N/A'
+          };
+        }
+        return orderObj;
+      });
 
       // Status breakdown
       const ordersByStatus = await Order.aggregate([

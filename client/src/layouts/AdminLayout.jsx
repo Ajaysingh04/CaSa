@@ -88,9 +88,21 @@ const AdminLayout = () => {
             overflow-x: auto !important;
             padding-bottom: 3px !important;
             -webkit-overflow-scrolling: touch !important;
+            scrollbar-width: none !important;
+          }
+          .admin-nav-tabs-responsive::-webkit-scrollbar {
+            display: none !important;
           }
           .admin-main-viewport {
             padding: 16px 12px 40px !important;
+          }
+        }
+        @media (max-width: 640px) {
+          .admin-header-responsive {
+            padding: 8px 10px !important;
+          }
+          .admin-main-viewport {
+            padding: 12px 8px 36px !important;
           }
         }
       `}</style>
