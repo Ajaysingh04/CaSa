@@ -71,6 +71,17 @@ const ProductsPage = () => {
     }
   }, [routeSubcategory, searchParams]);
 
+  // Reset pagination and stale filters when search query changes
+  useEffect(() => {
+    setCurrentPage(1);
+    if (!searchParams.get('subcategory')) {
+      setSelectedSubcategory('');
+    }
+    if (!searchParams.get('brand')) {
+      setSelectedBrands([]);
+    }
+  }, [searchQuery]);
+
   // Fetch Products based on all active parameters
   useEffect(() => {
     const fetchFilteredProducts = async () => {

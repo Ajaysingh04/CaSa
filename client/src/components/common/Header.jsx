@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   Search,
   ShoppingCart,
@@ -149,12 +149,22 @@ const Header = ({ onToggleMobileMenu }) => {
     );
   };
 
+  const location = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const searchRef = useRef(null);
   const userMenuRef = useRef(null);
+
+  // Sync search input with URL if query is present
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const q = params.get('search');
+    if (q !== null && q !== undefined) {
+      setSearchQuery(q);
+    }
+  }, [location.search]);
 
   // Debounced search suggestions
   useEffect(() => {

@@ -2,6 +2,7 @@ const Product = require('../models/Product');
 const Review = require('../models/Review');
 const { getDBStatus } = require('../config/db');
 const dataStore = require('../services/dataStore');
+const { searchAndRankProducts } = require('../services/searchEngine');
 
 // @desc    Get all products with filtering, sorting, pagination
 // @route   GET /api/products
@@ -49,13 +50,34 @@ exports.getProducts = async (req, res, next) => {
       if (bestseller === 'true') query.isBestSeller = true;
       if (trending === 'true') query.isTrending = true;
 
-      if (search) {
-        query.$or = [
-          { name: { $regex: search, $options: 'i' } },
-          { brand: { $regex: search, $options: 'i' } },
-          { description: { $regex: search, $options: 'i' } },
-          { tags: { $in: [new RegExp(search, 'i')] } }
-        ];
+      const pageNum = parseInt(page, 10);
+      const limitNum = parseInt(limit, 10);
+      const skip = (pageNum - 1) * limitNum;
+
+      // When search is provided, apply intelligent multi-token ranking
+      if (search && search.trim()) {
+        const candidates = await Product.find(query);
+        let ranked = searchAndRankProducts(candidates, search);
+
+        if (sort === 'price_asc') {
+          ranked.sort((a, b) => (a.discountPrice || a.price) - (b.discountPrice || b.price));
+        } else if (sort === 'price_desc') {
+          ranked.sort((a, b) => (b.discountPrice || b.price) - (a.discountPrice || a.price));
+        } else if (sort === 'rating') {
+          ranked.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+        }
+
+        const total = ranked.length;
+        const paginated = ranked.slice(skip, skip + limitNum);
+
+        return res.status(200).json({
+          success: true,
+          count: paginated.length,
+          total,
+          page: pageNum,
+          pages: Math.ceil(total / limitNum) || 1,
+          data: paginated,
+        });
       }
 
       let sortOptions = { createdAt: -1 };
@@ -63,10 +85,6 @@ exports.getProducts = async (req, res, next) => {
       else if (sort === 'price_desc') sortOptions = { discountPrice: -1, price: -1 };
       else if (sort === 'rating') sortOptions = { rating: -1 };
       else if (sort === 'newest') sortOptions = { createdAt: -1 };
-
-      const pageNum = parseInt(page, 10);
-      const limitNum = parseInt(limit, 10);
-      const skip = (pageNum - 1) * limitNum;
 
       const total = await Product.countDocuments(query);
       const products = await Product.find(query)
@@ -120,15 +138,8 @@ exports.getProducts = async (req, res, next) => {
       if (trending === 'true') {
         result = result.filter(p => p.isTrending);
       }
-      if (search) {
-        const s = search.toLowerCase();
-        result = result.filter(p =>
-          p.name.toLowerCase().includes(s) ||
-          p.brand.toLowerCase().includes(s) ||
-          p.categorySlug.toLowerCase().includes(s) ||
-          p.subcategory.toLowerCase().includes(s) ||
-          (p.description && p.description.toLowerCase().includes(s))
-        );
+      if (search && search.trim()) {
+        result = searchAndRankProducts(result, search);
       }
 
       // Sorting
@@ -228,39 +239,36 @@ exports.getSearchSuggestions = async (req, res, next) => {
       return res.status(200).json({ success: true, suggestions: [] });
     }
 
-    const query = q.trim().toLowerCase();
-
     if (getDBStatus()) {
-      const products = await Product.find({
-        $or: [
-          { name: { $regex: query, $options: 'i' } },
-          { brand: { $regex: query, $options: 'i' } }
-        ]
-      })
-        .select('name slug brand categorySlug images price discountPrice')
-        .limit(6);
+      const candidates = await Product.find({ isActive: true });
+      const ranked = searchAndRankProducts(candidates, q).slice(0, 6);
 
-      return res.status(200).json({ success: true, suggestions: products });
+      const suggestions = ranked.map((p) => ({
+        _id: p._id,
+        name: p.name,
+        slug: p.slug,
+        brand: p.brand,
+        categorySlug: p.categorySlug,
+        image: p.images?.[0] || '',
+        price: p.discountPrice || p.price,
+      }));
+
+      return res.status(200).json({ success: true, suggestions });
     } else {
-      const matches = dataStore.products
-        .filter(
-          p =>
-            p.name.toLowerCase().includes(query) ||
-            p.brand.toLowerCase().includes(query) ||
-            p.subcategory.toLowerCase().includes(query)
-        )
-        .slice(0, 6)
-        .map(p => ({
-          _id: p._id,
-          name: p.name,
-          slug: p.slug,
-          brand: p.brand,
-          categorySlug: p.categorySlug,
-          image: p.images[0],
-          price: p.discountPrice || p.price
-        }));
+      const candidates = (dataStore.products || []).filter((p) => p.isActive !== false);
+      const ranked = searchAndRankProducts(candidates, q).slice(0, 6);
 
-      return res.status(200).json({ success: true, suggestions: matches });
+      const suggestions = ranked.map((p) => ({
+        _id: p._id,
+        name: p.name,
+        slug: p.slug,
+        brand: p.brand,
+        categorySlug: p.categorySlug,
+        image: p.images?.[0] || '',
+        price: p.discountPrice || p.price,
+      }));
+
+      return res.status(200).json({ success: true, suggestions });
     }
   } catch (err) {
     next(err);
