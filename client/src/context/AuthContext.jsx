@@ -39,8 +39,11 @@ export const AuthProvider = ({ children }) => {
   const login = async (credentials) => {
     try {
       const data = await authService.login(credentials);
+      if (!data || !data.user) {
+        throw new Error(data?.message || 'Invalid login response from server.');
+      }
       setUser(data.user);
-      success(`Welcome back, ${data.user.name}!`);
+      success(`Welcome back, ${data.user.name || 'User'}!`);
       return { success: true, user: data.user };
     } catch (err) {
       console.error('Login error details:', err);
@@ -57,8 +60,11 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       const data = await authService.register(userData);
+      if (!data || !data.user) {
+        throw new Error(data?.message || 'Invalid registration response from server.');
+      }
       setUser(data.user);
-      success(`Account created successfully! Welcome to CASA, ${data.user.name}.`);
+      success(`Account created successfully! Welcome to CASA, ${data.user.name || 'User'}.`);
       return { success: true, user: data.user };
     } catch (err) {
       console.error('Registration error details:', err);

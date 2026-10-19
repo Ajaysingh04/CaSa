@@ -1,3 +1,13 @@
 const app = require('../server/app');
+const { connectDB, getDBStatus } = require('../server/config/db');
 
-module.exports = app;
+module.exports = async (req, res) => {
+  if (!getDBStatus() && process.env.MONGODB_URI) {
+    try {
+      await connectDB();
+    } catch (e) {
+      console.warn('DB connect warning in serverless handler:', e.message);
+    }
+  }
+  return app(req, res);
+};
