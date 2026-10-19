@@ -29,7 +29,9 @@ export const productService = {
 
   // Get promotional banners
   getBanners: async () => {
-    const response = await api.get('/banners');
+    const response = await api.get('/banners', {
+      params: { _t: Date.now() },
+    });
     return response.data.data;
   },
 };

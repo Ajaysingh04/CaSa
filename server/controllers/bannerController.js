@@ -7,6 +7,11 @@ const dataStore = require('../services/dataStore');
 // @access  Public
 exports.getActiveBanners = async (req, res, next) => {
   try {
+    // Prevent client or intermediate caching so newly added banners are served immediately
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
     if (getDBStatus()) {
       const banners = await Banner.find({ isActive: true }).sort({ order: 1, createdAt: -1 });
       return res.status(200).json({ success: true, count: banners.length, data: banners });

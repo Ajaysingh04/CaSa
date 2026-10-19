@@ -2,33 +2,23 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Sparkles, ArrowRight, Flame } from 'lucide-react';
 
-const defaultBanners = [
+// Clean fallback banner in case no banners exist in database (no old external images)
+const fallbackBanners = [
   {
-    _id: 'default-1',
-    title: 'CASA Grand Diwali & Festive Mega Sale',
-    subtitle: 'Flat 50% - 75% Off Across 15+ Categories | Top Indian & Global Brands',
-    badge: 'Limited Time Offer',
-    tag: 'MEGA FESTIVAL SALE',
-    image: 'https://images.unsplash.com/photo-1607083206869-4c7672e72a8a?w=1800&auto=format&fit=crop&q=85',
+    _id: 'default-welcome',
+    title: 'Welcome to CASA Premium Shopping',
+    subtitle: 'Discover handpicked collections across Fashion, Electronics, Home & Daily Essentials',
+    badge: 'Official Store',
+    tag: 'EXCLUSIVE DEALS',
+    image: '',
     link: '/products',
-    buttonText: 'Shop Grand Sale',
+    buttonText: 'Shop Now',
     accentColor: '#1d4ed8',
-  },
-  {
-    _id: 'default-2',
-    title: 'Royal Indian Ethnic & Sarees',
-    subtitle: 'Pure Kanjivaram, Banarasi & Designer Lehengas Crafted by Master Weavers',
-    badge: 'Heritage Couture',
-    tag: 'HANDLOOM CRAFT',
-    image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1800&auto=format&fit=crop&q=85',
-    link: '/category/womens-fashion',
-    buttonText: 'Explore Collection',
-    accentColor: '#be185d',
   },
 ];
 
-const HeroCarousel = ({ banners = [] }) => {
-  const activeBanners = banners && banners.length > 0 ? banners : defaultBanners;
+const HeroCarousel = ({ banners = [], loading = false }) => {
+  const activeBanners = banners && banners.length > 0 ? banners : (loading ? [] : fallbackBanners);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const touchStartX = useRef(0);
@@ -49,6 +39,39 @@ const HeroCarousel = ({ banners = [] }) => {
       setCurrentIndex(0);
     }
   }, [activeBanners.length, currentIndex]);
+
+  // If loading and no banners yet, render skeleton shimmer without flashing old content
+  if (loading && activeBanners.length === 0) {
+    return (
+      <div style={carouselWrapperStyle}>
+        <style>{`
+          @keyframes heroShimmerAnim {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+          }
+          .hero-shimmer {
+            background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);
+            background-size: 200% 100%;
+            animation: heroShimmerAnim 1.8s infinite linear;
+          }
+        `}</style>
+        <div className="hero-slide-container" style={{ minHeight: '420px', display: 'flex', alignItems: 'center', background: '#09101d' }}>
+          <div className="container hero-content-padding" style={contentContainerStyle}>
+            <div style={{ ...contentBoxStyle, background: 'rgba(8, 16, 32, 0.65)' }}>
+              <div className="hero-shimmer" style={{ width: '130px', height: '24px', borderRadius: '9999px' }} />
+              <div className="hero-shimmer" style={{ width: '75%', height: '42px', borderRadius: '10px' }} />
+              <div className="hero-shimmer" style={{ width: '55%', height: '20px', borderRadius: '6px' }} />
+              <div className="hero-shimmer" style={{ width: '160px', height: '46px', borderRadius: '10px', marginTop: '10px' }} />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (activeBanners.length === 0) {
+    return null;
+  }
 
   const currentBanner = activeBanners[currentIndex] || activeBanners[0];
 
@@ -152,21 +175,25 @@ const HeroCarousel = ({ banners = [] }) => {
 
       <div className="hero-slide-container">
         {/* Background Layer with Crossfade */}
-        {activeBanners.map((b, idx) => (
-          <div
-            key={b._id || idx}
-            style={{
-              ...slideBgStyle,
-              backgroundImage: `url(${b.image})`,
-              opacity: currentIndex === idx ? 1 : 0,
-              zIndex: currentIndex === idx ? 1 : 0,
-              transform: currentIndex === idx ? 'scale(1)' : 'scale(1.03)',
-              transition: 'opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1), transform 6s ease-out',
-            }}
-          >
-            <div style={gradientOverlayStyle} />
-          </div>
-        ))}
+        {activeBanners.map((b, idx) => {
+          const bgImg = b.image ? `url("${b.image}")` : 'none';
+          return (
+            <div
+              key={b._id || idx}
+              style={{
+                ...slideBgStyle,
+                backgroundImage: bgImg,
+                backgroundColor: b.accentColor ? `${b.accentColor}25` : '#09101d',
+                opacity: currentIndex === idx ? 1 : 0,
+                zIndex: currentIndex === idx ? 1 : 0,
+                transform: currentIndex === idx ? 'scale(1)' : 'scale(1.03)',
+                transition: 'opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1), transform 6s ease-out',
+              }}
+            >
+              <div style={gradientOverlayStyle} />
+            </div>
+          );
+        })}
 
         {/* Slide Content */}
         <div className="container hero-content-padding" style={contentContainerStyle}>

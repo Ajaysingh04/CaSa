@@ -10,7 +10,19 @@ import { Sparkles, TrendingUp, Award, Clock } from 'lucide-react';
 
 const HomePage = () => {
   const { categories = [] } = useOutletContext() || {};
-  const [banners, setBanners] = useState([]);
+  // Initialize banners from localStorage cache immediately to eliminate stale flash
+  const [banners, setBanners] = useState(() => {
+    try {
+      const cached = localStorage.getItem('casa_active_banners');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {
+      // ignore
+    }
+    return [];
+  });
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [recentlyViewed, setRecentlyViewed] = useState([]);
@@ -20,11 +32,18 @@ const HomePage = () => {
       try {
         setLoading(true);
         const [bannersData, productsRes] = await Promise.all([
-          productService.getBanners().catch(() => []),
+          productService.getBanners().catch(() => null),
           productService.getProducts({ limit: 100 }),
         ]);
 
-        setBanners(bannersData || []);
+        if (Array.isArray(bannersData) && bannersData.length > 0) {
+          setBanners(bannersData);
+          try {
+            localStorage.setItem('casa_active_banners', JSON.stringify(bannersData));
+          } catch (e) {
+            console.warn('Could not cache banners:', e);
+          }
+        }
         setProducts(productsRes.data || []);
       } catch (err) {
         console.error('Error fetching homepage data:', err);
@@ -35,6 +54,13 @@ const HomePage = () => {
 
     fetchData();
 
+    // Listen for banner updates from admin panel in same window or across tabs
+    const handleBannersUpdated = () => {
+      fetchData();
+    };
+    window.addEventListener('casa_banners_updated', handleBannersUpdated);
+    window.addEventListener('storage', handleBannersUpdated);
+
     // Load recently viewed products from localStorage
     try {
       const stored = localStorage.getItem('casa_recently_viewed');
@@ -44,6 +70,11 @@ const HomePage = () => {
     } catch {
       // ignore
     }
+
+    return () => {
+      window.removeEventListener('casa_banners_updated', handleBannersUpdated);
+      window.removeEventListener('storage', handleBannersUpdated);
+    };
   }, []);
 
   // Filter category products
@@ -65,7 +96,7 @@ const HomePage = () => {
   return (
     <div style={{ paddingBottom: '60px' }}>
       {/* 1. Large Hero Carousel */}
-      <HeroCarousel banners={banners} />
+      <HeroCarousel banners={banners} loading={loading && banners.length === 0} />
 
       {/* 2. Shop by Category Grid (All 15 Categories) */}
       <CategoryGrid categories={categories} />

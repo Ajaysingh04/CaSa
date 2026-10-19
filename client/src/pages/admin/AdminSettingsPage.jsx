@@ -390,6 +390,15 @@ const AdminSettingsPage = () => {
     success(`Applied preset template "${preset.name}"!`);
   };
 
+  const notifyBannersChanged = () => {
+    try {
+      localStorage.removeItem('casa_active_banners');
+      window.dispatchEvent(new Event('casa_banners_updated'));
+    } catch {
+      // ignore
+    }
+  };
+
   const handleSaveBanner = async (e) => {
     e.preventDefault();
     if (!bannerFormData.title.trim()) {
@@ -410,6 +419,7 @@ const AdminSettingsPage = () => {
         await adminService.createBanner(bannerFormData);
         success(`Banner "${bannerFormData.title}" created in Backend!`);
       }
+      notifyBannersChanged();
       setIsBannerModalOpen(false);
       loadBanners();
     } catch (err) {
@@ -427,6 +437,7 @@ const AdminSettingsPage = () => {
     try {
       await adminService.deleteBanner(banner._id);
       success(`Banner "${banner.title}" removed from Backend.`);
+      notifyBannersChanged();
       setBanners((prev) => prev.filter((b) => b._id !== banner._id));
     } catch (err) {
       error('Failed to delete banner in backend');
@@ -437,6 +448,7 @@ const AdminSettingsPage = () => {
     const updatedStatus = !banner.isActive;
     try {
       await adminService.updateBanner(banner._id, { isActive: updatedStatus });
+      notifyBannersChanged();
       setBanners((prev) =>
         prev.map((b) => (b._id === banner._id ? { ...b, isActive: updatedStatus } : b))
       );
@@ -451,6 +463,7 @@ const AdminSettingsPage = () => {
     const newOrder = direction === 'up' ? Math.max(1, currentOrder - 1) : currentOrder + 1;
     try {
       await adminService.updateBanner(banner._id, { order: newOrder });
+      notifyBannersChanged();
       loadBanners();
     } catch (err) {
       error('Failed to reorder banner in backend');
