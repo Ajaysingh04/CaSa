@@ -5,12 +5,17 @@ import Header from '../components/common/Header';
 import CategoryNavbar from '../components/common/CategoryNavbar';
 import CartDrawer from '../components/common/CartDrawer';
 import MobileCategoryDrawer from '../components/common/MobileCategoryDrawer';
+import LanguageModal from '../components/common/LanguageModal';
 import Footer from '../components/common/Footer';
 import { categoryService } from '../services/categoryService';
+import { useStore } from '../context/StoreContext';
+import { useAuth } from '../context/AuthContext';
 
 const MainLayout = () => {
   const [categories, setCategories] = useState([]);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { isLanguageModalOpen, openLanguageModal, closeLanguageModal } = useStore();
+  const { user } = useAuth();
 
   useEffect(() => {
     const fetchCats = async () => {
@@ -23,6 +28,24 @@ const MainLayout = () => {
     };
     fetchCats();
   }, []);
+
+  // Detect when a new user logs in or registers, and pop up the language selection modal
+  useEffect(() => {
+    // 1. Explicit trigger flag set on login/signup
+    const promptFlag = sessionStorage.getItem('casa_prompt_language_modal') === 'true';
+
+    // 2. Check if logged-in user hasn't selected their language preference yet
+    const userLangKey = user ? `casa_lang_selected_${user._id || user.id}` : null;
+    const hasSelected = userLangKey ? localStorage.getItem(userLangKey) : null;
+
+    if (promptFlag || (user && !hasSelected)) {
+      sessionStorage.removeItem('casa_prompt_language_modal');
+      const timer = setTimeout(() => {
+        openLanguageModal();
+      }, 350);
+      return () => clearTimeout(timer);
+    }
+  }, [user, openLanguageModal]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: '#f8fafc', width: '100%', maxWidth: '100vw', overflowX: 'hidden' }}>
@@ -40,6 +63,10 @@ const MainLayout = () => {
         isOpen={isMobileMenuOpen}
         onClose={() => setIsMobileMenuOpen(false)}
         categories={categories}
+      />
+      <LanguageModal
+        isOpen={isLanguageModalOpen}
+        onClose={closeLanguageModal}
       />
     </div>
   );

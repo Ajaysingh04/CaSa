@@ -88,6 +88,10 @@ const LoginPage = () => {
     setLoading(false);
 
     if (res.success) {
+      const userKey = `casa_lang_selected_${res.user._id || res.user.id}`;
+      if (!localStorage.getItem(userKey)) {
+        sessionStorage.setItem('casa_prompt_language_modal', 'true');
+      }
       success(`Welcome back, ${res.user.name}!`);
       if (res.user.role === 'admin' && (redirect === '/' || redirect === '/login')) {
         navigate('/admin');
@@ -117,6 +121,7 @@ const LoginPage = () => {
     setLoading(false);
 
     if (res.success) {
+      sessionStorage.setItem('casa_prompt_language_modal', 'true');
       success('Welcome to CASA! Your account was created successfully.');
       navigate(redirect);
     } else {

@@ -141,7 +141,7 @@ exports.getMe = async (req, res, next) => {
 // @access  Private
 exports.updateProfile = async (req, res, next) => {
   try {
-    const { name, phone, avatar } = req.body;
+    const { name, phone, avatar, preferredLanguage } = req.body;
 
     if (getDBStatus()) {
       const user = await User.findById(req.user._id);
@@ -152,6 +152,7 @@ exports.updateProfile = async (req, res, next) => {
       if (name) user.name = name;
       if (phone !== undefined) user.phone = phone;
       if (avatar) user.avatar = avatar;
+      if (preferredLanguage) user.preferredLanguage = preferredLanguage;
 
       await user.save();
       return res.status(200).json({ success: true, user });
@@ -164,6 +165,7 @@ exports.updateProfile = async (req, res, next) => {
       if (name) dataStore.users[userIndex].name = name;
       if (phone !== undefined) dataStore.users[userIndex].phone = phone;
       if (avatar) dataStore.users[userIndex].avatar = avatar;
+      if (preferredLanguage) dataStore.users[userIndex].preferredLanguage = preferredLanguage;
 
       const { password, ...safeUser } = dataStore.users[userIndex];
       return res.status(200).json({ success: true, user: safeUser });

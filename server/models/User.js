@@ -40,6 +40,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80'
     },
+    preferredLanguage: {
+      type: String,
+      default: 'en'
+    },
     resetPasswordToken: String,
     resetPasswordExpire: Date
   },

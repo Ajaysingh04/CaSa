@@ -27,10 +27,13 @@ import {
   Settings,
   Edit3,
   Upload,
+  Globe,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { useStore } from '../context/StoreContext';
 import { authService } from '../services/authService';
+import { LANGUAGE_OPTIONS } from '../components/common/LanguageModal';
 
 const AVATAR_PRESETS = [
   'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80',
@@ -43,8 +46,9 @@ const AVATAR_PRESETS = [
 const UserProfilePage = () => {
   const { user, updateProfile, isAdmin, logout } = useAuth();
   const { success, error } = useToast();
+  const { language, setLanguage, openLanguageModal, primaryColor } = useStore();
 
-  // Active section tab: 'profile' | 'addresses' | 'security'
+  // Active section tab: 'profile' | 'addresses' | 'security' | 'settings'
   const [activeSection, setActiveSection] = useState('profile');
 
   // Edit Mode toggle for personal info (prevents accidental direct editing)
@@ -524,6 +528,21 @@ const UserProfilePage = () => {
           <span className="tab-desktop-text">Account Security</span>
           <span className="tab-mobile-text">Security</span>
         </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveSection('settings')}
+          className="profile-tab-button"
+          style={{
+            background: activeSection === 'settings' ? '#ffffff' : 'transparent',
+            color: activeSection === 'settings' ? '#0f172a' : '#64748b',
+            boxShadow: activeSection === 'settings' ? '0 2px 8px rgba(15, 23, 42, 0.08)' : 'none',
+          }}
+        >
+          <Settings size={15} color={activeSection === 'settings' ? '#2563eb' : '#64748b'} />
+          <span className="tab-desktop-text">Settings & Language</span>
+          <span className="tab-mobile-text">Language</span>
+        </button>
       </div>
 
       {/* TAB 1: PERSONAL INFORMATION */}
@@ -821,6 +840,69 @@ const UserProfilePage = () => {
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* Preferred Language Setting Card */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '12px 16px',
+                background: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                borderRadius: '12px',
+                margin: '8px 0 12px 0',
+                flexWrap: 'wrap',
+                gap: '10px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div
+                  style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '10px',
+                    background: '#eff6ff',
+                    color: '#2563eb',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Globe size={18} />
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.84rem', fontWeight: 700, color: '#0f172a' }}>
+                    Preferred Marketplace Language
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                    Current: <strong style={{ color: '#2563eb' }}>{language === 'hi' ? '🇮🇳 हिन्दी (Hindi)' : language === 'hinglish' ? '🇮🇳 Hinglish' : language === 'bn' ? '🇮🇳 বাংলা (Bengali)' : language === 'mr' ? '🇮🇳 मराठी (Marathi)' : language === 'ta' ? '🇮🇳 தமிழ் (Tamil)' : language === 'te' ? '🇮🇳 తెలుగు (Telugu)' : language === 'gu' ? '🇮🇳 ગુજરાતી (Gujarati)' : '🇬🇧 English'}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={openLanguageModal}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '6px 14px',
+                  borderRadius: '8px',
+                  border: '1.5px solid #2563eb',
+                  background: '#ffffff',
+                  color: '#2563eb',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <Globe size={13} />
+                <span>Change Language / भाषा बदलें</span>
+              </button>
             </div>
 
             {/* Action Buttons: Edit / Save / Cancel */}
@@ -1246,6 +1328,228 @@ const UserProfilePage = () => {
               >
                 <LogOut size={15} /> Sign Out Now
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: SETTINGS & LANGUAGE PREFERENCES */}
+      {activeSection === 'settings' && (
+        <div className="profile-content-card">
+          <div style={cardHeaderRow}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Settings size={18} color="#2563eb" />
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                  Settings & Language Preferences / भाषा व सेटिंग्स
+                </h3>
+              </div>
+              <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '3px 0 0 0' }}>
+                Choose your default language for browsing products, banners, notifications and checkout.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={openLanguageModal}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '8px 14px',
+                borderRadius: '10px',
+                background: primaryColor || '#2563eb',
+                color: '#ffffff',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                border: 'none',
+                cursor: 'pointer',
+                boxShadow: '0 2px 8px rgba(37,99,235,0.25)',
+              }}
+            >
+              <Globe size={15} />
+              <span>Open Language Pop-up</span>
+            </button>
+          </div>
+
+          {/* Current Active Language Pill */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '12px 16px',
+              background: '#f0fdf4',
+              border: '1px solid #bbf7d0',
+              borderRadius: '12px',
+              marginBottom: '20px',
+              flexWrap: 'wrap',
+              gap: '10px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '10px',
+                  background: '#dcfce7',
+                  color: '#16a34a',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <CheckCircle2 size={18} />
+              </div>
+              <div>
+                <strong style={{ fontSize: '0.88rem', color: '#166534', display: 'block' }}>
+                  Current Active Language
+                </strong>
+                <span style={{ fontSize: '0.78rem', color: '#15803d' }}>
+                  All website elements, catalogs, and actions are rendered in this language.
+                </span>
+              </div>
+            </div>
+
+            <span
+              style={{
+                padding: '4px 12px',
+                borderRadius: '999px',
+                background: '#16a34a',
+                color: '#ffffff',
+                fontSize: '0.75rem',
+                fontWeight: 800,
+                textTransform: 'uppercase',
+              }}
+            >
+              Active: {language}
+            </span>
+          </div>
+
+          {/* All Languages Interactive Grid */}
+          <div style={{ marginBottom: '24px' }}>
+            <h4 style={{ fontSize: '0.92rem', fontWeight: 800, color: '#0f172a', marginBottom: '12px' }}>
+              Select Your Preferred Language (1-Click Change):
+            </h4>
+
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                gap: '12px',
+              }}
+            >
+              {LANGUAGE_OPTIONS.map((opt) => {
+                const isSelected = language === opt.id;
+                return (
+                  <div
+                    key={opt.id}
+                    onClick={async () => {
+                      setLanguage(opt.id);
+                      if (user) {
+                        localStorage.setItem(`casa_lang_selected_${user._id || user.id}`, 'true');
+                        try {
+                          await updateProfile({ preferredLanguage: opt.id });
+                        } catch {
+                          // non-blocking
+                        }
+                      }
+                      success(`Language changed to ${opt.nativeName} (${opt.name})!`);
+                    }}
+                    style={{
+                      border: isSelected ? `2px solid ${primaryColor || '#2563eb'}` : '1.5px solid #e2e8f0',
+                      borderRadius: '12px',
+                      padding: '14px',
+                      cursor: 'pointer',
+                      background: isSelected ? '#eff6ff' : '#ffffff',
+                      boxShadow: isSelected
+                        ? '0 6px 16px -2px rgba(37,99,235,0.18)'
+                        : '0 1px 3px rgba(0,0,0,0.03)',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '1.4rem' }}>{opt.flag}</span>
+                        <div>
+                          <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '0.95rem' }}>
+                            {opt.nativeName}
+                          </div>
+                          {opt.nativeName !== opt.name && (
+                            <div style={{ fontSize: '0.75rem', color: '#64748b' }}>({opt.name})</div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div
+                        style={{
+                          width: '22px',
+                          height: '22px',
+                          borderRadius: '50%',
+                          border: isSelected ? `2px solid ${primaryColor || '#2563eb'}` : '2px solid #cbd5e1',
+                          background: isSelected ? (primaryColor || '#2563eb') : '#ffffff',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        {isSelected && <Check size={13} color="#ffffff" strokeWidth={3} />}
+                      </div>
+                    </div>
+
+                    <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span
+                        style={{
+                          fontSize: '0.65rem',
+                          fontWeight: 700,
+                          padding: '2px 6px',
+                          borderRadius: '6px',
+                          background: `${opt.badgeColor}15`,
+                          color: opt.badgeColor,
+                        }}
+                      >
+                        {opt.badge}
+                      </span>
+                    </div>
+
+                    <p style={{ fontSize: '0.75rem', color: '#64748b', margin: '6px 0 0 0', lineHeight: 1.35 }}>
+                      {opt.description}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Additional Preferences Overview */}
+          <div
+            style={{
+              padding: '16px',
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              borderRadius: '14px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+            }}
+          >
+            <h4 style={{ fontSize: '0.88rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+              Regional & Marketplace Defaults
+            </h4>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+              <div style={{ background: '#ffffff', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                <span style={{ fontSize: '0.72rem', color: '#64748b', display: 'block' }}>Currency</span>
+                <strong style={{ fontSize: '0.85rem', color: '#0f172a' }}>Indian Rupee (₹ INR)</strong>
+              </div>
+              <div style={{ background: '#ffffff', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                <span style={{ fontSize: '0.72rem', color: '#64748b', display: 'block' }}>Marketplace Region</span>
+                <strong style={{ fontSize: '0.85rem', color: '#0f172a' }}>India (All States & UTs)</strong>
+              </div>
+              <div style={{ background: '#ffffff', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                <span style={{ fontSize: '0.72rem', color: '#64748b', display: 'block' }}>Language Auto-Prompt</span>
+                <strong style={{ fontSize: '0.85rem', color: '#16a34a' }}>Configured on Account</strong>
+              </div>
             </div>
           </div>
         </div>
