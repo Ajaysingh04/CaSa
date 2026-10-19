@@ -146,7 +146,27 @@ export const LanguageModal = ({ isOpen, onClose }) => {
     );
   }, [selectedLang]);
 
-  if (!isOpen) return null;
+  const handleSkip = () => {
+    // If skipped, still mark as acknowledged for this user so it won't keep popping up every navigation
+    if (user) {
+      localStorage.setItem(`casa_lang_selected_${user._id || user.id}`, 'skipped');
+    } else {
+      localStorage.setItem('casa_guest_lang_selected', 'skipped');
+    }
+    onClose();
+  };
+
+  // Keyboard shortcut: Escape to skip/dismiss (must be declared BEFORE early return)
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        handleSkip();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, user]);
 
   // Handle language confirmation and persistence
   const handleApply = async () => {
@@ -194,27 +214,7 @@ export const LanguageModal = ({ isOpen, onClose }) => {
     }
   };
 
-  const handleSkip = () => {
-    // If skipped, still mark as acknowledged for this user so it won't keep popping up every navigation
-    if (user) {
-      localStorage.setItem(`casa_lang_selected_${user._id || user.id}`, 'skipped');
-    } else {
-      localStorage.setItem('casa_guest_lang_selected', 'skipped');
-    }
-    onClose();
-  };
-
-  // Keyboard shortcut: Escape to skip/dismiss
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        handleSkip();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, user]);
+  if (!isOpen) return null;
 
   return (
     <div style={overlayStyle} onClick={handleSkip}>
