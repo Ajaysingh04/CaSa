@@ -165,6 +165,25 @@ const LoginPage = () => {
             display: none !important;
           }
         }
+        @media (max-width: 580px) {
+          .auth-form-side {
+            padding: 26px 18px !important;
+          }
+          .auth-split-card {
+            border-radius: 20px !important;
+          }
+          .auth-trust-strip {
+            flex-wrap: wrap !important;
+            gap: 10px !important;
+            justify-content: center !important;
+          }
+          .auth-title {
+            font-size: 1.3rem !important;
+          }
+          .demo-buttons-row {
+            flex-direction: column !important;
+          }
+        }
         .custom-auth-input:focus-within {
           border-color: #2563eb !important;
           box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12) !important;
@@ -270,7 +289,7 @@ const LoginPage = () => {
         </div>
 
         {/* Right Column: Interactive Form Card */}
-        <div style={formSideStyle}>
+        <div className="auth-form-side" style={formSideStyle}>
           {/* Dual Tab Switcher */}
           <div style={tabSwitcherWrapper}>
             <button
@@ -293,7 +312,7 @@ const LoginPage = () => {
 
           {/* Header Title */}
           <div style={{ marginBottom: '20px' }}>
-            <h1 style={formTitleStyle}>
+            <h1 className="auth-title" style={formTitleStyle}>
               {activeTab === 'signin' ? 'Sign In to CASA' : 'Create CASA Account'}
             </h1>
             <p style={formSubtitleStyle}>
@@ -311,7 +330,7 @@ const LoginPage = () => {
                 <span style={demoLabel}>
                   <Sparkles size={12} color="#2563eb" /> 1-Click Demo Fill:
                 </span>
-                <div style={demoButtonsRow}>
+                <div className="demo-buttons-row" style={demoButtonsRow}>
                   <button
                     type="button"
                     onClick={() => handleSelectRole('customer')}
@@ -341,10 +360,15 @@ const LoginPage = () => {
 
               <form onSubmit={handleSignInSubmit} style={formContainerStyle}>
                 <div style={fieldGroup}>
-                  <label style={labelStyle}>Email Address *</label>
-                  <div className="custom-auth-input" style={inputBoxStyle}>
+                  <label htmlFor="signin-email" style={labelStyle}>Email Address *</label>
+                  <div
+                    className="custom-auth-input"
+                    style={inputBoxStyle}
+                    onClick={() => document.getElementById('signin-email')?.focus()}
+                  >
                     <Mail size={17} color="#94a3b8" />
                     <input
+                      id="signin-email"
                       type="email"
                       required
                       placeholder="name@example.com"
@@ -357,12 +381,21 @@ const LoginPage = () => {
 
                 <div style={fieldGroup}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <label style={labelStyle}>Password *</label>
+                    <label htmlFor="signin-password" style={labelStyle}>Password *</label>
                     <span style={forgotLink}>Forgot password?</span>
                   </div>
-                  <div className="custom-auth-input" style={inputBoxStyle}>
+                  <div
+                    className="custom-auth-input"
+                    style={inputBoxStyle}
+                    onClick={(e) => {
+                      if (e.target.tagName !== 'BUTTON' && !e.target.closest('button')) {
+                        document.getElementById('signin-password')?.focus();
+                      }
+                    }}
+                  >
                     <Lock size={17} color="#94a3b8" />
                     <input
+                      id="signin-password"
                       type={showSignInPassword ? 'text' : 'password'}
                       required
                       placeholder="••••••••"
@@ -423,25 +456,35 @@ const LoginPage = () => {
             <div>
               <form onSubmit={handleSignUpSubmit} style={formContainerStyle}>
                 <div style={fieldGroup}>
-                  <label style={labelStyle}>Full Name *</label>
-                  <div className="custom-auth-input" style={inputBoxStyle}>
+                  <label htmlFor="signup-name" style={labelStyle}>Full Name *</label>
+                  <div
+                    className="custom-auth-input"
+                    style={inputBoxStyle}
+                    onClick={() => document.getElementById('signup-name')?.focus()}
+                  >
                     <User size={17} color="#94a3b8" />
                     <input
+                      id="signup-name"
                       type="text"
                       required
                       placeholder="e.g. Priya Sharma"
                       value={signUpName}
-                      onChange={(e) => setName ? setName(e.target.value) : setSignUpName(e.target.value)}
+                      onChange={(e) => setSignUpName(e.target.value)}
                       style={nativeInputStyle}
                     />
                   </div>
                 </div>
 
                 <div style={fieldGroup}>
-                  <label style={labelStyle}>Email Address *</label>
-                  <div className="custom-auth-input" style={inputBoxStyle}>
+                  <label htmlFor="signup-email" style={labelStyle}>Email Address *</label>
+                  <div
+                    className="custom-auth-input"
+                    style={inputBoxStyle}
+                    onClick={() => document.getElementById('signup-email')?.focus()}
+                  >
                     <Mail size={17} color="#94a3b8" />
                     <input
+                      id="signup-email"
                       type="email"
                       required
                       placeholder="priya@example.com"
@@ -453,13 +496,18 @@ const LoginPage = () => {
                 </div>
 
                 <div style={fieldGroup}>
-                  <label style={labelStyle}>Mobile Number *</label>
-                  <div className="custom-auth-input" style={inputBoxStyle}>
+                  <label htmlFor="signup-phone" style={labelStyle}>Mobile Number *</label>
+                  <div
+                    className="custom-auth-input"
+                    style={inputBoxStyle}
+                    onClick={() => document.getElementById('signup-phone')?.focus()}
+                  >
                     <div style={phonePrefixBadge}>
                       <span style={{ fontSize: '1rem' }}>🇮🇳</span>
                       <span style={{ fontSize: '0.825rem', fontWeight: 700, color: '#334155' }}>+91</span>
                     </div>
                     <input
+                      id="signup-phone"
                       type="tel"
                       required
                       pattern="[0-9]{10}"
@@ -474,16 +522,25 @@ const LoginPage = () => {
 
                 <div style={fieldGroup}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <label style={labelStyle}>Create Password *</label>
+                    <label htmlFor="signup-password" style={labelStyle}>Create Password *</label>
                     {signUpPassword && (
                       <span style={{ fontSize: '0.72rem', fontWeight: 700, color: passwordStrength.color }}>
                         {passwordStrength.label}
                       </span>
                     )}
                   </div>
-                  <div className="custom-auth-input" style={inputBoxStyle}>
+                  <div
+                    className="custom-auth-input"
+                    style={inputBoxStyle}
+                    onClick={(e) => {
+                      if (e.target.tagName !== 'BUTTON' && !e.target.closest('button')) {
+                        document.getElementById('signup-password')?.focus();
+                      }
+                    }}
+                  >
                     <Lock size={17} color="#94a3b8" />
                     <input
+                      id="signup-password"
                       type={showSignUpPassword ? 'text' : 'password'}
                       required
                       minLength={6}
@@ -560,7 +617,7 @@ const LoginPage = () => {
           )}
 
           {/* Trust Guarantees Micro Strip */}
-          <div style={trustStripStyle}>
+          <div className="auth-trust-strip" style={trustStripStyle}>
             <span style={trustBadgeItem}>
               <Shield size={13} color="#059669" /> 256-Bit SSL
             </span>
@@ -842,6 +899,7 @@ const inputBoxStyle = {
   border: '1.5px solid #cbd5e1',
   background: '#ffffff',
   transition: 'all 0.15s ease',
+  cursor: 'text',
 };
 
 const nativeInputStyle = {

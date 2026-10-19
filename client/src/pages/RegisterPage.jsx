@@ -101,6 +101,22 @@ const RegisterPage = () => {
             display: none !important;
           }
         }
+        @media (max-width: 580px) {
+          .register-form-side {
+            padding: 26px 18px !important;
+          }
+          .register-split-card {
+            border-radius: 20px !important;
+          }
+          .register-trust-strip {
+            flex-wrap: wrap !important;
+            gap: 10px !important;
+            justify-content: center !important;
+          }
+          .register-title {
+            font-size: 1.3rem !important;
+          }
+        }
         .custom-auth-input:focus-within {
           border-color: #2563eb !important;
           box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12) !important;
@@ -205,7 +221,7 @@ const RegisterPage = () => {
         </div>
 
         {/* Right Column: Seamless Interactive Form */}
-        <div style={formSideStyle}>
+        <div className="register-form-side" style={formSideStyle}>
           {/* Dual Tab Mode Switcher (Sign In vs Create Account) */}
           <div style={tabSwitcherWrapper}>
             <Link
@@ -224,7 +240,7 @@ const RegisterPage = () => {
 
           {/* Header Title */}
           <div style={{ marginBottom: '22px' }}>
-            <h1 style={formTitleStyle}>Create CASA Account</h1>
+            <h1 className="register-title" style={formTitleStyle}>Create CASA Account</h1>
             <p style={formSubtitleStyle}>
               Join thousands of shoppers for exclusive deals, rewards, and fast tracking.
             </p>
@@ -234,10 +250,15 @@ const RegisterPage = () => {
           <form onSubmit={handleSubmit} style={formContainerStyle}>
             {/* Full Name */}
             <div style={fieldGroup}>
-              <label style={labelStyle}>Full Name *</label>
-              <div className="custom-auth-input" style={inputBoxStyle}>
+              <label htmlFor="reg-name" style={labelStyle}>Full Name *</label>
+              <div
+                className="custom-auth-input"
+                style={inputBoxStyle}
+                onClick={() => document.getElementById('reg-name')?.focus()}
+              >
                 <User size={17} color="#94a3b8" />
                 <input
+                  id="reg-name"
                   type="text"
                   required
                   placeholder="e.g. Priya Sharma"
@@ -250,10 +271,15 @@ const RegisterPage = () => {
 
             {/* Email Address */}
             <div style={fieldGroup}>
-              <label style={labelStyle}>Email Address *</label>
-              <div className="custom-auth-input" style={inputBoxStyle}>
+              <label htmlFor="reg-email" style={labelStyle}>Email Address *</label>
+              <div
+                className="custom-auth-input"
+                style={inputBoxStyle}
+                onClick={() => document.getElementById('reg-email')?.focus()}
+              >
                 <Mail size={17} color="#94a3b8" />
                 <input
+                  id="reg-email"
                   type="email"
                   required
                   placeholder="priya@example.com"
@@ -266,13 +292,18 @@ const RegisterPage = () => {
 
             {/* Mobile Number with India Flag & Prefix */}
             <div style={fieldGroup}>
-              <label style={labelStyle}>Mobile Number *</label>
-              <div className="custom-auth-input" style={inputBoxStyle}>
+              <label htmlFor="reg-phone" style={labelStyle}>Mobile Number *</label>
+              <div
+                className="custom-auth-input"
+                style={inputBoxStyle}
+                onClick={() => document.getElementById('reg-phone')?.focus()}
+              >
                 <div style={phonePrefixBadge}>
                   <span style={{ fontSize: '1rem' }}>🇮🇳</span>
                   <span style={{ fontSize: '0.825rem', fontWeight: 700, color: '#334155' }}>+91</span>
                 </div>
                 <input
+                  id="reg-phone"
                   type="tel"
                   required
                   pattern="[0-9]{10}"
@@ -288,16 +319,25 @@ const RegisterPage = () => {
             {/* Password Field with Show/Hide & Strength Meter */}
             <div style={fieldGroup}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <label style={labelStyle}>Create Password *</label>
+                <label htmlFor="reg-password" style={labelStyle}>Create Password *</label>
                 {password && (
                   <span style={{ fontSize: '0.72rem', fontWeight: 700, color: passwordStrength.color }}>
                     {passwordStrength.label}
                   </span>
                 )}
               </div>
-              <div className="custom-auth-input" style={inputBoxStyle}>
+              <div
+                className="custom-auth-input"
+                style={inputBoxStyle}
+                onClick={(e) => {
+                  if (e.target.tagName !== 'BUTTON' && !e.target.closest('button')) {
+                    document.getElementById('reg-password')?.focus();
+                  }
+                }}
+              >
                 <Lock size={17} color="#94a3b8" />
                 <input
+                  id="reg-password"
                   type={showPassword ? 'text' : 'password'}
                   required
                   minLength={6}
@@ -372,7 +412,7 @@ const RegisterPage = () => {
           </form>
 
           {/* Trust Guarantees Micro Strip */}
-          <div style={trustStripStyle}>
+          <div className="register-trust-strip" style={trustStripStyle}>
             <span style={trustBadgeItem}>
               <Shield size={13} color="#059669" /> 256-Bit SSL
             </span>
@@ -621,6 +661,7 @@ const inputBoxStyle = {
   border: '1.5px solid #cbd5e1',
   background: '#ffffff',
   transition: 'all 0.15s ease',
+  cursor: 'text',
 };
 
 const nativeInputStyle = {
