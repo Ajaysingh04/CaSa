@@ -139,83 +139,8 @@ class DataStore {
       }
     ];
 
-    // 9. Sample Initial Orders for Admin & Customer view
-    this.orders = [
-      {
-        _id: 'ord_001',
-        orderNumber: 'CASA-2026-98124',
-        user: 'user_cust_001',
-        items: [
-          {
-            product: this.products[1]._id,
-            name: this.products[1].name,
-            slug: this.products[1].slug,
-            image: this.products[1].images[0],
-            price: this.products[1].discountPrice || this.products[1].price,
-            quantity: 1,
-            selectedVariant: { Color: 'Silver' },
-            subtotal: this.products[1].discountPrice || this.products[1].price
-          }
-        ],
-        shippingAddress: { ...this.addresses[0] },
-        paymentMethod: 'razorpay',
-        paymentStatus: 'paid',
-        paymentDetails: {
-          razorpayOrderId: 'order_rzp_mock_12345',
-          razorpayPaymentId: 'pay_rzp_mock_67890',
-          razorpaySignature: 'sig_mock_verified',
-          paidAt: new Date(Date.now() - 86400000 * 2)
-        },
-        itemsPrice: 28990,
-        shippingPrice: 0,
-        taxPrice: 0,
-        discountPrice: 200,
-        couponCode: 'CASA200',
-        totalPrice: 28790,
-        orderStatus: 'Delivered',
-        statusHistory: [
-          { status: 'Confirmed', timestamp: new Date(Date.now() - 86400000 * 2), note: 'Order placed & payment verified' },
-          { status: 'Processing', timestamp: new Date(Date.now() - 86400000 * 1.8), note: 'Packed at Bengaluru Fulfillment Center' },
-          { status: 'Shipped', timestamp: new Date(Date.now() - 86400000 * 1.2), note: 'Dispatched with BlueDart' },
-          { status: 'Out for delivery', timestamp: new Date(Date.now() - 86400000 * 0.4), note: 'Out for delivery by agent' },
-          { status: 'Delivered', timestamp: new Date(Date.now() - 86400000 * 0.1), note: 'Delivered to resident' }
-        ],
-        deliveredAt: new Date(Date.now() - 86400000 * 0.1),
-        createdAt: new Date(Date.now() - 86400000 * 2).toISOString()
-      },
-      {
-        _id: 'ord_002',
-        orderNumber: 'CASA-2026-98125',
-        user: 'user_cust_001',
-        items: [
-          {
-            product: this.products[9]._id, // Anarkali Kurti Set
-            name: this.products[9].name,
-            slug: this.products[9].slug,
-            image: this.products[9].images[0],
-            price: this.products[9].discountPrice || this.products[9].price,
-            quantity: 1,
-            selectedVariant: { Size: 'M', Color: 'Powder Blue' },
-            subtotal: this.products[9].discountPrice || this.products[9].price
-          }
-        ],
-        shippingAddress: { ...this.addresses[0] },
-        paymentMethod: 'cod',
-        paymentStatus: 'pending',
-        itemsPrice: 2899,
-        shippingPrice: 0,
-        taxPrice: 0,
-        discountPrice: 0,
-        totalPrice: 2899,
-        orderStatus: 'Shipped',
-        statusHistory: [
-          { status: 'Confirmed', timestamp: new Date(Date.now() - 86400000 * 1), note: 'Order confirmed with Cash on Delivery' },
-          { status: 'Packed', timestamp: new Date(Date.now() - 86400000 * 0.7), note: 'Packed at Hub' },
-          { status: 'Shipped', timestamp: new Date(Date.now() - 86400000 * 0.3), note: 'Handed over to courier' }
-        ],
-        createdAt: new Date(Date.now() - 86400000 * 1).toISOString()
-      }
-    ];
+    // 9. Initial Orders: Empty by default (only real customer orders appear)
+    this.orders = [];
   }
 }
 

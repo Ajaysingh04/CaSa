@@ -66,7 +66,21 @@ exports.getDashboardStats = async (req, res, next) => {
         .select('name slug stock price discountPrice images brand categorySlug rating numReviews')
         .limit(6);
 
-      const avgOrderValue = totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0;
+      // Real monthly revenue aggregation
+      const monthlySalesAgg = await Order.aggregate([
+        { $match: { orderStatus: { $nin: ['Cancelled', 'Refunded'] } } },
+        {
+          $group: {
+            _id: {
+              year: { $year: '$createdAt' },
+              month: { $month: '$createdAt' }
+            },
+            revenue: { $sum: '$totalPrice' },
+            orders: { $sum: 1 }
+          }
+        },
+        { $sort: { '_id.year': 1, '_id.month': 1 } }
+      ]);
 
       return res.status(200).json({
         success: true,
@@ -80,6 +94,7 @@ exports.getDashboardStats = async (req, res, next) => {
           topProducts,
           recentOrders,
           categoryBreakdown: categoryAgg,
+          monthlySales: monthlySalesAgg,
           ordersByStatus: ordersByStatus.reduce((acc, curr) => {
             acc[curr._id] = curr.count;
             return acc;
@@ -128,6 +143,24 @@ exports.getDashboardStats = async (req, res, next) => {
         ordersByStatus[o.orderStatus] = (ordersByStatus[o.orderStatus] || 0) + 1;
       });
 
+      const monthlySalesMap = {};
+      dataStore.orders.forEach(o => {
+        if (o.orderStatus !== 'Cancelled' && o.orderStatus !== 'Refunded') {
+          const d = new Date(o.createdAt || Date.now());
+          const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
+          if (!monthlySalesMap[key]) {
+            monthlySalesMap[key] = {
+              _id: { year: d.getFullYear(), month: d.getMonth() + 1 },
+              revenue: 0,
+              orders: 0
+            };
+          }
+          monthlySalesMap[key].revenue += (o.totalPrice || 0);
+          monthlySalesMap[key].orders += 1;
+        }
+      });
+      const monthlySales = Object.values(monthlySalesMap);
+
       return res.status(200).json({
         success: true,
         data: {
@@ -140,6 +173,7 @@ exports.getDashboardStats = async (req, res, next) => {
           topProducts,
           recentOrders,
           categoryBreakdown,
+          monthlySales,
           ordersByStatus
         }
       });

@@ -74,58 +74,121 @@ const AdminDashboardPage = () => {
     topProducts = [],
     recentOrders = [],
     categoryBreakdown = [],
+    monthlySales = [],
     ordersByStatus = {},
   } = stats || {};
 
-  // Real or dynamically computed monthly revenue bars
+  // Real monthly sales computed from actual database records
   const monthlyBars = useMemo(() => {
-    const baseRevenue = totalRevenue || 500000;
-    return [
-      { month: 'Jan', val: Math.round(baseRevenue * 0.65), orders: Math.max(12, Math.round(totalOrders * 0.6)) },
-      { month: 'Feb', val: Math.round(baseRevenue * 0.78), orders: Math.max(15, Math.round(totalOrders * 0.7)) },
-      { month: 'Mar', val: Math.round(baseRevenue * 0.58), orders: Math.max(10, Math.round(totalOrders * 0.5)) },
-      { month: 'Apr', val: Math.round(baseRevenue * 0.92), orders: Math.max(18, Math.round(totalOrders * 0.85)) },
-      { month: 'May', val: Math.round(baseRevenue * 0.75), orders: Math.max(14, Math.round(totalOrders * 0.72)) },
-      { month: 'Jun', val: Math.round(baseRevenue * 1.05), orders: Math.max(22, Math.round(totalOrders * 1.0)) },
-      { month: 'Jul', val: Math.round(baseRevenue * 0.88), orders: Math.max(17, Math.round(totalOrders * 0.8)) },
-      { month: 'Aug', val: baseRevenue, orders: totalOrders || 20 },
-    ];
-  }, [totalRevenue, totalOrders]);
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const now = new Date();
 
+    // Generate past 6 months timeline
+    const timeline = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      timeline.push({
+        year: d.getFullYear(),
+        monthNum: d.getMonth() + 1,
+        month: monthNames[d.getMonth()],
+        val: 0,
+        orders: 0,
+      });
+    }
+
+    if (Array.isArray(monthlySales) && monthlySales.length > 0) {
+      monthlySales.forEach((item) => {
+        const itemYear = item._id?.year;
+        const itemMonth = item._id?.month;
+        const match = timeline.find((m) => m.year === itemYear && m.monthNum === itemMonth);
+        if (match) {
+          match.val += item.revenue || 0;
+          match.orders += item.orders || 0;
+        } else if (itemMonth) {
+          timeline.push({
+            year: itemYear,
+            monthNum: itemMonth,
+            month: monthNames[itemMonth - 1] || `${itemMonth}`,
+            val: item.revenue || 0,
+            orders: item.orders || 0,
+          });
+        }
+      });
+    } else if (totalRevenue > 0) {
+      // If there are orders in current month
+      const current = timeline[timeline.length - 1];
+      current.val = totalRevenue;
+      current.orders = totalOrders;
+    }
+
+    return timeline;
+  }, [monthlySales, totalRevenue, totalOrders]);
+
+  // Real weekly bars computed from recent orders
   const weeklyBars = useMemo(() => {
-    const baseRev = (totalRevenue || 500000) / 4;
-    return [
-      { month: 'W1', val: Math.round(baseRev * 0.8), orders: Math.max(4, Math.round(totalOrders * 0.2)) },
-      { month: 'W2', val: Math.round(baseRev * 1.1), orders: Math.max(6, Math.round(totalOrders * 0.3)) },
-      { month: 'W3', val: Math.round(baseRev * 0.9), orders: Math.max(5, Math.round(totalOrders * 0.25)) },
-      { month: 'W4', val: Math.round(baseRev * 1.2), orders: Math.max(7, Math.round(totalOrders * 0.35)) },
+    const weeks = [
+      { month: '3 Wks Ago', val: 0, orders: 0 },
+      { month: '2 Wks Ago', val: 0, orders: 0 },
+      { month: 'Last Week', val: 0, orders: 0 },
+      { month: 'This Week', val: 0, orders: 0 },
     ];
-  }, [totalRevenue, totalOrders]);
+
+    if (Array.isArray(recentOrders) && recentOrders.length > 0) {
+      const now = Date.now();
+      const ONE_WEEK = 7 * 24 * 60 * 60 * 1000;
+      recentOrders.forEach((order) => {
+        const orderTime = new Date(order.createdAt || now).getTime();
+        const diff = now - orderTime;
+        const amount = order.totalPrice || order.totalAmount || 0;
+        if (diff < ONE_WEEK) {
+          weeks[3].val += amount;
+          weeks[3].orders += 1;
+        } else if (diff < 2 * ONE_WEEK) {
+          weeks[2].val += amount;
+          weeks[2].orders += 1;
+        } else if (diff < 3 * ONE_WEEK) {
+          weeks[1].val += amount;
+          weeks[1].orders += 1;
+        } else {
+          weeks[0].val += amount;
+          weeks[0].orders += 1;
+        }
+      });
+    }
+    return weeks;
+  }, [recentOrders]);
 
   const activeBars = chartTimeframe === 'monthly' ? monthlyBars : weeklyBars;
   const maxBarVal = Math.max(...activeBars.map((b) => b.val), 1);
 
-  // Category donut chart computation
+  // Category donut chart computation from REAL products in catalog
   const categorySegments = useMemo(() => {
-    const colors = ['#0f172a', '#2563eb', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899'];
+    const colors = ['#0f172a', '#2563eb', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#06b6d4', '#e11d48'];
     if (categoryBreakdown && categoryBreakdown.length > 0) {
-      const totalCount = categoryBreakdown.reduce((sum, c) => sum + (c.count || 1), 0) || 1;
-      return categoryBreakdown.map((cat, idx) => ({
-        id: cat._id || `cat-${idx}`,
-        label: cat._id ? cat._id.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()) : 'General',
-        count: cat.count || 1,
-        pct: Math.round(((cat.count || 1) / totalCount) * 100),
-        color: colors[idx % colors.length],
-      }));
+      const totalCount = categoryBreakdown.reduce((sum, c) => sum + (c.count || 0), 0) || 1;
+      let cumulativeOffset = 0;
+      const CIRCUMFERENCE = 2 * Math.PI * 38; // ~238.76
+
+      return categoryBreakdown.map((cat, idx) => {
+        const count = cat.count || 0;
+        const pct = Math.round((count / totalCount) * 100);
+        const strokeLength = (count / totalCount) * CIRCUMFERENCE;
+        const strokeDasharray = `${strokeLength.toFixed(1)} ${(CIRCUMFERENCE - strokeLength).toFixed(1)}`;
+        const strokeDashoffset = -cumulativeOffset;
+        cumulativeOffset += strokeLength;
+
+        return {
+          id: cat._id || `cat-${idx}`,
+          label: cat._id ? cat._id.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()) : 'General',
+          count,
+          pct,
+          color: colors[idx % colors.length],
+          strokeDasharray,
+          strokeDashoffset,
+        };
+      });
     }
-    // Default fallback distribution
-    return [
-      { id: 'electronics', label: 'Electronics', count: 18, pct: 35, color: '#0f172a' },
-      { id: 'fashion', label: 'Fashion & Apparel', count: 14, pct: 28, color: '#2563eb' },
-      { id: 'ethnic-wear', label: 'Ethnic & Sarees', count: 10, pct: 18, color: '#f59e0b' },
-      { id: 'home', label: 'Home & Living', count: 8, pct: 12, color: '#10b981' },
-      { id: 'footwear', label: 'Footwear & Shoes', count: 4, pct: 7, color: '#8b5cf6' },
-    ];
+    return [];
   }, [categoryBreakdown]);
 
   // Filter recent orders based on search and tab
@@ -409,10 +472,10 @@ const AdminDashboardPage = () => {
           </div>
           <div style={kpiBottomRow}>
             <span style={{ ...trendPill, background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0' }}>
-              <ArrowUpRight size={13} /> +18.4%
+              <TrendingUp size={13} /> Live Gross Sales
             </span>
             <span style={kpiMetaText}>
-              AOV: <strong>{formatINR(avgOrderValue || (totalOrders > 0 ? totalRevenue / totalOrders : 0))}</strong>
+              AOV: <strong>{formatINR(avgOrderValue || (totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0))}</strong>
             </span>
           </div>
         </div>
@@ -430,7 +493,7 @@ const AdminDashboardPage = () => {
           </div>
           <div style={kpiBottomRow}>
             <span style={{ ...trendPill, background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe' }}>
-              <ArrowUpRight size={13} /> +12.0%
+              <CheckCircle2 size={13} /> {ordersByStatus.Delivered || 0} Delivered
             </span>
             <Link to="/admin/orders" style={kpiActionLink}>
               View Orders →
@@ -478,7 +541,7 @@ const AdminDashboardPage = () => {
           </div>
           <div style={kpiBottomRow}>
             <span style={{ ...trendPill, background: '#faf5ff', color: '#9333ea', border: '1px solid #e9d5ff' }}>
-              <Sparkles size={12} /> Active Store
+              <Users size={12} /> {totalUsers} Active {totalUsers === 1 ? 'Shopper' : 'Shoppers'}
             </span>
             <Link to="/admin/users" style={kpiActionLink}>
               Directory →
@@ -661,10 +724,10 @@ const AdminDashboardPage = () => {
             }}
           >
             <span>
-              Peak Month: <strong style={{ color: '#0f172a' }}>August ({formatINR(totalRevenue)})</strong>
+              Storewide Inflow: <strong style={{ color: '#0f172a' }}>{formatINR(totalRevenue)}</strong> across {totalOrders} {totalOrders === 1 ? 'order' : 'orders'}
             </span>
             <span style={{ color: '#16a34a', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <TrendingUp size={14} /> +24% YoY Growth
+              <CheckCircle2 size={14} /> Live Database Synced
             </span>
           </div>
         </div>
@@ -695,7 +758,7 @@ const AdminDashboardPage = () => {
               </p>
             </div>
             <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#059669', background: '#ecfdf5', padding: '3px 8px', borderRadius: '6px' }}>
-              15 Categories
+              {categorySegments.length} Departments
             </span>
           </div>
 
@@ -713,76 +776,22 @@ const AdminDashboardPage = () => {
             <div style={{ position: 'relative', width: '150px', height: '150px', flexShrink: 0 }}>
               <svg viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)', width: '100%', height: '100%' }}>
                 <circle cx="50" cy="50" r="38" fill="none" stroke="#f1f5f9" strokeWidth="12" />
-                {/* Segment 1 */}
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="38"
-                  fill="none"
-                  stroke="#0f172a"
-                  strokeWidth={hoveredDonut === 'electronics' ? '14' : '11'}
-                  strokeDasharray="80 160"
-                  strokeDashoffset="0"
-                  style={{ transition: 'all 0.2s ease', cursor: 'pointer' }}
-                  onMouseEnter={() => setHoveredDonut('electronics')}
-                  onMouseLeave={() => setHoveredDonut(null)}
-                />
-                {/* Segment 2 */}
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="38"
-                  fill="none"
-                  stroke="#2563eb"
-                  strokeWidth={hoveredDonut === 'fashion' ? '14' : '11'}
-                  strokeDasharray="60 180"
-                  strokeDashoffset="-80"
-                  style={{ transition: 'all 0.2s ease', cursor: 'pointer' }}
-                  onMouseEnter={() => setHoveredDonut('fashion')}
-                  onMouseLeave={() => setHoveredDonut(null)}
-                />
-                {/* Segment 3 */}
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="38"
-                  fill="none"
-                  stroke="#f59e0b"
-                  strokeWidth={hoveredDonut === 'ethnic-wear' ? '14' : '11'}
-                  strokeDasharray="40 200"
-                  strokeDashoffset="-140"
-                  style={{ transition: 'all 0.2s ease', cursor: 'pointer' }}
-                  onMouseEnter={() => setHoveredDonut('ethnic-wear')}
-                  onMouseLeave={() => setHoveredDonut(null)}
-                />
-                {/* Segment 4 */}
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="38"
-                  fill="none"
-                  stroke="#10b981"
-                  strokeWidth={hoveredDonut === 'home' ? '14' : '11'}
-                  strokeDasharray="35 205"
-                  strokeDashoffset="-180"
-                  style={{ transition: 'all 0.2s ease', cursor: 'pointer' }}
-                  onMouseEnter={() => setHoveredDonut('home')}
-                  onMouseLeave={() => setHoveredDonut(null)}
-                />
-                {/* Segment 5 */}
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="38"
-                  fill="none"
-                  stroke="#8b5cf6"
-                  strokeWidth={hoveredDonut === 'footwear' ? '14' : '11'}
-                  strokeDasharray="24 216"
-                  strokeDashoffset="-215"
-                  style={{ transition: 'all 0.2s ease', cursor: 'pointer' }}
-                  onMouseEnter={() => setHoveredDonut('footwear')}
-                  onMouseLeave={() => setHoveredDonut(null)}
-                />
+                {categorySegments.map((seg) => (
+                  <circle
+                    key={seg.id}
+                    cx="50"
+                    cy="50"
+                    r="38"
+                    fill="none"
+                    stroke={seg.color}
+                    strokeWidth={hoveredDonut === seg.id ? '14' : '11'}
+                    strokeDasharray={seg.strokeDasharray}
+                    strokeDashoffset={seg.strokeDashoffset}
+                    style={{ transition: 'all 0.2s ease', cursor: 'pointer' }}
+                    onMouseEnter={() => setHoveredDonut(seg.id)}
+                    onMouseLeave={() => setHoveredDonut(null)}
+                  />
+                ))}
               </svg>
 
               {/* Center Stat */}
