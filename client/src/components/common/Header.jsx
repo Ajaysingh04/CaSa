@@ -11,7 +11,6 @@ import {
   Shield,
   Package,
   LogOut,
-  Globe,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
@@ -28,7 +27,7 @@ const Header = ({ onToggleMobileMenu }) => {
   const { success } = useToast();
   const { cartCount, openDrawer } = useCart();
   const { wishlistCount } = useWishlist();
-  const { storeName, storeTagline, primaryColor, language, setLanguage, t, openLanguageModal } = useStore();
+  const { storeName, storeTagline, primaryColor, t } = useStore();
 
   // Location State (persisted in localStorage)
   const [showLocationModal, setShowLocationModal] = useState(false);
@@ -260,54 +259,6 @@ const Header = ({ onToggleMobileMenu }) => {
 
         {/* Action Icons & Account */}
         <div className="header-action-group-responsive" style={actionGroupStyle}>
-          {/* Quick Language Toggle Pill with Modal Opener */}
-          <div style={{ display: 'flex', alignItems: 'center', background: '#f1f5f9', borderRadius: '8px', padding: '2px', border: '1px solid #e2e8f0', gap: '2px' }}>
-            {['en', 'hi', 'hinglish'].map((lng) => (
-              <button
-                key={lng}
-                type="button"
-                onClick={() => setLanguage(lng)}
-                style={{
-                  border: 'none',
-                  background: language === lng ? (primaryColor || '#2563eb') : 'transparent',
-                  color: language === lng ? '#ffffff' : '#64748b',
-                  fontSize: '0.68rem',
-                  fontWeight: 700,
-                  padding: '3px 7px',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  textTransform: 'uppercase',
-                  transition: 'all 0.15s ease',
-                }}
-                title={`Switch Language to ${lng === 'en' ? 'English' : lng === 'hi' ? 'हिन्दी (Hindi)' : 'Hinglish'}`}
-              >
-                {lng === 'en' ? 'EN' : lng === 'hi' ? 'हिन्दी' : 'HING'}
-              </button>
-            ))}
-            <button
-              type="button"
-              onClick={openLanguageModal}
-              style={{
-                border: 'none',
-                background: 'transparent',
-                color: primaryColor || '#2563eb',
-                fontSize: '0.68rem',
-                fontWeight: 700,
-                padding: '3px 5px',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '2px',
-                transition: 'all 0.15s ease',
-              }}
-              title="Open Language Selection / भाषा चुनें"
-            >
-              <Globe size={12} />
-              <span>+</span>
-            </button>
-          </div>
-
           {/* Wishlist */}
           <Link to="/wishlist" style={actionItemStyle} title="My Wishlist">
             <div style={{ position: 'relative' }}>
@@ -411,25 +362,6 @@ const Header = ({ onToggleMobileMenu }) => {
                     <Link to="/wishlist" onClick={() => setShowUserMenu(false)} style={dropdownLinkStyle}>
                       <Heart size={16} /> My Wishlist
                     </Link>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowUserMenu(false);
-                        openLanguageModal();
-                      }}
-                      style={{
-                        ...dropdownLinkStyle,
-                        width: '100%',
-                        border: 'none',
-                        background: 'transparent',
-                        textAlign: 'left',
-                        cursor: 'pointer',
-                        fontFamily: 'inherit',
-                      }}
-                    >
-                      <Globe size={16} /> Choose Language / भाषा
-                    </button>
 
                     <div style={{ borderTop: '1px solid #f1f5f9', margin: '4px 0' }} />
 
