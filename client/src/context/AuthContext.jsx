@@ -43,7 +43,12 @@ export const AuthProvider = ({ children }) => {
       success(`Welcome back, ${data.user.name}!`);
       return { success: true, user: data.user };
     } catch (err) {
-      const msg = err.response?.data?.message || 'Login failed. Please check credentials.';
+      console.error('Login error details:', err);
+      const msg =
+        err.response?.data?.message ||
+        (typeof err.response?.data === 'string' && err.response.data.includes('<!DOCTYPE')
+          ? 'API returned HTML instead of JSON. Check Vercel backend routing.'
+          : err.message || 'Login failed. Please check credentials.');
       error(msg);
       return { success: false, message: msg };
     }
@@ -56,7 +61,12 @@ export const AuthProvider = ({ children }) => {
       success(`Account created successfully! Welcome to CASA, ${data.user.name}.`);
       return { success: true, user: data.user };
     } catch (err) {
-      const msg = err.response?.data?.message || 'Registration failed.';
+      console.error('Registration error details:', err);
+      const msg =
+        err.response?.data?.message ||
+        (typeof err.response?.data === 'string' && err.response.data.includes('<!DOCTYPE')
+          ? 'API returned HTML instead of JSON. Check Vercel backend routing.'
+          : err.message || 'Registration failed.');
       error(msg);
       return { success: false, message: msg };
     }

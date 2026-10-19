@@ -68,8 +68,6 @@ const RegisterPage = () => {
       sessionStorage.setItem('casa_prompt_language_modal', 'true');
       success('Welcome to CASA! Your account was created successfully.');
       navigate(redirect);
-    } else {
-      error(res.message || 'Registration failed. Please check your details.');
     }
   };
 
