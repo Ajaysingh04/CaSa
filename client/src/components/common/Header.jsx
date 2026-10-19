@@ -11,6 +11,7 @@ import {
   Shield,
   Package,
   LogOut,
+  Loader2,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
@@ -19,7 +20,6 @@ import { useToast } from '../../context/ToastContext';
 import { useStore } from '../../context/StoreContext';
 import { productService } from '../../services/productService';
 import { formatINR } from '../../utils/formatters';
-import LocationModal from './LocationModal';
 
 const Header = ({ onToggleMobileMenu }) => {
   const navigate = useNavigate();
@@ -30,7 +30,8 @@ const Header = ({ onToggleMobileMenu }) => {
   const { storeName, storeTagline, primaryColor, t } = useStore();
 
   // Location State (persisted in localStorage)
-  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
+  const [detectStatus, setDetectStatus] = useState('');
   const [deliveryLocation, setDeliveryLocation] = useState(() => {
     try {
       const saved = localStorage.getItem('casa_delivery_location');
@@ -40,13 +41,112 @@ const Header = ({ onToggleMobileMenu }) => {
     }
   });
 
-  const handleSelectLocation = (newLoc) => {
-    setDeliveryLocation(newLoc);
-    try {
-      localStorage.setItem('casa_delivery_location', JSON.stringify(newLoc));
-    } catch (e) {
-      console.error(e);
+  const handleDetectLocationInline = async () => {
+    if (isDetectingLocation) return;
+    setIsDetectingLocation(true);
+    setDetectStatus('Locating...');
+
+    const applyLocation = (city, pincode, state = '') => {
+      const loc = { city: city || 'Bengaluru', pincode: pincode || '560038', state };
+      setDeliveryLocation(loc);
+      try {
+        localStorage.setItem('casa_delivery_location', JSON.stringify(loc));
+      } catch (e) {
+        console.error(e);
+      }
+      setIsDetectingLocation(false);
+      setDetectStatus('');
+      success(`📍 Delivery location set to ${loc.city} ${loc.pincode}`);
+    };
+
+    const tryIpFallback = async () => {
+      try {
+        setDetectStatus('Analyzing IP...');
+        const res = await fetch('https://ipapi.co/json/');
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.city) {
+            applyLocation(data.city, data.postal || '560038', data.region || '');
+            return;
+          }
+        }
+      } catch {
+        try {
+          const res2 = await fetch('https://ipwho.is/');
+          if (res2.ok) {
+            const data2 = await res2.json();
+            if (data2 && data2.city) {
+              applyLocation(data2.city, data2.postal || '560038', data2.region || '');
+              return;
+            }
+          }
+        } catch {
+          // ignore
+        }
+      }
+      applyLocation('Bengaluru', '560038', 'Karnataka');
+    };
+
+    if (!navigator.geolocation) {
+      await tryIpFallback();
+      return;
     }
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          setDetectStatus('Analyzing GPS...');
+          const { latitude, longitude } = pos.coords;
+
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 3500);
+
+          let detectedCity = '';
+          let detectedPincode = '';
+          let detectedState = '';
+
+          try {
+            const res = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
+              {
+                signal: controller.signal,
+                headers: { 'Accept-Language': 'en' },
+              }
+            );
+            clearTimeout(timeoutId);
+            if (res.ok) {
+              const data = await res.json();
+              if (data && data.address) {
+                detectedCity =
+                  data.address.city ||
+                  data.address.town ||
+                  data.address.suburb ||
+                  data.address.state_district ||
+                  data.address.county ||
+                  '';
+                detectedPincode = data.address.postcode || '';
+                detectedState = data.address.state || '';
+              }
+            }
+          } catch (fetchErr) {
+            console.log('Reverse geocode error or timeout:', fetchErr);
+          }
+
+          if (detectedCity && detectedPincode) {
+            applyLocation(detectedCity, detectedPincode, detectedState);
+          } else {
+            await tryIpFallback();
+          }
+        } catch {
+          await tryIpFallback();
+        }
+      },
+      async (err) => {
+        console.log('GPS denied or unavailable, trying IP fallback:', err.message);
+        await tryIpFallback();
+      },
+      { timeout: 6000, maximumAge: 60000, enableHighAccuracy: false }
+    );
   };
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -187,20 +287,31 @@ const Header = ({ onToggleMobileMenu }) => {
           </div>
         </Link>
 
-        {/* Deliver To Pin Code (Interactive GPS Location Analyzer) */}
+        {/* Deliver To Pin Code (Inline Auto-Detect GPS & IP Analyzer) */}
         <button
           type="button"
-          onClick={() => setShowLocationModal(true)}
+          onClick={handleDetectLocationInline}
+          disabled={isDetectingLocation}
           className="header-delivery-badge delivery-badge-btn"
-          title="Click to analyze and set delivery location"
+          style={{
+            ...deliveryBadgeStyle,
+            borderColor: isDetectingLocation ? '#2563eb' : '#e2e8f0',
+            background: isDetectingLocation ? '#eff6ff' : '#f8fafc',
+            cursor: isDetectingLocation ? 'wait' : 'pointer',
+          }}
+          title="Click to auto-detect and analyze your delivery location"
         >
-          <MapPin size={18} color={primaryColor || '#1d4ed8'} style={{ flexShrink: 0 }} />
+          {isDetectingLocation ? (
+            <Loader2 size={18} color="#2563eb" className="spin-animation" style={{ flexShrink: 0 }} />
+          ) : (
+            <MapPin size={18} color={primaryColor || '#1d4ed8'} style={{ flexShrink: 0 }} />
+          )}
           <div style={deliveryBadgeText}>
             <span style={{ fontSize: '0.68rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '3px' }}>
-              {t('deliverTo')} <ChevronDown size={11} color="#64748b" />
+              {isDetectingLocation ? (detectStatus || 'Locating...') : t('deliverTo')}
             </span>
-            <strong style={{ fontSize: '0.825rem', color: '#0f172a', whiteSpace: 'nowrap' }}>
-              {deliveryLocation.city} {deliveryLocation.pincode}
+            <strong style={{ fontSize: '0.825rem', color: isDetectingLocation ? '#2563eb' : '#0f172a', whiteSpace: 'nowrap', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {isDetectingLocation ? 'Analyzing...' : `${deliveryLocation.city} ${deliveryLocation.pincode}`}
             </strong>
           </div>
         </button>
@@ -425,27 +536,28 @@ const Header = ({ onToggleMobileMenu }) => {
       {/* Mobile Delivery Location Strip (<900px) */}
       <div
         className="mobile-delivery-strip"
-        onClick={() => setShowLocationModal(true)}
-        title="Tap to analyze and change delivery location"
+        onClick={handleDetectLocationInline}
+        style={{ cursor: isDetectingLocation ? 'wait' : 'pointer' }}
+        title="Tap to auto-detect your live delivery location"
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <MapPin size={14} color="#1d4ed8" />
+          {isDetectingLocation ? (
+            <Loader2 size={14} color="#1d4ed8" className="spin-animation" />
+          ) : (
+            <MapPin size={14} color="#1d4ed8" />
+          )}
           <span style={{ fontSize: '0.74rem', color: '#334155' }}>
-            Deliver to <strong>{deliveryLocation.city} {deliveryLocation.pincode}</strong>
+            {isDetectingLocation ? (
+              <span style={{ color: '#1d4ed8', fontWeight: 600 }}>Analyzing live location...</span>
+            ) : (
+              <>Deliver to <strong>{deliveryLocation.city} {deliveryLocation.pincode}</strong></>
+            )}
           </span>
         </div>
         <span style={{ fontSize: '0.72rem', color: '#1d4ed8', fontWeight: 700 }}>
-          Change Location →
+          {isDetectingLocation ? 'Buffering...' : 'Auto-Detect 📍'}
         </span>
       </div>
-
-      {/* Location Analyzer & Selector Modal */}
-      <LocationModal
-        isOpen={showLocationModal}
-        onClose={() => setShowLocationModal(false)}
-        currentLocation={deliveryLocation}
-        onSelectLocation={handleSelectLocation}
-      />
     </header>
   );
 };
