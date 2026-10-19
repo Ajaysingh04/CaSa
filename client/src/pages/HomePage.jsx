@@ -162,6 +162,7 @@ const HomePage = () => {
         subtitle="Niacinamide serums, Ayurvedic Soundarya cream & Philips precision grooming"
         categorySlug="beauty-and-personal-care"
         products={beautyProducts}
+        allProducts={products}
       />
 
       {/* 11. Footwear & Accessories Showcase */}
@@ -170,6 +171,7 @@ const HomePage = () => {
         subtitle="Nike Air Jordans, handcrafted leather oxfords & Bata block heels"
         categorySlug="footwear"
         products={footwearProducts}
+        allProducts={products}
       />
 
       {/* 12. Grocery and Daily Essentials */}
@@ -178,6 +180,7 @@ const HomePage = () => {
         subtitle="Unpolished organic pulses, Blue Tokai roast coffee & California dry fruits"
         categorySlug="grocery-and-daily-essentials"
         products={groceryProducts}
+        allProducts={products}
       />
 
       {/* 13. Kids, Toys & Baby Products */}
@@ -186,6 +189,7 @@ const HomePage = () => {
         subtitle="LEGO classic building boxes, European safety strollers & organic sleepsuits"
         categorySlug="kids-and-baby"
         products={kidsProducts}
+        allProducts={products}
       />
 
       {/* 14. Trending Products */}
@@ -220,6 +224,7 @@ const HomePage = () => {
         subtitle="Hex dumbbells, James Clear's Atomic Habits, ergonomic chairs & travel luggage"
         categorySlug="furniture"
         products={sportsBooksFurniture}
+        allProducts={products}
       />
 
       {/* 16. Recently Viewed Products (if any) */}

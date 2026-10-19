@@ -1108,6 +1108,35 @@ const productsData = [
     isTrending: true,
     isActive: true
   },
+  {
+    name: "Adidas Ultraboost Light Running & Training Shoes",
+    slug: "adidas-ultraboost-light-running-shoes",
+    categorySlug: "footwear",
+    subcategory: "Sneakers",
+    brand: "Adidas",
+    description: "Experience epic energy return with the lightest Ultraboost ever made. Featuring revolutionary Light BOOST foam, Primeknit+ forged upper, and Continental rubber outsole.",
+    shortDescription: "Ultra-lightweight Boost foam, Primeknit upper, Continental rubber grip.",
+    price: 18999,
+    discountPrice: 14499,
+    stock: 35,
+    rating: 4.8,
+    numReviews: 320,
+    images: [
+      "https://images.unsplash.com/photo-1584735935682-2f2b69dff9d2?w=800&auto=format&fit=crop&q=80"
+    ],
+    variants: [
+      { name: "Size (UK)", options: ["7", "8", "9", "10", "11"] },
+      { name: "Color", options: ["Core Black", "Cloud White"] }
+    ],
+    specifications: [
+      { key: "Cushioning", value: "Light BOOST Energy Foam" },
+      { key: "Outsole", value: "Continental Better Rubber" }
+    ],
+    isFeatured: true,
+    isBestSeller: true,
+    isTrending: true,
+    isActive: true
+  },
 
   // ================= 8. GROCERY AND DAILY ESSENTIALS =================
   {
@@ -1188,6 +1217,34 @@ const productsData = [
       { key: "Net Weight", value: "500g Resealable Pouch" }
     ],
     isFeatured: false,
+    isBestSeller: true,
+    isTrending: false,
+    isActive: true
+  },
+  {
+    name: "Daawat Rozana Gold Aged Long Grain Basmati Rice (5kg)",
+    slug: "daawat-rozana-gold-aged-basmati-rice-5kg",
+    categorySlug: "grocery-and-daily-essentials",
+    subcategory: "Packaged Foods",
+    brand: "Daawat",
+    description: "Fluffy, non-sticky and delightfully aromatic long-grain aged Basmati rice, carefully matured to perfection for everyday royal meals and biryanis.",
+    shortDescription: "Naturally aged, aromatic long grains, perfect non-sticky texture.",
+    price: 495,
+    discountPrice: 385,
+    stock: 180,
+    rating: 4.7,
+    numReviews: 940,
+    images: [
+      "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=800&auto=format&fit=crop&q=80"
+    ],
+    variants: [
+      { name: "Pack Size", options: ["1 kg", "5 kg", "10 kg"] }
+    ],
+    specifications: [
+      { key: "Aging", value: "Naturally Aged 2 Years" },
+      { key: "Origin", value: "Himalayan Foothills, India" }
+    ],
+    isFeatured: true,
     isBestSeller: true,
     isTrending: false,
     isActive: true
