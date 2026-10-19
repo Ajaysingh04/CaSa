@@ -21,7 +21,7 @@ const HomePage = () => {
         setLoading(true);
         const [bannersData, productsRes] = await Promise.all([
           productService.getBanners().catch(() => []),
-          productService.getProducts({ limit: 40 }),
+          productService.getProducts({ limit: 100 }),
         ]);
 
         setBanners(bannersData || []);
@@ -79,6 +79,7 @@ const HomePage = () => {
         subtitle="Pure Kanjivaram silk, Banarasi weaves, Anarkali suits & bridal lehengas"
         categorySlug="womens-fashion"
         products={womensProducts}
+        allProducts={products}
       />
 
       {/* 5. Electronics & Gadgets Showcase */}
@@ -87,6 +88,7 @@ const HomePage = () => {
         subtitle="M3 MacBooks, Sony ANC headphones, OLED TVs & Galaxy flagships"
         categorySlug="electronics"
         products={electronicsProducts}
+        allProducts={products}
       />
 
       {/* 6. Promotional Mid-Page Banner */}
@@ -116,6 +118,7 @@ const HomePage = () => {
         subtitle="100% European linen shirts, Levi's stretch denim & Manyavar festive wear"
         categorySlug="mens-fashion"
         products={mensProducts}
+        allProducts={products}
       />
 
       {/* 8. Home & Kitchen Showcase */}
@@ -124,6 +127,7 @@ const HomePage = () => {
         subtitle="Prestige mixer grinders, tri-ply stainless cookware & Egyptian cotton sheets"
         categorySlug="home-and-kitchen"
         products={homeProducts}
+        allProducts={products}
       />
 
       {/* 9. Bestsellers Across Multiple Categories */}

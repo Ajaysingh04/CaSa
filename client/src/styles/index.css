@@ -551,6 +551,87 @@ ul, ol {
   display: none;
 }
 
+/* ==========================================================================
+   RICH CARD HOVER, ZOOM & MICRO-ANIMATIONS
+   ========================================================================== */
+
+/* Interactive Card Elevation & Smooth Transitions */
+.card-hover-interactive {
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.25s ease !important;
+}
+
+.card-hover-interactive:hover {
+  transform: translateY(-7px) !important;
+  box-shadow: 0 20px 32px -8px rgba(15, 23, 42, 0.12), 0 8px 14px -3px rgba(15, 23, 42, 0.05) !important;
+  border-color: #93c5fd !important;
+}
+
+.card-hover-interactive:hover .card-img-zoom {
+  transform: scale(1.08) !important;
+}
+
+/* Badge Pulse Animation */
+@keyframes badgePulseGlow {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 2px 6px rgba(220, 38, 38, 0.2);
+  }
+  50% {
+    transform: scale(1.04);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+  }
+}
+
+.badge-animated-pulse {
+  animation: badgePulseGlow 3s infinite ease-in-out;
+}
+
+/* Quick Add button interactive micro-animations */
+.card-quick-add-btn {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.card-quick-add-btn:hover {
+  transform: scale(1.06) !important;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25) !important;
+}
+
+.card-quick-add-btn:active {
+  transform: scale(0.95) !important;
+}
+
+/* Wishlist heart interactive pop */
+.wishlist-heart-btn {
+  transition: transform 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.2s ease !important;
+}
+
+.wishlist-heart-btn:hover {
+  transform: scale(1.15) !important;
+  background: #ffffff !important;
+}
+
+.wishlist-heart-btn:active {
+  transform: scale(0.85) !important;
+}
+
+/* Section reveal entrance animation */
+@keyframes sectionFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-section-reveal {
+  animation: sectionFadeIn 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 
 
 

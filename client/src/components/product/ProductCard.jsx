@@ -44,7 +44,7 @@ const ProductCard = ({ product }) => {
   };
 
   return (
-    <div style={cardWrapperStyle} className="card">
+    <div style={cardWrapperStyle} className="card card-hover-interactive">
       <style>{`
         @media (max-width: 640px) {
           .card-img-wrap {
@@ -71,6 +71,7 @@ const ProductCard = ({ product }) => {
         <img
           src={product.images?.[0] || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80'}
           alt={product.name}
+          className="card-img-zoom"
           style={imageStyle}
           loading="lazy"
           onError={(e) => {
@@ -82,12 +83,12 @@ const ProductCard = ({ product }) => {
         {/* Badges Overlay */}
         <div style={badgesContainerStyle}>
           {product.isBestSeller && (
-            <span style={topItemBadge}>
+            <span style={topItemBadge} className="badge-animated-pulse">
               ★ Top Pick
             </span>
           )}
           {discountPercent > 0 && (
-            <span style={discountBadgeStyle}>
+            <span style={discountBadgeStyle} className="badge-animated-pulse">
               {discountPercent}% OFF
             </span>
           )}
@@ -96,6 +97,7 @@ const ProductCard = ({ product }) => {
         {/* Wishlist Heart Button */}
         <button
           onClick={handleWishlistToggle}
+          className="wishlist-heart-btn"
           style={wishlistBtnStyle}
           aria-label={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
         >
@@ -155,7 +157,7 @@ const ProductCard = ({ product }) => {
             <button
               onClick={handleAddToCart}
               disabled={isAdding}
-              className="card-add-btn"
+              className="card-add-btn card-quick-add-btn"
               style={{
                 ...cartPillBtn,
                 background: justAdded ? '#10b981' : '#eff6ff',
