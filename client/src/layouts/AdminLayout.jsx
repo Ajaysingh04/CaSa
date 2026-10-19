@@ -111,10 +111,10 @@ const AdminLayout = () => {
             <div style={adminUserPill}>
               <img
                 src={user.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'}
-                alt={user.name}
+                alt={user?.name || 'Admin'}
                 style={adminAvatar}
               />
-              <span style={adminUserName}>{user.name.split(' ')[0]}</span>
+              <span style={adminUserName}>{user?.name ? user.name.split(' ')[0] : 'Admin'}</span>
               <button
                 onClick={() => {
                   logout();

@@ -13,7 +13,8 @@ const generateToken = (id) => {
 };
 
 const sendTokenResponse = (user, statusCode, res) => {
-  const token = generateToken(user._id);
+  const userObj = user && typeof user.toObject === 'function' ? user.toObject() : { ...user };
+  const token = generateToken(userObj._id);
 
   const cookieOptions = {
     expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
@@ -22,7 +23,7 @@ const sendTokenResponse = (user, statusCode, res) => {
     sameSite: 'lax'
   };
 
-  const { password, ...safeUser } = user;
+  const { password, ...safeUser } = userObj;
 
   res
     .status(statusCode)

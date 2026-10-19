@@ -245,7 +245,7 @@ export const LanguageModal = ({ isOpen, onClose }) => {
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <h2 style={titleStyle}>
-                  {user ? `Namaste, ${user.name?.split(' ')[0]}!` : 'Welcome to CASA!'}
+                  {user ? `Namaste, ${user.name ? user.name.split(' ')[0] : (user.email ? user.email.split('@')[0] : 'Shopper')}!` : 'Welcome to CASA!'}
                 </h2>
                 <span style={pillBadgeStyle}>
                   <Sparkles size={11} color="#f59e0b" />
@@ -391,7 +391,7 @@ export const LanguageModal = ({ isOpen, onClose }) => {
               "{activeOption.previewGreeting}"
             </div>
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-              {activeOption.previewPills.map((pill, idx) => (
+              {(activeOption?.previewPills || []).map((pill, idx) => (
                 <span key={idx} style={previewPillStyle}>
                   {pill}
                 </span>

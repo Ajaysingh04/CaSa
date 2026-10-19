@@ -347,7 +347,7 @@ const Header = ({ onToggleMobileMenu }) => {
                   {user ? 'Hello,' : 'Sign In'}
                 </span>
                 <strong style={{ fontSize: '0.825rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '2px' }}>
-                  {user ? user.name.split(' ')[0] : 'Account'} <ChevronDown size={14} />
+                  {user ? (user.name ? user.name.split(' ')[0] : (user.email ? user.email.split('@')[0] : 'Shopper')) : 'Account'} <ChevronDown size={14} />
                 </strong>
               </div>
             </button>

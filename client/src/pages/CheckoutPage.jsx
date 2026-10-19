@@ -387,7 +387,7 @@ const CheckoutPage = () => {
             </div>
             <div className="checkout-step-text" style={stepTextGroup}>
               <span style={stepLabelCompleted}>1. Sign In</span>
-              <span className="checkout-step-sublabel" style={stepSublabel}>{user ? user.name.split(' ')[0] : 'Guest'}</span>
+              <span className="checkout-step-sublabel" style={stepSublabel}>{user ? (user.name ? user.name.split(' ')[0] : (user.email ? user.email.split('@')[0] : 'Shopper')) : 'Guest'}</span>
             </div>
           </div>
           <div className="checkout-step-line" style={stepLineActive} />
