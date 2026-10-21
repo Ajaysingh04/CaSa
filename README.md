@@ -214,6 +214,50 @@ RAZORPAY_KEY_SECRET=rzp_test_placeholder_secret
 - `DELETE /api/admin/products/:id` — Remove product from catalog
 - `GET /api/admin/users` — Directory of registered customer accounts
 
+### Vendor & Delivery Partner APIs
+- `GET /api/vendor/products` — Manage seller-isolated catalog
+- `GET /api/vendor/orders` — Manage seller-isolated order items
+- `PUT /api/vendor/orders/:id/status` — Advance seller item to `Packed` / `Ready for pickup`
+- `GET /api/delivery/my-deliveries` — List assigned shipments for courier
+- `PUT /api/delivery/orders/:id/pickup` — Scan and confirm merchant hub pickup
+- `PUT /api/delivery/orders/:id/status` — Update in-transit/out-for-delivery/delivery with 4-digit OTP
+
+---
+
+## 🧪 Automated Testing & Workflow Validation
+
+CaSa includes an automated end-to-end validation suite executing all 18 lifecycle scenarios against MongoDB Atlas:
+```powershell
+node server/scripts/validateMarketplaceWorkflow.js
+```
+
+### Validated Test Scenarios:
+1. Customer checkout with immutable purchase-time snapshots
+2. Insufficient stock rejection
+3. Multi-customer concurrency on last stock unit
+4. Pending payment gateway verification
+5. Cryptographic signature payment confirmation
+6. Idempotent payment webhook processing
+7. Strict multi-vendor tenant data isolation
+8. Vendor packing and pickup requests
+9. Admin delivery partner assignment and OTP issuance
+10. Delivery partner barcode pickup scan confirmation
+11. Real-time chronological tracking milestones
+12. Doorstep 4-digit OTP delivery proof
+13. Failed delivery reasons and next-day reattempts
+14. Pre-dispatch cancellation with inventory re-crediting
+15. 7-day doorstep return pickup and reverse logistics
+16. Multi-vendor composite status recalculation
+17. Real database queries for admin metrics
+18. RBAC blocking unauthorized access with HTTP 403
+19. Snapshot persistence and audit resilience across restarts
+
+---
+
+## 📖 Operational Documentation
+
+For external gateway credential setup, courier dispatch configuration, and environment setup boundaries, see the [Integration and Setup Guide](docs/INTEGRATION_AND_SETUP.md).
+
 ---
 
 ## 📦 Production Build
