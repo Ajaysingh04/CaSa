@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { adminService } from '../../services/adminService';
 import { formatINR, formatDate, formatDateTime } from '../../utils/formatters';
+import { getSocket } from '../../services/socketService';
 
 const AdminDashboardPage = () => {
   const [stats, setStats] = useState(null);
@@ -62,6 +63,19 @@ const AdminDashboardPage = () => {
 
   useEffect(() => {
     fetchStats();
+
+    // Auto-refresh operational metrics on incoming live events
+    try {
+      const socket = getSocket();
+      const handleLiveEvent = () => fetchStats(true);
+      socket.on('new_order', handleLiveEvent);
+      socket.on('admin_order_update', handleLiveEvent);
+
+      return () => {
+        socket.off('new_order', handleLiveEvent);
+        socket.off('admin_order_update', handleLiveEvent);
+      };
+    } catch (e) {}
   }, []);
 
   const {

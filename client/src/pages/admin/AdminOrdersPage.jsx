@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { adminService } from '../../services/adminService';
 import { useToast } from '../../context/ToastContext';
 import { formatINR, formatDateTime } from '../../utils/formatters';
+import { getSocket } from '../../services/socketService';
 import {
   Eye,
   CheckCircle,
@@ -78,6 +79,18 @@ const AdminOrdersPage = () => {
 
   useEffect(() => {
     fetchOrders();
+
+    try {
+      const socket = getSocket();
+      const handleLiveOrderEvent = () => fetchOrders();
+      socket.on('new_order', handleLiveOrderEvent);
+      socket.on('order_status_update', handleLiveOrderEvent);
+
+      return () => {
+        socket.off('new_order', handleLiveOrderEvent);
+        socket.off('order_status_update', handleLiveOrderEvent);
+      };
+    } catch (e) {}
   }, []);
 
   const handleAssignRider = async (orderId, riderId) => {

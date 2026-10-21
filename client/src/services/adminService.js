@@ -86,8 +86,8 @@ export const adminService = {
     return response.data.data;
   },
 
-  deleteUser: async (id) => {
-    const response = await api.delete(`/admin/users/${id}`);
+  deleteUser: async (id, data = { confirmation: true }) => {
+    const response = await api.delete(`/admin/users/${id}`, { data });
     return response.data;
   },
 
