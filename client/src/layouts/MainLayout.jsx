@@ -29,20 +29,28 @@ const MainLayout = () => {
     fetchCats();
   }, []);
 
-  // Detect when a new user logs in or registers, and pop up the language selection modal
+  // Language modal should ONLY prompt ONCE ever across the application
   useEffect(() => {
-    // 1. Explicit trigger flag set on login/signup
-    const promptFlag = sessionStorage.getItem('casa_prompt_language_modal') === 'true';
+    // If already prompted once in this browser, never auto-popup again
+    if (localStorage.getItem('casa_language_prompted_once')) {
+      sessionStorage.removeItem('casa_prompt_language_modal');
+      return;
+    }
 
-    // 2. Check if logged-in user hasn't selected their language preference yet
+    const promptFlag = sessionStorage.getItem('casa_prompt_language_modal') === 'true';
     const userLangKey = user ? `casa_lang_selected_${user._id || user.id}` : null;
     const hasSelected = userLangKey ? localStorage.getItem(userLangKey) : null;
 
     if (promptFlag || (user && !hasSelected)) {
       sessionStorage.removeItem('casa_prompt_language_modal');
+      localStorage.setItem('casa_language_prompted_once', 'true');
+      if (userLangKey) {
+        localStorage.setItem(userLangKey, 'true');
+      }
+
       const timer = setTimeout(() => {
         openLanguageModal();
-      }, 350);
+      }, 400);
       return () => clearTimeout(timer);
     }
   }, [user, openLanguageModal]);

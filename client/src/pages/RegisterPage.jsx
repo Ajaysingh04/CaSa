@@ -84,7 +84,9 @@ const RegisterPage = () => {
     setLoading(false);
 
     if (res.success) {
-      sessionStorage.setItem('casa_prompt_language_modal', 'true');
+      if (!localStorage.getItem('casa_language_prompted_once')) {
+        sessionStorage.setItem('casa_prompt_language_modal', 'true');
+      }
       success('Welcome to CASA! Your account was created successfully.');
       if (accountRole === 'vendor') {
         navigate('/vendor');

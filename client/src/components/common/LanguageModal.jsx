@@ -147,7 +147,8 @@ export const LanguageModal = ({ isOpen, onClose }) => {
   }, [selectedLang]);
 
   const handleSkip = () => {
-    // If skipped, still mark as acknowledged for this user so it won't keep popping up every navigation
+    // If skipped, mark as prompted once so it won't keep popping up
+    localStorage.setItem('casa_language_prompted_once', 'true');
     if (user) {
       localStorage.setItem(`casa_lang_selected_${user._id || user.id}`, 'skipped');
     } else {
@@ -174,6 +175,7 @@ export const LanguageModal = ({ isOpen, onClose }) => {
     try {
       // 1. Update in StoreContext (which persists in localStorage)
       setLanguage(selectedLang);
+      localStorage.setItem('casa_language_prompted_once', 'true');
 
       // 2. Mark user preference in localStorage so modal doesn't re-trigger unnecessarily
       if (user) {
