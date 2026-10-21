@@ -25,8 +25,17 @@ import { useToast } from '../context/ToastContext';
 const RegisterPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { register } = useAuth();
+  const { register, user, logout } = useAuth();
   const { success, error } = useToast();
+
+  const redirect = searchParams.get('redirect') || '/';
+
+  // If already logged in, redirect away from signup
+  useEffect(() => {
+    if (user) {
+      navigate(user.role === 'admin' ? '/admin' : '/', { replace: true });
+    }
+  }, [user, navigate]);
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -35,8 +44,6 @@ const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(true);
   const [loading, setLoading] = useState(false);
-
-  const redirect = searchParams.get('redirect') || '/';
 
   // Interactive Password Strength Evaluation
   const passwordStrength = useMemo(() => {
@@ -70,6 +77,77 @@ const RegisterPage = () => {
       navigate(redirect);
     }
   };
+
+  if (user) {
+    return (
+      <div style={pageWrapperStyle}>
+        <div
+          className="card"
+          style={{
+            maxWidth: '480px',
+            width: '100%',
+            padding: '40px 32px',
+            borderRadius: '24px',
+            textAlign: 'center',
+            background: '#ffffff',
+            boxShadow: '0 20px 40px -15px rgba(15, 23, 42, 0.1)',
+            zIndex: 10,
+          }}
+        >
+          <div
+            style={{
+              width: '64px',
+              height: '64px',
+              borderRadius: '50%',
+              background: '#ecfdf5',
+              color: '#059669',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 18px',
+            }}
+          >
+            <ShieldCheck size={36} />
+          </div>
+          <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a' }}>
+            Already Signed In
+          </h2>
+          <p style={{ color: '#475569', fontSize: '0.925rem', marginTop: '10px', lineHeight: 1.5 }}>
+            Aap pehle se <strong>{user.name}</strong> ({user.email}) ke roop me logged in hain.
+          </p>
+          <p style={{ color: '#64748b', fontSize: '0.85rem', marginTop: '6px' }}>
+            Naya account register karne ke liye pehle logout karein.
+          </p>
+          <div style={{ display: 'flex', gap: '12px', marginTop: '28px' }}>
+            <button
+              onClick={() => navigate(user.role === 'admin' ? '/admin' : '/')}
+              className="btn btn-outline"
+              style={{ flex: 1, padding: '11px', borderRadius: '10px', fontWeight: 700 }}
+            >
+              Continue Shopping
+            </button>
+            <button
+              onClick={async () => {
+                await logout();
+              }}
+              className="btn"
+              style={{
+                flex: 1,
+                padding: '11px',
+                borderRadius: '10px',
+                background: '#dc2626',
+                color: '#ffffff',
+                border: 'none',
+                fontWeight: 700,
+              }}
+            >
+              Log Out Now
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={pageWrapperStyle}>

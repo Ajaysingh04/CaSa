@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ToastProvider } from './context/ToastContext';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
 import { StoreProvider } from './context/StoreContext';
@@ -35,6 +35,22 @@ import AdminCouponsPage from './pages/admin/AdminCouponsPage';
 import AdminSettingsPage from './pages/admin/AdminSettingsPage';
 import AdminBannersPage from './pages/admin/AdminBannersPage';
 
+// Route guard: Accessible ONLY when logged out. If already logged in, redirect away.
+const GuestRoute = ({ children }) => {
+  const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="skeleton" style={{ width: '400px', height: '300px', borderRadius: '16px' }} />
+      </div>
+    );
+  }
+  if (user) {
+    return <Navigate to={user.role === 'admin' ? '/admin' : '/'} replace />;
+  }
+  return children;
+};
+
 function App() {
   return (
     <BrowserRouter>
@@ -59,8 +75,22 @@ function App() {
                     <Route path="orders/:id" element={<OrderDetailPage />} />
                     <Route path="wishlist" element={<WishlistPage />} />
                     <Route path="profile" element={<UserProfilePage />} />
-                    <Route path="login" element={<LoginPage />} />
-                    <Route path="register" element={<RegisterPage />} />
+                    <Route
+                      path="login"
+                      element={
+                        <GuestRoute>
+                          <LoginPage />
+                        </GuestRoute>
+                      }
+                    />
+                    <Route
+                      path="register"
+                      element={
+                        <GuestRoute>
+                          <RegisterPage />
+                        </GuestRoute>
+                      }
+                    />
                     <Route path="*" element={<NotFoundPage />} />
                   </Route>
 
