@@ -21,10 +21,11 @@ export const deliveryService = {
     return res.data.data;
   },
 
-  updateDeliveryStatus: async (orderId, status, note = '') => {
+  updateDeliveryStatus: async (orderId, status, note = '', otp = '') => {
     const res = await api.put(`/delivery/orders/${orderId}/status`, {
       status,
-      note
+      note,
+      otp
     });
     return res.data.data;
   }

@@ -111,6 +111,7 @@ exports.createOrder = async (req, res, next) => {
         couponCode: couponCode || null,
         totalPrice,
         orderStatus: initialStatus,
+        deliveryProofOtp: Math.floor(1000 + Math.random() * 9000).toString(),
         statusHistory: [
           {
             status: initialStatus,
@@ -206,6 +207,7 @@ exports.createOrder = async (req, res, next) => {
         couponCode: couponCode || null,
         totalPrice,
         orderStatus: initialStatus,
+        deliveryProofOtp: Math.floor(1000 + Math.random() * 9000).toString(),
         statusHistory: [
           {
             status: initialStatus,

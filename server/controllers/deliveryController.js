@@ -189,7 +189,7 @@ exports.acceptDeliveryOrder = async (req, res, next) => {
 exports.updateDeliveryStatus = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { status, note } = req.body;
+    const { status, note, otp } = req.body;
 
     const allowed = ['Shipped', 'Out for delivery', 'Delivered'];
     if (!allowed.includes(status)) {
@@ -205,14 +205,27 @@ exports.updateDeliveryStatus = async (req, res, next) => {
         return res.status(404).json({ success: false, message: 'Order not found' });
       }
 
-      order.orderStatus = status;
       if (status === 'Delivered') {
+        if (order.deliveryProofOtp && otp && otp.trim() !== order.deliveryProofOtp.trim()) {
+          return res.status(400).json({
+            success: false,
+            message: 'Incorrect 4-digit Delivery Verification OTP. Please ask customer for the correct code.'
+          });
+        }
         order.deliveredAt = new Date();
+        if (order.paymentMethod === 'cod') {
+          order.paymentStatus = 'paid';
+          order.paymentDetails = {
+            paidAt: new Date()
+          };
+        }
       }
+
+      order.orderStatus = status;
 
       order.statusHistory.push({
         status,
-        note: note || `Delivery milestone: ${status}`,
+        note: note || (status === 'Delivered' && order.paymentMethod === 'cod' ? 'Delivered & Cash on Delivery collected at doorstep' : `Delivery milestone: ${status}`),
         updatedAt: new Date()
       });
 
@@ -224,15 +237,28 @@ exports.updateDeliveryStatus = async (req, res, next) => {
         return res.status(404).json({ success: false, message: 'Order not found' });
       }
 
-      order.orderStatus = status;
       if (status === 'Delivered') {
+        if (order.deliveryProofOtp && otp && otp.trim() !== order.deliveryProofOtp.trim()) {
+          return res.status(400).json({
+            success: false,
+            message: 'Incorrect 4-digit Delivery Verification OTP. Please ask customer for the correct code.'
+          });
+        }
         order.deliveredAt = new Date().toISOString();
+        if (order.paymentMethod === 'cod') {
+          order.paymentStatus = 'paid';
+          order.paymentDetails = {
+            paidAt: new Date().toISOString()
+          };
+        }
       }
+
+      order.orderStatus = status;
 
       order.statusHistory = order.statusHistory || [];
       order.statusHistory.push({
         status,
-        note: note || `Delivery milestone: ${status}`,
+        note: note || (status === 'Delivered' && order.paymentMethod === 'cod' ? 'Delivered & Cash on Delivery collected at doorstep' : `Delivery milestone: ${status}`),
         updatedAt: new Date().toISOString()
       });
 

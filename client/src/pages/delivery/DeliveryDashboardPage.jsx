@@ -77,9 +77,15 @@ const DeliveryDashboardPage = () => {
 
   // Update status milestone (Shipped -> Out for delivery -> Delivered)
   const handleUpdateMilestone = async (orderId, newStatus) => {
+    let otp = '';
+    if (newStatus === 'Delivered') {
+      const enteredOtp = window.prompt('Enter Customer 4-Digit Delivery Verification OTP (or press OK to bypass):', '');
+      if (enteredOtp === null) return; // user cancelled prompt
+      otp = enteredOtp.trim();
+    }
     setUpdatingId(orderId);
     try {
-      await deliveryService.updateDeliveryStatus(orderId, newStatus, `Rider ${user?.name || ''} executed milestone: ${newStatus}`);
+      await deliveryService.updateDeliveryStatus(orderId, newStatus, `Rider ${user?.name || ''} executed milestone: ${newStatus}`, otp);
       success(`Status updated to ${newStatus}! Customer tracking notified in real-time.`);
       await loadData();
     } catch (err) {

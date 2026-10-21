@@ -10,6 +10,8 @@ import {
   RotateCcw,
   AlertTriangle,
   ChevronLeft,
+  ShieldCheck,
+  Phone,
 } from 'lucide-react';
 import { orderService } from '../services/orderService';
 import { useToast } from '../context/ToastContext';
@@ -236,6 +238,87 @@ const OrderDetailPage = () => {
 
         {/* Right: Address & Price Summary */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* Flipkart-Style Secure Doorstep Delivery OTP Card */}
+          {order.deliveryProofOtp && !['Delivered', 'Cancelled', 'Refunded'].includes(order.orderStatus) && (
+            <div
+              style={{
+                ...infoCard,
+                background: '#f0fdf4',
+                border: '1.5px dashed #22c55e',
+                borderRadius: '16px',
+              }}
+              className="card"
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <ShieldCheck size={20} color="#15803d" />
+                  <strong style={{ fontSize: '0.95rem', color: '#15803d' }}>Delivery Verification Code</strong>
+                </div>
+                <span style={{ fontSize: '0.72rem', fontWeight: 800, padding: '2px 8px', borderRadius: '999px', background: '#dcfce7', color: '#166534' }}>
+                  DOORSTEP OTP
+                </span>
+              </div>
+              <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  {order.deliveryProofOtp.split('').map((digit, i) => (
+                    <span
+                      key={i}
+                      style={{
+                        width: '32px',
+                        height: '38px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: '#ffffff',
+                        border: '1.5px solid #86efac',
+                        borderRadius: '8px',
+                        fontSize: '1.25rem',
+                        fontWeight: 900,
+                        color: '#15803d',
+                        boxShadow: '0 2px 4px rgba(22, 101, 52, 0.08)',
+                      }}
+                    >
+                      {digit}
+                    </span>
+                  ))}
+                </div>
+                <span style={{ fontSize: '0.75rem', color: '#166534', fontWeight: 600, maxWidth: '180px' }}>
+                  Share this 4-digit code with the courier only after receiving your package.
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Assigned Delivery Courier Partner */}
+          {order.deliveryPartnerName && (
+            <div style={infoCard} className="card">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                <Truck size={18} color="#0284c7" />
+                <strong style={{ fontSize: '0.95rem' }}>Assigned Delivery Partner</strong>
+              </div>
+              <div style={{ fontSize: '0.875rem', color: '#0f172a', fontWeight: 700 }}>
+                {order.deliveryPartnerName}
+              </div>
+              {order.deliveryPartnerPhone && (
+                <a
+                  href={`tel:${order.deliveryPartnerPhone}`}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    fontSize: '0.8rem',
+                    color: '#0284c7',
+                    marginTop: '4px',
+                    fontWeight: 600,
+                    textDecoration: 'none',
+                  }}
+                >
+                  <Phone size={13} /> +91 {order.deliveryPartnerPhone}
+                </a>
+              )}
+            </div>
+          )}
+
           {/* Shipping Address */}
           <div style={infoCard} className="card">
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
