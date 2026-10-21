@@ -44,6 +44,19 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: 'Bike'
     },
+    onDuty: {
+      type: Boolean,
+      default: true
+    },
+    assignedZone: {
+      type: String,
+      default: 'Central Hub - Zone 1'
+    },
+    deliveryApprovalStatus: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected'],
+      default: 'approved'
+    },
     avatar: {
       type: String,
       default: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80'

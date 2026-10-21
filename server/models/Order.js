@@ -100,6 +100,8 @@ const orderSchema = new mongoose.Schema(
         'Shipped',
         'Out for delivery',
         'Delivered',
+        'Delivery Attempt Failed',
+        'RTO - Return to Hub',
         'Cancelled',
         'Return requested',
         'Refunded'
@@ -111,6 +113,16 @@ const orderSchema = new mongoose.Schema(
       type: Date
     },
     deliveredAt: {
+      type: Date
+    },
+    pickupConfirmedAt: {
+      type: Date
+    },
+    failedAttemptReason: {
+      type: String,
+      default: ''
+    },
+    reattemptDate: {
       type: Date
     },
     cancellationReason: {
