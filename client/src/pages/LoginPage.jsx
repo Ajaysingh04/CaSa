@@ -19,6 +19,7 @@ import {
   Shield,
   LogIn,
   UserPlus,
+  Store,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -103,6 +104,10 @@ const LoginPage = () => {
       success(`Welcome back, ${res.user.name}!`);
       if (res.user.role === 'admin' && (redirect === '/' || redirect === '/login')) {
         navigate('/admin');
+      } else if (res.user.role === 'vendor' && (redirect === '/' || redirect === '/login')) {
+        navigate('/vendor');
+      } else if (res.user.role === 'delivery' && (redirect === '/' || redirect === '/login')) {
+        navigate('/delivery');
       } else {
         navigate(redirect);
       }
@@ -139,6 +144,12 @@ const LoginPage = () => {
     if (role === 'customer') {
       setSignInEmail('rajesh@casa.in');
       setSignInPassword('User@Casa2026');
+    } else if (role === 'vendor') {
+      setSignInEmail('vendor@casa.in');
+      setSignInPassword('Vendor@Casa2026');
+    } else if (role === 'delivery') {
+      setSignInEmail('delivery@casa.in');
+      setSignInPassword('Delivery@Casa2026');
     } else {
       setSignInEmail('admin@casa.in');
       setSignInPassword('Admin@Casa2026');
@@ -421,19 +432,43 @@ const LoginPage = () => {
                       color: loginRole === 'customer' ? '#2563eb' : '#475569',
                     }}
                   >
-                    <User size={13} /> Customer Demo
+                    <User size={13} /> Customer
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSelectRole('vendor')}
+                    style={{
+                      ...demoBtn,
+                      background: loginRole === 'vendor' ? '#f0fdf4' : '#ffffff',
+                      borderColor: loginRole === 'vendor' ? '#16a34a' : '#e2e8f0',
+                      color: loginRole === 'vendor' ? '#15803d' : '#475569',
+                    }}
+                  >
+                    <Store size={13} /> Vendor
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSelectRole('delivery')}
+                    style={{
+                      ...demoBtn,
+                      background: loginRole === 'delivery' ? '#e0f2fe' : '#ffffff',
+                      borderColor: loginRole === 'delivery' ? '#0284c7' : '#e2e8f0',
+                      color: loginRole === 'delivery' ? '#0369a1' : '#475569',
+                    }}
+                  >
+                    <Truck size={13} /> Delivery
                   </button>
                   <button
                     type="button"
                     onClick={() => handleSelectRole('admin')}
                     style={{
                       ...demoBtn,
-                      background: loginRole === 'admin' ? '#eff6ff' : '#ffffff',
-                      borderColor: loginRole === 'admin' ? '#2563eb' : '#e2e8f0',
-                      color: loginRole === 'admin' ? '#2563eb' : '#475569',
+                      background: loginRole === 'admin' ? '#f5f3ff' : '#ffffff',
+                      borderColor: loginRole === 'admin' ? '#7c3aed' : '#e2e8f0',
+                      color: loginRole === 'admin' ? '#6d28d9' : '#475569',
                     }}
                   >
-                    <ShieldCheck size={13} /> Admin Demo
+                    <ShieldCheck size={13} /> Admin
                   </button>
                 </div>
               </div>

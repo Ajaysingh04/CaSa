@@ -116,6 +116,26 @@ const orderSchema = new mongoose.Schema(
     cancellationReason: {
       type: String,
       default: ''
+    },
+    assignedDeliveryPartner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    deliveryPartnerName: {
+      type: String,
+      default: ''
+    },
+    deliveryPartnerPhone: {
+      type: String,
+      default: ''
+    },
+    vendorNotes: {
+      type: String,
+      default: ''
+    },
+    deliveryProofOtp: {
+      type: String,
+      default: ''
     }
   },
   {

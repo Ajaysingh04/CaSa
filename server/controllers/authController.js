@@ -48,13 +48,17 @@ exports.register = async (req, res, next) => {
         return res.status(400).json({ success: false, message: 'An account with this email already exists' });
       }
 
-      // Security rule: never let user assign admin role
+      const validRoles = ['user', 'vendor', 'delivery'];
+      const assignedRole = validRoles.includes(req.body.role) ? req.body.role : 'user';
+
       const user = await User.create({
         name,
         email,
         password,
         phone: phone || '',
-        role: 'user'
+        role: assignedRole,
+        vendorStoreName: req.body.vendorStoreName || '',
+        vehicleType: req.body.vehicleType || 'Bike'
       });
 
       return sendTokenResponse(user.toObject(), 201, res);
@@ -67,19 +71,53 @@ exports.register = async (req, res, next) => {
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(password, salt);
 
+      const validRoles = ['user', 'vendor', 'delivery'];
+      const assignedRole = validRoles.includes(req.body.role) ? req.body.role : 'user';
+
       const newUser = {
         _id: dataStore.generateId(),
         name,
         email: email.toLowerCase(),
         password: hashedPassword,
         phone: phone || '',
-        role: 'user',
+        role: assignedRole,
+        vendorStoreName: req.body.vendorStoreName || '',
+        vehicleType: req.body.vehicleType || 'Bike',
         avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80',
         createdAt: new Date().toISOString()
       };
 
       dataStore.users.push(newUser);
       return sendTokenResponse(newUser, 201, res);
+    }
+  } catch (err) {
+    next(err);
+  }
+};
+
+// @desc    Switch User Role (Instant Demo & Portal Testing: user, vendor, delivery, admin)
+// @route   POST /api/auth/switch-role
+// @access  Private
+exports.switchRole = async (req, res, next) => {
+  try {
+    const { role } = req.body;
+    const allowed = ['user', 'vendor', 'delivery', 'admin'];
+    if (!allowed.includes(role)) {
+      return res.status(400).json({ success: false, message: `Invalid role: ${role}` });
+    }
+
+    if (getDBStatus()) {
+      const user = await User.findById(req.user._id);
+      if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+      user.role = role;
+      await user.save();
+      return sendTokenResponse(user.toObject(), 200, res);
+    } else {
+      const user = dataStore.users.find(u => u._id === req.user._id);
+      if (user) {
+        user.role = role;
+      }
+      return sendTokenResponse({ ...req.user, role }, 200, res);
     }
   } catch (err) {
     next(err);

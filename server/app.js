@@ -17,6 +17,8 @@ const couponRoutes = require('./routes/couponRoutes');
 const userRoutes = require('./routes/userRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const bannerRoutes = require('./routes/bannerRoutes');
+const vendorRoutes = require('./routes/vendorRoutes');
+const deliveryRoutes = require('./routes/deliveryRoutes');
 const { getPublicSettings } = require('./controllers/adminController');
 
 const app = express();
@@ -123,6 +125,8 @@ const registerRoutes = (prefix = '') => {
   app.use(`${prefix}/user`, userRoutes);
   app.use(`${prefix}/admin`, adminRoutes);
   app.use(`${prefix}/banners`, bannerRoutes);
+  app.use(`${prefix}/vendor`, vendorRoutes);
+  app.use(`${prefix}/delivery`, deliveryRoutes);
 };
 
 // Register for standard `/api` prefix

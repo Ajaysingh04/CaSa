@@ -41,6 +41,15 @@ export const authService = {
     return response.data.user;
   },
 
+  switchRole: async (role) => {
+    const response = await api.post('/auth/switch-role', { role });
+    if (response.data.token) {
+      localStorage.setItem('casa_token', response.data.token);
+      localStorage.setItem('casa_user', JSON.stringify(response.data.user));
+    }
+    return response.data;
+  },
+
   // Addresses
   getAddresses: async () => {
     const response = await api.get('/user/addresses');

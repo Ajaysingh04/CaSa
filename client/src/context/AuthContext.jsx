@@ -101,7 +101,25 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const switchRole = async (newRole) => {
+    try {
+      const data = await authService.switchRole(newRole);
+      if (data.user) {
+        setUser(data.user);
+        success(`Active persona switched to ${newRole.toUpperCase()} mode!`);
+        return { success: true, user: data.user };
+      }
+      return { success: false };
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Failed to switch role.';
+      error(msg);
+      return { success: false, message: msg };
+    }
+  };
+
   const isAdmin = user?.role === 'admin';
+  const isVendor = user?.role === 'vendor' || user?.role === 'admin';
+  const isDelivery = user?.role === 'delivery' || user?.role === 'admin';
 
   return (
     <AuthContext.Provider
@@ -109,10 +127,13 @@ export const AuthProvider = ({ children }) => {
         user,
         loading,
         isAdmin,
+        isVendor,
+        isDelivery,
         login,
         register,
         logout,
         updateProfile,
+        switchRole,
       }}
     >
       {children}

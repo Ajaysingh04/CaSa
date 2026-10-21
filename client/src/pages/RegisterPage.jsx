@@ -18,6 +18,7 @@ import {
   BadgeCheck,
   Shield,
   Layers,
+  Store,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -43,6 +44,9 @@ const RegisterPage = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(true);
+  const [accountRole, setAccountRole] = useState('user'); // 'user', 'vendor', 'delivery'
+  const [vendorStoreName, setVendorStoreName] = useState('');
+  const [vehicleType, setVehicleType] = useState('Bike');
   const [loading, setLoading] = useState(false);
 
   // Interactive Password Strength Evaluation
@@ -68,13 +72,27 @@ const RegisterPage = () => {
     }
 
     setLoading(true);
-    const res = await register({ name, email, phone, password });
+    const res = await register({
+      name,
+      email,
+      phone,
+      password,
+      role: accountRole,
+      vendorStoreName: accountRole === 'vendor' ? vendorStoreName : undefined,
+      vehicleType: accountRole === 'delivery' ? vehicleType : undefined,
+    });
     setLoading(false);
 
     if (res.success) {
       sessionStorage.setItem('casa_prompt_language_modal', 'true');
       success('Welcome to CASA! Your account was created successfully.');
-      navigate(redirect);
+      if (accountRole === 'vendor') {
+        navigate('/vendor');
+      } else if (accountRole === 'delivery') {
+        navigate('/delivery');
+      } else {
+        navigate(redirect);
+      }
     }
   };
 
@@ -325,6 +343,144 @@ const RegisterPage = () => {
 
           {/* Form Fields */}
           <form onSubmit={handleSubmit} style={formContainerStyle}>
+            {/* Account Role Selector */}
+            <div style={{ marginBottom: '2px' }}>
+              <label style={{ ...labelStyle, marginBottom: '6px', display: 'block' }}>I want to join as</label>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(3, 1fr)',
+                  gap: '8px',
+                  background: '#f1f5f9',
+                  padding: '4px',
+                  borderRadius: '12px',
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => setAccountRole('user')}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: '8px 4px',
+                    borderRadius: '9px',
+                    border: 'none',
+                    background: accountRole === 'user' ? '#ffffff' : 'transparent',
+                    boxShadow: accountRole === 'user' ? '0 2px 6px rgba(0,0,0,0.08)' : 'none',
+                    color: accountRole === 'user' ? '#0f172a' : '#64748b',
+                    fontWeight: accountRole === 'user' ? 700 : 500,
+                    fontSize: '0.78rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <User size={16} color={accountRole === 'user' ? '#3b82f6' : '#94a3b8'} />
+                  <span>Customer</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setAccountRole('vendor')}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: '8px 4px',
+                    borderRadius: '9px',
+                    border: 'none',
+                    background: accountRole === 'vendor' ? '#ffffff' : 'transparent',
+                    boxShadow: accountRole === 'vendor' ? '0 2px 6px rgba(0,0,0,0.08)' : 'none',
+                    color: accountRole === 'vendor' ? '#0f172a' : '#64748b',
+                    fontWeight: accountRole === 'vendor' ? 700 : 500,
+                    fontSize: '0.78rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <Store size={16} color={accountRole === 'vendor' ? '#8b5cf6' : '#94a3b8'} />
+                  <span>Vendor</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setAccountRole('delivery')}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: '8px 4px',
+                    borderRadius: '9px',
+                    border: 'none',
+                    background: accountRole === 'delivery' ? '#ffffff' : 'transparent',
+                    boxShadow: accountRole === 'delivery' ? '0 2px 6px rgba(0,0,0,0.08)' : 'none',
+                    color: accountRole === 'delivery' ? '#0f172a' : '#64748b',
+                    fontWeight: accountRole === 'delivery' ? 700 : 500,
+                    fontSize: '0.78rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <Truck size={16} color={accountRole === 'delivery' ? '#10b981' : '#94a3b8'} />
+                  <span>Delivery</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Vendor Specific Store Name Field */}
+            {accountRole === 'vendor' && (
+              <div style={fieldGroup}>
+                <label htmlFor="reg-vendor-store" style={labelStyle}>Store / Brand Name *</label>
+                <div
+                  className="custom-auth-input"
+                  style={inputBoxStyle}
+                  onClick={() => document.getElementById('reg-vendor-store')?.focus()}
+                >
+                  <Store size={17} color="#8b5cf6" />
+                  <input
+                    id="reg-vendor-store"
+                    type="text"
+                    required
+                    placeholder="e.g. Royal Apparel & Co."
+                    value={vendorStoreName}
+                    onChange={(e) => setVendorStoreName(e.target.value)}
+                    style={nativeInputStyle}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Delivery Specific Vehicle Type */}
+            {accountRole === 'delivery' && (
+              <div style={fieldGroup}>
+                <label htmlFor="reg-vehicle" style={labelStyle}>Vehicle Type *</label>
+                <div
+                  className="custom-auth-input"
+                  style={inputBoxStyle}
+                >
+                  <Truck size={17} color="#10b981" />
+                  <select
+                    id="reg-vehicle"
+                    value={vehicleType}
+                    onChange={(e) => setVehicleType(e.target.value)}
+                    style={{
+                      ...nativeInputStyle,
+                      cursor: 'pointer',
+                      background: 'transparent',
+                    }}
+                  >
+                    <option value="Bike">Motorcycle / Bike</option>
+                    <option value="Scooter">Electric Scooter / EV</option>
+                    <option value="Car">Car / Van</option>
+                    <option value="Bicycle">Bicycle</option>
+                  </select>
+                </div>
+              </div>
+            )}
+
             {/* Full Name */}
             <div style={fieldGroup}>
               <label htmlFor="reg-name" style={labelStyle}>Full Name *</label>

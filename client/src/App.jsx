@@ -25,6 +25,10 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import NotFoundPage from './pages/NotFoundPage';
 
+// Multi-Portal Hubs: Vendor & Delivery
+import VendorDashboardPage from './pages/vendor/VendorDashboardPage';
+import DeliveryDashboardPage from './pages/delivery/DeliveryDashboardPage';
+
 // Admin Pages
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import AdminOrdersPage from './pages/admin/AdminOrdersPage';
@@ -91,6 +95,8 @@ function App() {
                         </GuestRoute>
                       }
                     />
+                    <Route path="vendor" element={<VendorDashboardPage />} />
+                    <Route path="delivery" element={<DeliveryDashboardPage />} />
                     <Route path="*" element={<NotFoundPage />} />
                   </Route>
 
