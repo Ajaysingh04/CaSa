@@ -117,32 +117,52 @@ const HeroCarousel = ({ banners = [], loading = false }) => {
     >
       <style>{`
         .hero-slide-container {
-          min-height: 420px;
+          min-height: 480px;
           position: relative;
           display: flex;
           align-items: center;
           transition: all 0.4s ease;
         }
+        .hero-bg-overlay {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(90deg, rgba(8, 14, 28, 0.72) 0%, rgba(8, 14, 28, 0.38) 42%, rgba(8, 14, 28, 0.02) 72%, transparent 100%);
+          pointer-events: none;
+        }
+        .hero-content-padding {
+          position: relative;
+          z-index: 10;
+          padding: 40px 24px;
+        }
+        .hero-content-box {
+          max-width: 580px;
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+        }
         .hero-title {
-          font-size: clamp(1.75rem, 4vw, 3.25rem);
-          line-height: 1.15;
+          font-size: clamp(1.85rem, 4.2vw, 3.25rem);
+          line-height: 1.14;
           letter-spacing: -0.025em;
           color: #ffffff;
           font-weight: 900;
-          text-shadow: 0 2px 10px rgba(0,0,0,0.4);
+          text-shadow: 0 3px 12px rgba(0, 0, 0, 0.85), 0 1px 3px rgba(0, 0, 0, 0.9);
+          margin: 0;
         }
         .hero-subtitle {
-          font-size: clamp(0.9rem, 1.8vw, 1.15rem);
-          color: #f1f5f9;
+          font-size: clamp(0.92rem, 1.8vw, 1.15rem);
+          color: #f8fafc;
           line-height: 1.55;
-          text-shadow: 0 1px 6px rgba(0,0,0,0.5);
+          text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85);
+          margin: 0;
+          max-width: 520px;
         }
         .hero-btn-main {
           transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .hero-btn-main:hover {
           transform: translateY(-2px) scale(1.02);
-          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
         }
         .hero-nav-arrow {
           opacity: 0.85;
@@ -153,12 +173,35 @@ const HeroCarousel = ({ banners = [], loading = false }) => {
           transform: translateY(-50%) scale(1.1);
           background: rgba(255, 255, 255, 0.35) !important;
         }
-        @media (max-width: 640px) {
+
+        /* Mobile specific: image sits wide open at the top, text smoothly docks at the bottom */
+        @media (max-width: 768px) {
           .hero-slide-container {
-            min-height: 380px;
+            min-height: 440px;
+            align-items: flex-end;
+          }
+          .hero-bg-overlay {
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.08) 35%, rgba(8, 14, 28, 0.76) 68%, rgba(8, 14, 28, 0.94) 100%) !important;
           }
           .hero-content-padding {
-            padding: 36px 16px 56px !important;
+            padding: 20px 16px 46px !important;
+            width: 100%;
+          }
+          .hero-content-box {
+            max-width: 100%;
+            gap: 10px;
+          }
+          .hero-title {
+            font-size: 1.65rem !important;
+            line-height: 1.2 !important;
+          }
+          .hero-subtitle {
+            font-size: 0.85rem !important;
+            line-height: 1.4 !important;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
           }
           .hero-nav-arrow {
             width: 36px !important;
@@ -190,14 +233,14 @@ const HeroCarousel = ({ banners = [], loading = false }) => {
                 transition: 'opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1), transform 6s ease-out',
               }}
             >
-              <div style={gradientOverlayStyle} />
+              <div className="hero-bg-overlay" />
             </div>
           );
         })}
 
         {/* Slide Content */}
         <div className="container hero-content-padding" style={contentContainerStyle}>
-          <div style={contentBoxStyle} key={currentBanner._id || currentIndex} className="animate-slide-up">
+          <div className="hero-content-box animate-slide-up" key={currentBanner._id || currentIndex}>
             {/* Tag & Badge Row */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
               {currentBanner.tag && (
@@ -217,7 +260,7 @@ const HeroCarousel = ({ banners = [], loading = false }) => {
             <h1 className="hero-title">{currentBanner.title}</h1>
             
             {currentBanner.subtitle && (
-              <p className="hero-subtitle" style={subtitleStyle}>{currentBanner.subtitle}</p>
+              <p className="hero-subtitle">{currentBanner.subtitle}</p>
             )}
 
             <div style={btnRowStyle}>
@@ -298,68 +341,49 @@ const slideBgStyle = {
   position: 'absolute',
   inset: 0,
   backgroundSize: 'cover',
-  backgroundPosition: 'center right',
-  filter: 'saturate(1.18) contrast(1.05) brightness(1.02)',
-};
-
-const gradientOverlayStyle = {
-  position: 'absolute',
-  inset: 0,
-  background: 'linear-gradient(90deg, rgba(7, 15, 30, 0.88) 0%, rgba(7, 15, 30, 0.52) 42%, rgba(7, 15, 30, 0.08) 75%, transparent 100%)',
+  backgroundPosition: 'center center',
+  filter: 'saturate(1.08) contrast(1.02)',
 };
 
 const contentContainerStyle = {
   position: 'relative',
   zIndex: 10,
-  padding: '40px 24px',
-};
-
-const contentBoxStyle = {
-  maxWidth: '640px',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '16px',
-  background: 'rgba(8, 16, 32, 0.48)',
-  backdropFilter: 'blur(14px)',
-  WebkitBackdropFilter: 'blur(14px)',
-  padding: '30px 34px',
-  borderRadius: '22px',
-  border: '1px solid rgba(255, 255, 255, 0.16)',
-  boxShadow: '0 24px 48px -12px rgba(0, 0, 0, 0.5)',
 };
 
 const tagStyle = {
   alignSelf: 'flex-start',
-  background: 'rgba(249, 115, 22, 0.25)',
-  color: '#fdba74',
-  border: '1px solid rgba(249, 115, 22, 0.5)',
+  background: 'rgba(15, 23, 42, 0.65)',
+  color: '#fed7aa',
+  border: '1.5px solid rgba(249, 115, 22, 0.7)',
   padding: '4px 12px',
   borderRadius: '9999px',
   fontWeight: '800',
-  fontSize: '0.75rem',
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: '5px',
-  letterSpacing: '0.05em',
-  textTransform: 'uppercase',
-  backdropFilter: 'blur(6px)',
-};
-
-const badgeStyle = {
-  alignSelf: 'flex-start',
-  background: 'rgba(245, 158, 11, 0.22)',
-  color: '#fef08a',
-  border: '1px solid rgba(245, 158, 11, 0.45)',
-  padding: '4px 12px',
-  borderRadius: '9999px',
-  fontWeight: '700',
-  fontSize: '0.75rem',
+  fontSize: '0.74rem',
   display: 'inline-flex',
   alignItems: 'center',
   gap: '5px',
   letterSpacing: '0.04em',
   textTransform: 'uppercase',
   backdropFilter: 'blur(6px)',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+};
+
+const badgeStyle = {
+  alignSelf: 'flex-start',
+  background: 'rgba(15, 23, 42, 0.65)',
+  color: '#fef08a',
+  border: '1.5px solid rgba(245, 158, 11, 0.7)',
+  padding: '4px 12px',
+  borderRadius: '9999px',
+  fontWeight: '700',
+  fontSize: '0.74rem',
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '5px',
+  letterSpacing: '0.04em',
+  textTransform: 'uppercase',
+  backdropFilter: 'blur(6px)',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
 };
 
 const subtitleStyle = {
