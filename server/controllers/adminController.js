@@ -3,6 +3,11 @@ const Product = require('../models/Product');
 const User = require('../models/User');
 const Category = require('../models/Category');
 const Setting = require('../models/Setting');
+const Refund = require('../models/Refund');
+const ReturnRequest = require('../models/ReturnRequest');
+const Shipment = require('../models/Shipment');
+const Vendor = require('../models/Vendor');
+const AuditService = require('../services/auditService');
 const { getDBStatus } = require('../config/db');
 const dataStore = require('../services/dataStore');
 const {
@@ -278,14 +283,14 @@ exports.assignDeliveryPartner = async (req, res, next) => {
     const { id } = req.params;
     const { partnerId, reason = 'Assigned by Operations Admin' } = req.body;
 
-    if (!partnerId) {
-      return res.status(400).json({ success: false, message: 'Delivery partner ID is required.' });
-    }
+      const partnerUser = partnerId || req.body.deliveryPartnerId;
+      if (!partnerUser) {
+        return res.status(400).json({ success: false, message: 'Delivery partner ID is required.' });
+      }
 
-    if (getDBStatus()) {
       const [order, partner] = await Promise.all([
         Order.findById(id),
-        User.findById(partnerId)
+        User.findById(partnerUser)
       ]);
 
       if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
@@ -303,6 +308,75 @@ exports.assignDeliveryPartner = async (req, res, next) => {
         note: `Dispatched & Assigned to Delivery Partner ${partner.name} (${partner.phone || 'Phone verified'}). Reason: ${reason}`,
         updatedBy: `${req.user.name} (Admin)`,
         reason
+      });
+
+      // Upsert canonical Shipment document
+      let shipment = await Shipment.findOne({ order: order._id });
+      if (!shipment) {
+        const shipmentNumber = `SHP-${order.orderNumber.replace('CASA-', '')}`;
+        shipment = await Shipment.create({
+          shipmentNumber,
+          order: order._id,
+          orderNumber: order.orderNumber,
+          vendor: order.items[0]?.vendor || req.user._id,
+          deliveryPartner: partner._id,
+          items: order.items.map(i => ({
+            product: i.product,
+            name: i.name,
+            sku: i.sku || i.slug,
+            quantity: i.quantity,
+            price: i.price,
+            subtotal: i.subtotal
+          })),
+          deliveryAddress: order.shippingAddress,
+          trackingNumber: `TRK-${order._id.toString().slice(-8).toUpperCase()}`,
+          barcode: `BAR-${order.orderNumber}`,
+          proofOtp: order.deliveryProofOtp || '1234',
+          status: 'Manifested',
+          events: [
+            {
+              status: 'Assigned',
+              location: 'Hub',
+              description: `Assigned to delivery partner ${partner.name}. Reason: ${reason}`,
+              scannedBy: req.user._id,
+              scannedByRole: 'admin',
+              timestamp: new Date()
+            }
+          ]
+        });
+        order.shipments = order.shipments || [];
+        order.shipments.push(shipment._id);
+      } else {
+        shipment.deliveryPartner = partner._id;
+        shipment.events.push({
+          status: 'Reassigned',
+          location: 'Hub',
+          description: `Reassigned to delivery partner ${partner.name}. Reason: ${reason}`,
+          scannedBy: req.user._id,
+          scannedByRole: 'admin',
+          timestamp: new Date()
+        });
+        await shipment.save();
+      }
+
+      await AuditService.logEvent({
+        action: 'DELIVERY_PARTNER_ASSIGNED',
+        entityType: 'Order',
+        entityId: order._id,
+        performedBy: req.user._id,
+        performedByName: req.user.name,
+        performedByRole: 'admin',
+        newState: { assignedDeliveryPartner: partner._id, partnerName: partner.name },
+        reason
+      });
+
+      await AuditService.createNotification({
+        recipient: partner._id,
+        recipientRole: 'delivery',
+        title: `New Shipment Assigned: ${order.orderNumber}`,
+        message: `Order #${order.orderNumber} has been assigned to you for delivery.`,
+        type: 'shipment_dispatch',
+        data: { orderId: order._id, orderNumber: order.orderNumber }
       });
 
       await order.save();
@@ -361,6 +435,17 @@ exports.adminOverrideOrderStatus = async (req, res, next) => {
         note || `Admin manual override to ${status}`,
         reason
       );
+
+      await AuditService.logEvent({
+        action: 'ADMIN_ORDER_OVERRIDE',
+        entityType: 'Order',
+        entityId: order._id,
+        performedBy: req.user._id,
+        performedByName: req.user.name,
+        performedByRole: 'admin',
+        newState: { orderStatus: status },
+        reason
+      });
 
       await order.save();
       return res.status(200).json({ success: true, data: order });
@@ -452,7 +537,7 @@ exports.getReturnsAndRefunds = async (req, res, next) => {
 exports.handleReturnAction = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { action, reason = '' } = req.body;
+    const { action, reason = '', refundAmount } = req.body;
 
     if (!['approve', 'receive', 'refund', 'reject'].includes(action)) {
       return res.status(400).json({ success: false, message: 'Valid actions: approve, receive, refund, reject' });
@@ -464,15 +549,76 @@ exports.handleReturnAction = async (req, res, next) => {
 
       if (action === 'approve') {
         applyStatusTransition(order, 'Return approved', req.user.name, 'admin', 'Return authorized. Doorstep courier pickup dispatch scheduled.', reason);
+
+        // Upsert ReturnRequest in MongoDB
+        await ReturnRequest.findOneAndUpdate(
+          { order: order._id },
+          {
+            returnRequestNumber: `RET-${order.orderNumber.replace('CASA-', '')}`,
+            order: order._id,
+            orderNumber: order.orderNumber,
+            user: order.user,
+            type: 'refund',
+            reason: reason || 'Customer return approved',
+            status: 'approved',
+            pickupAddress: order.shippingAddress,
+            adminNotes: 'Return pickup authorized',
+            decidedBy: req.user._id,
+            decidedAt: new Date()
+          },
+          { upsert: true, new: true }
+        );
       } else if (action === 'receive') {
         applyStatusTransition(order, 'Return received', req.user.name, 'admin', 'Returned item received and inspected at Central Fulfillment Hub.', reason);
+
+        await ReturnRequest.findOneAndUpdate(
+          { order: order._id },
+          { status: 'received_at_hub' }
+        );
       } else if (action === 'refund') {
-        applyStatusTransition(order, 'Refunded', req.user.name, 'admin', `Refund of ₹${order.totalPrice} processed back to original source payment method.`, reason);
+        const amountToRefund = refundAmount ? Number(refundAmount) : order.totalPrice;
+        applyStatusTransition(order, 'Refunded', req.user.name, 'admin', `Refund of ₹${amountToRefund} processed back to original source payment method.`, reason);
         order.refundStatus = 'refunded';
+
+        // Persist canonical Refund document
+        const refundNumber = `REF-${Date.now().toString().slice(-6)}-${Math.floor(1000 + Math.random() * 9000)}`;
+        await Refund.create({
+          refundNumber,
+          order: order._id,
+          orderNumber: order.orderNumber,
+          user: order.user,
+          amount: amountToRefund,
+          gatewayRefundId: `RFND_${Date.now()}`,
+          reason: reason || 'Customer return processed and approved',
+          authorizedBy: req.user._id,
+          authorizedByName: req.user.name,
+          status: 'processed'
+        });
+
+        await ReturnRequest.findOneAndUpdate(
+          { order: order._id },
+          { status: 'refund_processed' }
+        );
       } else if (action === 'reject') {
         applyStatusTransition(order, 'Delivered', req.user.name, 'admin', `Return request rejected: ${reason || 'Does not satisfy return criteria'}.`, reason);
         order.refundStatus = 'none';
+
+        await ReturnRequest.findOneAndUpdate(
+          { order: order._id },
+          { status: 'rejected', adminNotes: reason }
+        );
       }
+
+      await AuditService.logEvent({
+        action: 'RETURN_ACTION_PROCESSED',
+        entityType: 'Order',
+        entityId: order._id,
+        performedBy: req.user._id,
+        performedByName: req.user.name,
+        performedByRole: 'admin',
+        newState: { orderStatus: order.orderStatus, returnAction: action },
+        reason
+      });
 
       await order.save();
       return res.status(200).json({ success: true, data: order });
@@ -640,6 +786,18 @@ exports.manageProductApproval = async (req, res, next) => {
       if (isActive !== undefined) product.isActive = Boolean(isActive);
 
       await product.save();
+
+      await AuditService.logEvent({
+        action: 'PRODUCT_APPROVAL_STATUS',
+        entityType: 'Product',
+        entityId: product._id,
+        performedBy: req.user._id,
+        performedByName: req.user.name,
+        performedByRole: 'admin',
+        newState: { approvalStatus: product.approvalStatus, isActive: product.isActive },
+        reason: rejectionReason || `Product status set to ${approvalStatus}`
+      });
+
       return res.status(200).json({ success: true, data: product });
     } else {
       const product = dataStore.products.find(p => p._id === id || p.slug === id);
@@ -744,6 +902,18 @@ exports.manageUserStatus = async (req, res, next) => {
       if (suspensionReason) user.suspensionReason = suspensionReason;
 
       await user.save();
+
+      await AuditService.logEvent({
+        action: isActive ? 'USER_REACTIVATED' : 'USER_SUSPENDED',
+        entityType: 'User',
+        entityId: user._id,
+        performedBy: req.user._id,
+        performedByName: req.user.name,
+        performedByRole: 'admin',
+        newState: { isActive: user.isActive, suspensionReason: user.suspensionReason },
+        reason: suspensionReason || (isActive ? 'Reactivated by admin' : 'Suspended by admin')
+      });
+
       return res.status(200).json({ success: true, data: user });
     } else {
       const user = dataStore.users.find(u => u._id === id);
@@ -785,6 +955,32 @@ exports.manageVendorStatus = async (req, res, next) => {
       }
 
       await user.save();
+
+      // Upsert Vendor profile document
+      await Vendor.findOneAndUpdate(
+        { user: user._id },
+        {
+          user: user._id,
+          storeName: user.vendorStoreName || `${user.name}'s Store`,
+          businessEmail: user.email,
+          businessPhone: user.phone,
+          status: vendorApprovalStatus,
+          isVerified: vendorApprovalStatus === 'approved'
+        },
+        { upsert: true, new: true }
+      );
+
+      await AuditService.logEvent({
+        action: 'VENDOR_APPROVAL_STATUS',
+        entityType: 'User',
+        entityId: user._id,
+        performedBy: req.user._id,
+        performedByName: req.user.name,
+        performedByRole: 'admin',
+        newState: { vendorApprovalStatus, isActive: user.isActive },
+        reason: note || `Vendor status set to ${vendorApprovalStatus}`
+      });
+
       return res.status(200).json({ success: true, data: user });
     } else {
       const user = dataStore.users.find(u => u._id === id);

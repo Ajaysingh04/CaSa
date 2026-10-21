@@ -10,6 +10,7 @@ const {
   isAuthorizedForTransition,
   recalculateMultiVendorOrderStatus
 } = require('../services/orderLifecycleService');
+const AuditService = require('../services/auditService');
 
 // @desc    Create new order with idempotency check
 // @route   POST /api/orders
@@ -75,8 +76,11 @@ exports.createOrder = async (req, res, next) => {
           product: product._id,
           name: product.name,
           slug: product.slug,
+          sku: product.sku || product.slug,
           image: product.images[0],
           price: unitPrice,
+          discountPrice: product.discountPrice || 0,
+          taxPrice: 0,
           quantity: item.quantity,
           selectedVariant: item.selectedVariant || {},
           subtotal,
@@ -139,12 +143,64 @@ exports.createOrder = async (req, res, next) => {
         estimatedDeliveryDate: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000)
       });
 
-      // Deduct inventory
+      // Deduct inventory and record movements in MongoDB
       for (const item of validatedItems) {
-        await Product.findByIdAndUpdate(item.product, {
-          $inc: { stock: -item.quantity }
+        const prod = await Product.findById(item.product);
+        const prevStock = prod ? prod.stock : 0;
+        const newStock = Math.max(0, prevStock - item.quantity);
+        if (prod) {
+          prod.stock = newStock;
+          await prod.save();
+        }
+
+        await AuditService.recordInventoryMovement({
+          product: item.product,
+          productName: item.name,
+          sku: item.sku,
+          vendor: item.vendor,
+          movementType: 'order_placed',
+          quantityChanged: -item.quantity,
+          previousStock: prevStock,
+          newStock: newStock,
+          order: order._id,
+          orderNumber: order.orderNumber,
+          reason: `Purchased in order #${order.orderNumber}`,
+          actor: req.user.name,
+          actorId: userId
         });
+
+        if (item.vendor) {
+          await AuditService.recordCommission({
+            order: order._id,
+            orderNumber: order.orderNumber,
+            vendor: item.vendor,
+            grossAmount: item.subtotal,
+            commissionRate: 10.0
+          });
+        }
       }
+
+      // Record business audit event
+      await AuditService.logEvent({
+        action: 'ORDER_CREATED',
+        entityType: 'Order',
+        entityId: order._id,
+        performedBy: userId,
+        performedByName: req.user.name,
+        performedByRole: req.user.role || 'user',
+        newState: { orderNumber: order.orderNumber, total: order.totalPrice, status: initialStatus, paymentMethod },
+        reason: 'Customer placed order'
+      });
+
+      // Send customer notification
+      await AuditService.createNotification({
+        recipient: userId,
+        recipientRole: 'user',
+        title: `Order ${order.orderNumber} Placed`,
+        message: `Your order of ₹${order.totalPrice} has been placed successfully.`,
+        type: 'order_status',
+        data: { orderId: order._id, orderNumber: order.orderNumber }
+      });
 
       // Clear user cart
       await Cart.findOneAndUpdate({ user: userId }, { items: [], coupon: null });
@@ -482,12 +538,44 @@ exports.cancelOrder = async (req, res, next) => {
         reason
       );
 
-      // Restore inventory
+      // Restore inventory and record movement
       for (const item of order.items) {
-        await Product.findByIdAndUpdate(item.product, {
-          $inc: { stock: item.quantity }
+        const prod = await Product.findById(item.product);
+        const prevStock = prod ? prod.stock : 0;
+        const newStock = prevStock + item.quantity;
+        if (prod) {
+          prod.stock = newStock;
+          await prod.save();
+        }
+
+        await AuditService.recordInventoryMovement({
+          product: item.product,
+          productName: item.name,
+          sku: item.sku,
+          vendor: item.vendor,
+          movementType: 'order_cancelled',
+          quantityChanged: item.quantity,
+          previousStock: prevStock,
+          newStock: newStock,
+          order: order._id,
+          orderNumber: order.orderNumber,
+          reason: `Stock restored upon cancellation of order #${order.orderNumber}: ${reason}`,
+          actor: req.user.name,
+          actorId: req.user._id
         });
       }
+
+      await AuditService.logEvent({
+        action: 'ORDER_CANCELLED',
+        entityType: 'Order',
+        entityId: order._id,
+        performedBy: req.user._id,
+        performedByName: req.user.name,
+        performedByRole: req.user.role || 'user',
+        previousState: { status: order.statusHistory?.slice(-2)[0]?.status || 'Active' },
+        newState: { status: 'Cancelled' },
+        reason
+      });
 
       await order.save();
       return res.status(200).json({ success: true, data: order });

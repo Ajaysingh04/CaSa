@@ -8,8 +8,11 @@ const orderItemSchema = new mongoose.Schema({
   },
   name: { type: String, required: true },
   slug: { type: String, required: true },
+  sku: { type: String, default: '' },
   image: { type: String, required: true },
   price: { type: Number, required: true },
+  discountPrice: { type: Number, default: 0 },
+  taxPrice: { type: Number, default: 0 },
   quantity: { type: Number, required: true, min: 1 },
   selectedVariant: { type: Map, of: String, default: {} },
   subtotal: { type: Number, required: true },
@@ -200,11 +203,23 @@ const orderSchema = new mongoose.Schema(
       type: String,
       enum: ['none', 'initiated', 'processed', 'refunded'],
       default: 'none'
-    }
+    },
+    shipments: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Shipment'
+      }
+    ]
   },
   {
     timestamps: true
   }
 );
+
+orderSchema.index({ orderNumber: 1 });
+orderSchema.index({ user: 1, createdAt: -1 });
+orderSchema.index({ orderStatus: 1 });
+orderSchema.index({ 'items.vendor': 1 });
+orderSchema.index({ assignedDeliveryPartner: 1 });
 
 module.exports = mongoose.model('Order', orderSchema);

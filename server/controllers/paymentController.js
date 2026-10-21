@@ -3,6 +3,7 @@ const Payment = require('../models/Payment');
 const { getDBStatus } = require('../config/db');
 const dataStore = require('../services/dataStore');
 const { createRazorpayOrder, verifyPaymentSignature } = require('../services/paymentService');
+const AuditService = require('../services/auditService');
 
 // @desc    Create Razorpay Payment Order
 // @route   POST /api/payments/create-order
@@ -122,6 +123,28 @@ exports.verifyPayment = async (req, res, next) => {
         razorpaySignature,
         amount: order.totalPrice,
         status: 'captured'
+      });
+
+      // Centralized audit and event persistence
+      await AuditService.logEvent({
+        action: 'PAYMENT_CAPTURED',
+        entityType: 'Payment',
+        entityId: order._id,
+        performedBy: req.user._id,
+        performedByName: req.user.name || 'Customer',
+        performedByRole: 'user',
+        previousState: { paymentStatus: 'pending' },
+        newState: { paymentStatus: 'paid', razorpayPaymentId, amount: order.totalPrice },
+        reason: 'Payment captured and verified via Razorpay gateway'
+      });
+
+      await AuditService.createNotification({
+        recipient: order.user,
+        recipientRole: 'user',
+        title: 'Payment Confirmed',
+        message: `Your payment of ₹${order.totalPrice} for Order #${order.orderNumber} has been received.`,
+        type: 'payment',
+        data: { orderId: order._id, orderNumber: order.orderNumber, paymentId: razorpayPaymentId }
       });
 
       return res.status(200).json({
