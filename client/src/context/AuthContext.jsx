@@ -22,12 +22,19 @@ export const AuthProvider = ({ children }) => {
       if (token) {
         try {
           const currentUser = await authService.getCurrentUser();
-          setUser(currentUser);
-          localStorage.setItem('casa_user', JSON.stringify(currentUser));
-        } catch {
-          setUser(null);
-          localStorage.removeItem('casa_token');
-          localStorage.removeItem('casa_user');
+          if (currentUser) {
+            setUser(currentUser);
+            localStorage.setItem('casa_user', JSON.stringify(currentUser));
+          }
+        } catch (err) {
+          // Only clear session if server explicitly returns 401 Unauthorized (token expired/invalid)
+          if (err.response && err.response.status === 401) {
+            setUser(null);
+            localStorage.removeItem('casa_token');
+            localStorage.removeItem('casa_user');
+          } else {
+            console.warn('Auth validation server latency: maintaining persistent local session.');
+          }
         }
       }
       setLoading(false);

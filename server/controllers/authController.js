@@ -192,7 +192,13 @@ exports.login = async (req, res, next) => {
         return res.status(401).json({ success: false, message: 'Invalid email or password' });
       }
 
-      const isMatch = await user.matchPassword(password);
+      let isMatch = false;
+      try {
+        isMatch = await user.matchPassword(password);
+      } catch (e) {
+        isMatch = false;
+      }
+
       if (!isMatch) {
         if (demoProfile && password === demoProfile.password) {
           user.password = password;

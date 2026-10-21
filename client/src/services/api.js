@@ -39,8 +39,9 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
-      // If token expired, clear localStorage
-      if (localStorage.getItem('casa_token')) {
+      const url = error.config?.url || '';
+      // Only clear storage when the token validation check itself is rejected
+      if (url.includes('/auth/me')) {
         localStorage.removeItem('casa_token');
         localStorage.removeItem('casa_user');
       }

@@ -32,13 +32,6 @@ const LoginPage = () => {
 
   const redirect = searchParams.get('redirect') || '/';
 
-  // If already logged in, redirect away from signin/signup
-  useEffect(() => {
-    if (user) {
-      navigate(user.role === 'admin' ? '/admin' : '/', { replace: true });
-    }
-  }, [user, navigate]);
-
   // Active Tab: 'signin' or 'signup'
   const initialTab = searchParams.get('tab') === 'signup' ? 'signup' : 'signin';
   const [activeTab, setActiveTab] = useState(initialTab);
@@ -196,8 +189,8 @@ const LoginPage = () => {
         >
           <div
             style={{
-              width: '64px',
-              height: '64px',
+              width: '68px',
+              height: '68px',
               borderRadius: '50%',
               background: '#ecfdf5',
               color: '#059669',
@@ -207,39 +200,70 @@ const LoginPage = () => {
               margin: '0 auto 16px',
             }}
           >
-            <ShieldCheck size={36} />
+            <ShieldCheck size={38} />
           </div>
-          <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a' }}>
-            Already Signed In
+          <h2 style={{ fontSize: '1.45rem', fontWeight: 800, color: '#0f172a' }}>
+            Aap Already Logged In Hain
           </h2>
-          <p style={{ color: '#475569', fontSize: '0.925rem', marginTop: '8px', lineHeight: 1.5 }}>
-            You are logged in as <strong>{user.name}</strong> ({user.email}) with role: <strong style={{ color: '#2563eb', textTransform: 'uppercase' }}>{user.role}</strong>.
+          <p style={{ color: '#475569', fontSize: '0.95rem', marginTop: '8px', lineHeight: 1.5 }}>
+            Aapka active account: <strong>{user.name}</strong> ({user.email})<br />
+            Role: <strong style={{ color: '#2563eb', textTransform: 'uppercase' }}>{user.role}</strong>
           </p>
 
-          <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
-            <button
-              onClick={() => navigate(user.role === 'admin' ? '/admin' : user.role === 'vendor' ? '/vendor' : user.role === 'delivery' ? '/delivery' : '/')}
-              className="btn btn-outline"
-              style={{ flex: 1, padding: '11px', borderRadius: '10px', fontWeight: 700 }}
-            >
-              Continue Dashboard
-            </button>
+          <div
+            style={{
+              background: '#eff6ff',
+              border: '1.5px solid #bfdbfe',
+              borderRadius: '14px',
+              padding: '14px 16px',
+              margin: '18px 0',
+              fontSize: '0.88rem',
+              color: '#1e40af',
+              textAlign: 'left',
+              lineHeight: 1.5,
+            }}
+          >
+            🔒 <strong>Session Security Rule:</strong> Ek bar login hone ke baad, doosri ID kholne ke liye pehle is ID se <strong>Logout</strong> karna hoga. Page refresh karne se aapki ID logout nahi hogi.
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '20px' }}>
             <button
               onClick={async () => {
                 await logout();
+                success('Logged out successfully. Ab aap nayi ya doosri ID se login kar sakte hain.');
               }}
               className="btn"
               style={{
-                flex: 1,
-                padding: '11px',
-                borderRadius: '10px',
+                width: '100%',
+                padding: '13px',
+                borderRadius: '12px',
                 background: '#dc2626',
                 color: '#ffffff',
                 border: 'none',
                 fontWeight: 700,
+                fontSize: '0.95rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                boxShadow: '0 4px 12px rgba(220, 38, 38, 0.25)',
               }}
             >
-              Log Out Now
+              <LogOut size={18} /> Is ID Se Logout Karein (Doosri ID Kholne Ke Liye)
+            </button>
+            <button
+              onClick={() => navigate(user.role === 'admin' ? '/admin' : user.role === 'vendor' ? '/vendor' : user.role === 'delivery' ? '/delivery' : '/')}
+              className="btn btn-outline"
+              style={{
+                width: '100%',
+                padding: '12px',
+                borderRadius: '12px',
+                fontWeight: 700,
+                fontSize: '0.9rem',
+              }}
+            >
+              Continue to {user.role === 'admin' ? 'Admin Panel' : user.role === 'vendor' ? 'Vendor Panel' : user.role === 'delivery' ? 'Delivery Panel' : 'Store'} →
             </button>
           </div>
         </div>
