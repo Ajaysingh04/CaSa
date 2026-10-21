@@ -1,4 +1,10 @@
-const { Server } = require('socket.io');
+let Server = null;
+try {
+  const socketModule = require('socket.io');
+  Server = socketModule.Server || socketModule;
+} catch (e) {
+  // Gracefully fallback in environments without socket.io (e.g. serverless functions)
+}
 const jwt = require('jsonwebtoken');
 
 let io = null;
@@ -7,13 +13,15 @@ let io = null;
  * Initialize Socket.IO with HTTP Server
  */
 const initSocket = (httpServer) => {
+  if (!Server || !httpServer) return null;
   const allowedOrigins = [
     'http://localhost:5173',
     'http://127.0.0.1:5173',
     process.env.CLIENT_URL
   ].filter(Boolean);
 
-  io = new Server(httpServer, {
+  try {
+    io = new Server(httpServer, {
     cors: {
       origin: function (origin, callback) {
         if (!origin || allowedOrigins.indexOf(origin) !== -1) {
@@ -84,6 +92,9 @@ const initSocket = (httpServer) => {
       // Disconnection cleanup handled automatically by Socket.io
     });
   });
+  } catch (err) {
+    console.warn('[Socket.IO Initialization Warning]:', err.message);
+  }
 
   return io;
 };

@@ -27,10 +27,15 @@ const app = express();
 // Enable trust proxy for Vercel, reverse proxies, and rate limiters
 app.set('trust proxy', 1);
 
+// Disable X-Powered-By natively
+app.disable('x-powered-by');
+
 // Security HTTP headers
 app.use(
   helmet({
-    crossOriginResourcePolicy: false
+    crossOriginResourcePolicy: false,
+    contentSecurityPolicy: false,
+    hidePoweredBy: false
   })
 );
 
@@ -61,16 +66,32 @@ app.options('*', cors(corsOptions));
 
 // URL normalization for Vercel rewrites (e.g. if rewritten to /api/index.js)
 app.use((req, res, next) => {
-  if (req.url && req.url.startsWith('/api/index.js')) {
+  const vercelOriginal =
+    req.headers['x-vercel-original-uri'] ||
+    req.headers['x-matched-path'] ||
+    req.headers['x-rewrite-url'];
+
+  if (vercelOriginal && vercelOriginal.startsWith('/api')) {
+    req.url = vercelOriginal;
+  } else if (req.url && req.url.startsWith('/api/index.js')) {
     req.url = req.url.replace('/api/index.js', '') || '/';
   }
   next();
 });
 
-// Body parsers: handle both pre-parsed serverless bodies and standard Express streams
+// Body parsers: handle pre-parsed serverless bodies, JSON strings, and Express streams
 app.use((req, res, next) => {
-  if (req.body && typeof req.body === 'object' && Object.keys(req.body).length > 0) {
-    return next();
+  if (req.body) {
+    if (typeof req.body === 'string' && req.body.trim().startsWith('{')) {
+      try {
+        req.body = JSON.parse(req.body);
+      } catch (e) {
+        // preserve body as is
+      }
+    }
+    if (typeof req.body === 'object') {
+      return next();
+    }
   }
   express.json({ limit: '10mb' })(req, res, (err) => {
     if (err) return next(err);
@@ -80,16 +101,12 @@ app.use((req, res, next) => {
 app.use(cookieParser());
 
 // Serverless DB connection middleware (ensures connection is established to MongoDB Atlas)
-let isDbConnecting = false;
 app.use(async (req, res, next) => {
-  if (!getDBStatus() && !isDbConnecting) {
-    isDbConnecting = true;
+  if (!getDBStatus()) {
     try {
       await connectDB();
     } catch (e) {
       console.warn('DB connect error:', e.message);
-    } finally {
-      isDbConnecting = false;
     }
   }
   next();
