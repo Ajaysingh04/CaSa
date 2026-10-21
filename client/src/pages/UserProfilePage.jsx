@@ -41,6 +41,7 @@ import { useStore } from '../context/StoreContext';
 import { authService } from '../services/authService';
 import { LANGUAGE_OPTIONS } from '../components/common/LanguageModal';
 import ProfessionalVendorProfile from '../components/profile/ProfessionalVendorProfile';
+import VendorStoreSettings from '../components/profile/VendorStoreSettings';
 
 const AVATAR_PRESETS = [
   'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80',
@@ -1802,7 +1803,15 @@ const UserProfilePage = () => {
 
       {/* TAB 4: SETTINGS & LANGUAGE PREFERENCES */}
       {activeSection === 'settings' && (
-        <div className="profile-content-card">
+        isVendor ? (
+          <VendorStoreSettings
+            user={user}
+            onSettingsSaved={(updatedUser) => {
+              if (updatedUser) updateProfile(updatedUser);
+            }}
+          />
+        ) : (
+          <div className="profile-content-card">
           <div style={cardHeaderRow}>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -2020,6 +2029,7 @@ const UserProfilePage = () => {
             </div>
           </div>
         </div>
+        )
       )}
         </>
       )}

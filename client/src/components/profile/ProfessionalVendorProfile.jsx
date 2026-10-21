@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
+import VendorStoreSettings from './VendorStoreSettings';
 
 const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
   const { success, error } = useToast();
@@ -563,6 +564,20 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
           <CreditCard size={16} />
           <span>Bank & Settlement Payouts</span>
         </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('settings')}
+          className="vendor-subtab-btn"
+          style={{
+            background: activeTab === 'settings' ? '#ea580c' : '#f1f5f9',
+            color: activeTab === 'settings' ? '#ffffff' : '#475569',
+            boxShadow: activeTab === 'settings' ? '0 2px 8px rgba(234, 88, 12, 0.3)' : 'none',
+          }}
+        >
+          <Sliders size={16} />
+          <span>Store Operations & Automation Settings</span>
+        </button>
       </div>
 
       {/* 4. ACTIVE SUB-TAB CONTENT PANELS */}
@@ -960,6 +975,11 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
               </Link>
             </div>
           </div>
+        )}
+
+        {/* TAB 5: STORE OPERATIONS & AUTOMATION SETTINGS */}
+        {activeTab === 'settings' && (
+          <VendorStoreSettings user={user} onSettingsSaved={onProfileUpdated} />
         )}
       </div>
 
