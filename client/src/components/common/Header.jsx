@@ -648,40 +648,6 @@ const Header = ({ onToggleMobileMenu }) => {
 
                     {/* Navigation Menu Links */}
                     <div style={{ padding: '8px' }}>
-                      {/* Vendor Portal */}
-                      <Link
-                        to="/vendor"
-                        onClick={() => setShowUserMenu(false)}
-                        className="dropdown-menu-item"
-                        style={dropdownMenuItemStyle}
-                      >
-                        <div style={{ ...menuIconBox, background: '#f0fdf4', color: '#16a34a' }}>
-                          <Store size={16} />
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={menuItemTitleStyle}>Vendor / Merchant Hub</div>
-                          <div style={menuItemSubStyle}>Orders fulfillment & stock inventory</div>
-                        </div>
-                        <ChevronRight size={14} className="dropdown-menu-arrow" />
-                      </Link>
-
-                      {/* Delivery Portal */}
-                      <Link
-                        to="/delivery"
-                        onClick={() => setShowUserMenu(false)}
-                        className="dropdown-menu-item"
-                        style={dropdownMenuItemStyle}
-                      >
-                        <div style={{ ...menuIconBox, background: '#e0f2fe', color: '#0284c7' }}>
-                          <Truck size={16} />
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={menuItemTitleStyle}>Delivery Partner Portal</div>
-                          <div style={menuItemSubStyle}>Route maps & live package dispatch</div>
-                        </div>
-                        <ChevronRight size={14} className="dropdown-menu-arrow" />
-                      </Link>
-
                       {isAdmin && (
                         <Link
                           to="/admin"
@@ -751,79 +717,6 @@ const Header = ({ onToggleMobileMenu }) => {
                           <ChevronRight size={14} className="dropdown-menu-arrow" />
                         )}
                       </Link>
-                    </div>
-
-                    {/* Quick Demo Persona Switcher */}
-                    <div style={{ padding: '8px 12px 10px', background: '#fafbfc', borderTop: '1px solid #f1f5f9', borderBottom: '1px solid #f1f5f9' }}>
-                      <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
-                        Active Persona Mode:
-                      </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
-                        <button
-                          type="button"
-                          onClick={() => switchRole('user')}
-                          style={{
-                            padding: '5px 8px',
-                            borderRadius: '8px',
-                            fontSize: '0.72rem',
-                            fontWeight: 700,
-                            border: (!user.role || user.role === 'user') ? '1.5px solid #2563eb' : '1px solid #e2e8f0',
-                            background: (!user.role || user.role === 'user') ? '#eff6ff' : '#ffffff',
-                            color: (!user.role || user.role === 'user') ? '#1d4ed8' : '#475569',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          🛒 Customer
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => switchRole('vendor')}
-                          style={{
-                            padding: '5px 8px',
-                            borderRadius: '8px',
-                            fontSize: '0.72rem',
-                            fontWeight: 700,
-                            border: user.role === 'vendor' ? '1.5px solid #16a34a' : '1px solid #e2e8f0',
-                            background: user.role === 'vendor' ? '#f0fdf4' : '#ffffff',
-                            color: user.role === 'vendor' ? '#15803d' : '#475569',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          🏪 Vendor
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => switchRole('delivery')}
-                          style={{
-                            padding: '5px 8px',
-                            borderRadius: '8px',
-                            fontSize: '0.72rem',
-                            fontWeight: 700,
-                            border: user.role === 'delivery' ? '1.5px solid #0284c7' : '1px solid #e2e8f0',
-                            background: user.role === 'delivery' ? '#e0f2fe' : '#ffffff',
-                            color: user.role === 'delivery' ? '#0369a1' : '#475569',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          🚚 Delivery
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => switchRole('admin')}
-                          style={{
-                            padding: '5px 8px',
-                            borderRadius: '8px',
-                            fontSize: '0.72rem',
-                            fontWeight: 700,
-                            border: user.role === 'admin' ? '1.5px solid #7c3aed' : '1px solid #e2e8f0',
-                            background: user.role === 'admin' ? '#f5f3ff' : '#ffffff',
-                            color: user.role === 'admin' ? '#6d28d9' : '#475569',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          🛡️ Admin
-                        </button>
-                      </div>
                     </div>
 
                     <div style={{ padding: '0 8px 8px' }}>
