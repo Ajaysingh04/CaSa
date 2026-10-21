@@ -23,7 +23,7 @@ import { deliveryService } from '../../services/deliveryService';
 import { formatINR, formatDate, formatDateTime } from '../../utils/formatters';
 
 const DeliveryDashboardPage = () => {
-  const { user, switchRole } = useAuth();
+  const { user, switchRole, login } = useAuth();
   const { success, error, info } = useToast();
 
   const [activeTab, setActiveTab] = useState('active'); // 'active' or 'available'
@@ -34,6 +34,10 @@ const DeliveryDashboardPage = () => {
   const [updatingId, setUpdatingId] = useState(null);
 
   const loadData = async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const [statsData, myData, poolData] = await Promise.all([
@@ -54,7 +58,7 @@ const DeliveryDashboardPage = () => {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [user]);
 
   // Accept available shipment
   const handleAcceptDelivery = async (orderId) => {
@@ -85,8 +89,121 @@ const DeliveryDashboardPage = () => {
     }
   };
 
+  if (!user) {
+    return (
+      <div className="container" style={{ padding: '60px 16px', maxWidth: '520px', margin: '0 auto', textAlign: 'center' }}>
+        <div
+          className="card"
+          style={{
+            padding: '40px 32px',
+            borderRadius: '24px',
+            background: '#ffffff',
+            boxShadow: '0 20px 40px -15px rgba(12, 74, 110, 0.15)',
+            border: '1px solid #e0f2fe',
+          }}
+        >
+          <div
+            style={{
+              width: '72px',
+              height: '72px',
+              borderRadius: '20px',
+              background: '#e0f2fe',
+              color: '#0284c7',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 20px',
+            }}
+          >
+            <Truck size={38} />
+          </div>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0f172a' }}>Delivery Partner Portal</h2>
+          <p style={{ color: '#64748b', fontSize: '0.92rem', marginTop: '10px', lineHeight: 1.55 }}>
+            Access real-time package dispatches, accept route deliveries, GPS route directions, and COD collection metrics.
+          </p>
+          <div style={{ marginTop: '28px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <button
+              onClick={async () => {
+                const res = await login({ email: 'delivery@casa.in', password: 'Delivery@Casa2026' });
+                if (res.success) {
+                  success('Welcome to CASA Delivery! Live demo rider session started.');
+                }
+              }}
+              className="btn btn-primary"
+              style={{
+                padding: '13px',
+                borderRadius: '12px',
+                background: 'linear-gradient(135deg, #0284c7, #0369a1)',
+                border: 'none',
+                fontWeight: 800,
+                fontSize: '0.95rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                boxShadow: '0 8px 20px -4px rgba(2, 132, 199, 0.4)',
+              }}
+            >
+              <Sparkles size={17} /> ⚡ 1-Click Launch Delivery Demo
+            </button>
+            <Link
+              to="/login?redirect=/delivery"
+              className="btn btn-outline"
+              style={{ padding: '12px', borderRadius: '12px', fontWeight: 700 }}
+            >
+              Sign In with Other Account
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container" style={{ padding: '24px 16px 60px' }}>
+      {/* Non-delivery role warning banner with 1-click switch */}
+      {user.role !== 'delivery' && user.role !== 'admin' && (
+        <div
+          style={{
+            background: '#fffbeb',
+            border: '1.5px solid #fde68a',
+            borderRadius: '14px',
+            padding: '14px 20px',
+            marginBottom: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '12px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <AlertCircle size={20} color="#d97706" />
+            <div>
+              <strong style={{ color: '#92400e', fontSize: '0.9rem' }}>You are viewing with account: {user.name} ({user.role.toUpperCase()})</strong>
+              <div style={{ color: '#b45309', fontSize: '0.8rem' }}>Switch your persona to Delivery Partner to accept packages and execute delivery runs.</div>
+            </div>
+          </div>
+          <button
+            onClick={async () => {
+              await switchRole('delivery');
+              success('Switched to Delivery Partner persona!');
+            }}
+            className="btn"
+            style={{
+              background: '#d97706',
+              color: '#ffffff',
+              border: 'none',
+              padding: '8px 14px',
+              borderRadius: '8px',
+              fontWeight: 700,
+              fontSize: '0.8rem',
+            }}
+          >
+            ⚡ Switch to Delivery Partner (1-Click)
+          </button>
+        </div>
+      )}
       <style>{`
         .rider-kpi-card {
           transition: transform 0.22s ease, box-shadow 0.22s ease;

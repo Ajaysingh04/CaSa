@@ -124,33 +124,117 @@ exports.switchRole = async (req, res, next) => {
   }
 };
 
+const DEMO_ACCOUNTS = {
+  'admin@casa.in': {
+    name: 'CASA Executive Admin',
+    password: 'Admin@Casa2026',
+    role: 'admin',
+    phone: '+91 98765 43210',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80'
+  },
+  'vendor@casa.in': {
+    name: 'Aarav Fashion & Handlooms',
+    password: 'Vendor@Casa2026',
+    role: 'vendor',
+    phone: '+91 98765 24680',
+    vendorStoreName: 'Aarav Luxury Handlooms & Apparel',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80'
+  },
+  'delivery@casa.in': {
+    name: 'Vikram Singh (Express Rider)',
+    password: 'Delivery@Casa2026',
+    role: 'delivery',
+    phone: '+91 98765 13579',
+    vehicleType: 'Bike',
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80'
+  },
+  'rajesh@casa.in': {
+    name: 'Rajesh Sharma',
+    password: 'User@Casa2026',
+    role: 'user',
+    phone: '+91 91234 56789',
+    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80'
+  }
+};
+
 // @desc    Login user
 // @route   POST /api/auth/login
 // @access  Public
 exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ success: false, message: 'Please provide email and password' });
+    }
+
+    const cleanEmail = email.toLowerCase().trim();
+    const demoProfile = DEMO_ACCOUNTS[cleanEmail];
 
     if (getDBStatus()) {
-      const user = await User.findOne({ email }).select('+password');
+      let user = await User.findOne({ email: cleanEmail }).select('+password');
+
+      // Auto-provision demo account if not exists
+      if (!user && demoProfile && password === demoProfile.password) {
+        user = await User.create({
+          name: demoProfile.name,
+          email: cleanEmail,
+          password: demoProfile.password,
+          role: demoProfile.role,
+          phone: demoProfile.phone || '',
+          vendorStoreName: demoProfile.vendorStoreName || '',
+          vehicleType: demoProfile.vehicleType || 'Bike',
+          avatar: demoProfile.avatar || ''
+        });
+        return sendTokenResponse(user.toObject(), 200, res);
+      }
+
       if (!user) {
         return res.status(401).json({ success: false, message: 'Invalid email or password' });
       }
 
       const isMatch = await user.matchPassword(password);
       if (!isMatch) {
+        if (demoProfile && password === demoProfile.password) {
+          user.password = password;
+          await user.save();
+          return sendTokenResponse(user.toObject(), 200, res);
+        }
         return res.status(401).json({ success: false, message: 'Invalid email or password' });
       }
 
       return sendTokenResponse(user.toObject(), 200, res);
     } else {
-      const user = dataStore.users.find(u => u.email.toLowerCase() === email.toLowerCase());
+      let user = dataStore.users.find(u => u.email.toLowerCase() === cleanEmail);
+
+      // Auto-provision demo account in memory if missing
+      if (!user && demoProfile && password === demoProfile.password) {
+        const salt = await bcrypt.genSalt(10);
+        const hash = await bcrypt.hash(password, salt);
+        user = {
+          _id: dataStore.generateId(),
+          name: demoProfile.name,
+          email: cleanEmail,
+          password: hash,
+          role: demoProfile.role,
+          phone: demoProfile.phone || '',
+          vendorStoreName: demoProfile.vendorStoreName || '',
+          vehicleType: demoProfile.vehicleType || 'Bike',
+          avatar: demoProfile.avatar || '',
+          createdAt: new Date().toISOString()
+        };
+        dataStore.users.push(user);
+        return sendTokenResponse(user, 200, res);
+      }
+
       if (!user) {
         return res.status(401).json({ success: false, message: 'Invalid email or password' });
       }
 
       const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) {
+        if (demoProfile && password === demoProfile.password) {
+          return sendTokenResponse(user, 200, res);
+        }
         return res.status(401).json({ success: false, message: 'Invalid email or password' });
       }
 

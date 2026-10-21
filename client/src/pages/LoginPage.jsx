@@ -27,7 +27,7 @@ import { useToast } from '../context/ToastContext';
 const LoginPage = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { login, register, user, logout } = useAuth();
+  const { login, register, user, logout, switchRole } = useAuth();
   const { success, error } = useToast();
 
   const redirect = searchParams.get('redirect') || '/';
@@ -138,21 +138,42 @@ const LoginPage = () => {
     }
   };
 
-  // 1-Click Demo Fill
-  const handleSelectRole = (role) => {
+  // 1-Click Demo Fill & Instant Launch
+  const handleSelectRole = async (role, instantLaunch = false) => {
     setLoginRole(role);
+    let email = 'rajesh@casa.in';
+    let password = 'User@Casa2026';
+    let target = '/';
+
     if (role === 'customer') {
-      setSignInEmail('rajesh@casa.in');
-      setSignInPassword('User@Casa2026');
+      email = 'rajesh@casa.in';
+      password = 'User@Casa2026';
+      target = '/';
     } else if (role === 'vendor') {
-      setSignInEmail('vendor@casa.in');
-      setSignInPassword('Vendor@Casa2026');
+      email = 'vendor@casa.in';
+      password = 'Vendor@Casa2026';
+      target = '/vendor';
     } else if (role === 'delivery') {
-      setSignInEmail('delivery@casa.in');
-      setSignInPassword('Delivery@Casa2026');
+      email = 'delivery@casa.in';
+      password = 'Delivery@Casa2026';
+      target = '/delivery';
     } else {
-      setSignInEmail('admin@casa.in');
-      setSignInPassword('Admin@Casa2026');
+      email = 'admin@casa.in';
+      password = 'Admin@Casa2026';
+      target = '/admin';
+    }
+
+    setSignInEmail(email);
+    setSignInPassword(password);
+
+    if (instantLaunch) {
+      setLoading(true);
+      const res = await login({ email, password });
+      setLoading(false);
+      if (res.success) {
+        success(`Logged in as ${res.user.name || role}!`);
+        navigate(target);
+      }
     }
   };
 
@@ -162,9 +183,9 @@ const LoginPage = () => {
         <div
           className="card"
           style={{
-            maxWidth: '480px',
+            maxWidth: '520px',
             width: '100%',
-            padding: '40px 32px',
+            padding: '36px 30px',
             borderRadius: '24px',
             textAlign: 'center',
             background: '#ffffff',
@@ -182,7 +203,7 @@ const LoginPage = () => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              margin: '0 auto 18px',
+              margin: '0 auto 16px',
             }}
           >
             <ShieldCheck size={36} />
@@ -190,19 +211,130 @@ const LoginPage = () => {
           <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a' }}>
             Already Signed In
           </h2>
-          <p style={{ color: '#475569', fontSize: '0.925rem', marginTop: '10px', lineHeight: 1.5 }}>
-            Aap pehle se <strong>{user.name}</strong> ({user.email}) ke roop me logged in hain.
+          <p style={{ color: '#475569', fontSize: '0.925rem', marginTop: '8px', lineHeight: 1.5 }}>
+            You are logged in as <strong>{user.name}</strong> ({user.email}) with role: <strong style={{ color: '#2563eb', textTransform: 'uppercase' }}>{user.role}</strong>.
           </p>
-          <p style={{ color: '#64748b', fontSize: '0.85rem', marginTop: '6px' }}>
-            Kisi dusre account se sign in karne ya naya account banane ke liye pehle logout karein.
-          </p>
-          <div style={{ display: 'flex', gap: '12px', marginTop: '28px' }}>
+
+          {/* Quick 1-Click Persona & Portal Switcher */}
+          <div
+            style={{
+              marginTop: '20px',
+              padding: '16px',
+              background: '#f8fafc',
+              borderRadius: '16px',
+              border: '1px solid #e2e8f0',
+              textAlign: 'left',
+            }}
+          >
+            <div style={{ fontSize: '0.76rem', fontWeight: 800, color: '#64748b', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: '10px' }}>
+              ⚡ Quick Switch & Open Demo Portals:
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (user.role !== 'delivery') await switchRole('delivery');
+                  navigate('/delivery');
+                }}
+                className="btn"
+                style={{
+                  padding: '10px 12px',
+                  background: '#0284c7',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '10px',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  justifyContent: 'center',
+                }}
+              >
+                <Truck size={15} /> Delivery Portal
+              </button>
+
+              <button
+                type="button"
+                onClick={async () => {
+                  if (user.role !== 'vendor') await switchRole('vendor');
+                  navigate('/vendor');
+                }}
+                className="btn"
+                style={{
+                  padding: '10px 12px',
+                  background: '#16a34a',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '10px',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  justifyContent: 'center',
+                }}
+              >
+                <Store size={15} /> Vendor Hub
+              </button>
+
+              <button
+                type="button"
+                onClick={async () => {
+                  if (user.role !== 'admin') await switchRole('admin');
+                  navigate('/admin');
+                }}
+                className="btn"
+                style={{
+                  padding: '10px 12px',
+                  background: '#7c3aed',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '10px',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  justifyContent: 'center',
+                }}
+              >
+                <Shield size={15} /> Admin Console
+              </button>
+
+              <button
+                type="button"
+                onClick={async () => {
+                  if (user.role !== 'user') await switchRole('user');
+                  navigate('/');
+                }}
+                className="btn"
+                style={{
+                  padding: '10px 12px',
+                  background: '#2563eb',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '10px',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  justifyContent: 'center',
+                }}
+              >
+                <User size={15} /> Customer Store
+              </button>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
             <button
-              onClick={() => navigate(user.role === 'admin' ? '/admin' : '/')}
+              onClick={() => navigate(user.role === 'admin' ? '/admin' : user.role === 'vendor' ? '/vendor' : user.role === 'delivery' ? '/delivery' : '/')}
               className="btn btn-outline"
               style={{ flex: 1, padding: '11px', borderRadius: '10px', fontWeight: 700 }}
             >
-              Continue to {user.role === 'admin' ? 'Admin' : 'Store'}
+              Continue Dashboard
             </button>
             <button
               onClick={async () => {
@@ -416,56 +548,68 @@ const LoginPage = () => {
           {/* TAB 1: SIGN IN */}
           {activeTab === 'signin' ? (
             <div>
-              {/* 1-Click Demo Buttons */}
+              {/* 1-Click Instant Demo Launch Buttons */}
               <div style={demoFillContainer}>
                 <span style={demoLabel}>
-                  <Sparkles size={12} color="#2563eb" /> 1-Click Demo Fill:
+                  <Sparkles size={12} color="#2563eb" /> 1-Click Instant Demo Launch:
                 </span>
                 <div className="demo-buttons-row" style={demoButtonsRow}>
                   <button
                     type="button"
-                    onClick={() => handleSelectRole('customer')}
+                    onClick={() => handleSelectRole('customer', true)}
+                    disabled={loading}
+                    title="1-Click Instant Login as Customer"
                     style={{
                       ...demoBtn,
                       background: loginRole === 'customer' ? '#eff6ff' : '#ffffff',
                       borderColor: loginRole === 'customer' ? '#2563eb' : '#e2e8f0',
                       color: loginRole === 'customer' ? '#2563eb' : '#475569',
+                      cursor: loading ? 'wait' : 'pointer',
                     }}
                   >
                     <User size={13} /> Customer
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleSelectRole('vendor')}
+                    onClick={() => handleSelectRole('vendor', true)}
+                    disabled={loading}
+                    title="1-Click Instant Login as Vendor Hub"
                     style={{
                       ...demoBtn,
                       background: loginRole === 'vendor' ? '#f0fdf4' : '#ffffff',
                       borderColor: loginRole === 'vendor' ? '#16a34a' : '#e2e8f0',
                       color: loginRole === 'vendor' ? '#15803d' : '#475569',
+                      cursor: loading ? 'wait' : 'pointer',
                     }}
                   >
                     <Store size={13} /> Vendor
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleSelectRole('delivery')}
+                    onClick={() => handleSelectRole('delivery', true)}
+                    disabled={loading}
+                    title="1-Click Instant Login as Delivery Partner"
                     style={{
                       ...demoBtn,
                       background: loginRole === 'delivery' ? '#e0f2fe' : '#ffffff',
                       borderColor: loginRole === 'delivery' ? '#0284c7' : '#e2e8f0',
                       color: loginRole === 'delivery' ? '#0369a1' : '#475569',
+                      cursor: loading ? 'wait' : 'pointer',
                     }}
                   >
                     <Truck size={13} /> Delivery
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleSelectRole('admin')}
+                    onClick={() => handleSelectRole('admin', true)}
+                    disabled={loading}
+                    title="1-Click Instant Login as Admin Console"
                     style={{
                       ...demoBtn,
                       background: loginRole === 'admin' ? '#f5f3ff' : '#ffffff',
                       borderColor: loginRole === 'admin' ? '#7c3aed' : '#e2e8f0',
                       color: loginRole === 'admin' ? '#6d28d9' : '#475569',
+                      cursor: loading ? 'wait' : 'pointer',
                     }}
                   >
                     <ShieldCheck size={13} /> Admin

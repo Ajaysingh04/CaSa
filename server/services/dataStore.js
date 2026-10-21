@@ -65,10 +65,12 @@ class DataStore {
       createdAt: new Date().toISOString()
     }));
 
-    // 6. Users (Admin + Demo User)
+    // 6. Users (Admin + Customer + Vendor + Delivery Rider)
     const salt = bcrypt.genSaltSync(10);
     const adminPasswordHash = bcrypt.hashSync('Admin@Casa2026', salt);
     const userPasswordHash = bcrypt.hashSync('User@Casa2026', salt);
+    const vendorPasswordHash = bcrypt.hashSync('Vendor@Casa2026', salt);
+    const deliveryPasswordHash = bcrypt.hashSync('Delivery@Casa2026', salt);
 
     this.users = [
       {
@@ -89,6 +91,28 @@ class DataStore {
         phone: '+91 91234 56789',
         role: 'user',
         avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80',
+        createdAt: new Date().toISOString()
+      },
+      {
+        _id: 'user_vendor_001',
+        name: 'Aarav Fashion & Handlooms',
+        email: 'vendor@casa.in',
+        password: vendorPasswordHash,
+        phone: '+91 98765 24680',
+        role: 'vendor',
+        vendorStoreName: 'Aarav Luxury Handlooms & Apparel',
+        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80',
+        createdAt: new Date().toISOString()
+      },
+      {
+        _id: 'user_delivery_001',
+        name: 'Vikram Singh (Express Rider)',
+        email: 'delivery@casa.in',
+        password: deliveryPasswordHash,
+        phone: '+91 98765 13579',
+        role: 'delivery',
+        vehicleType: 'Bike',
+        avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80',
         createdAt: new Date().toISOString()
       }
     ];

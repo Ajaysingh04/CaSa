@@ -26,7 +26,7 @@ import { vendorService } from '../../services/vendorService';
 import { formatINR, formatDate, formatDateTime } from '../../utils/formatters';
 
 const VendorDashboardPage = () => {
-  const { user, switchRole } = useAuth();
+  const { user, switchRole, login } = useAuth();
   const { success, error, info } = useToast();
 
   const [activeTab, setActiveTab] = useState('orders'); // 'orders' or 'inventory'
@@ -44,6 +44,10 @@ const VendorDashboardPage = () => {
   const [newPrice, setNewPrice] = useState('');
 
   const loadData = async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const [statsData, ordersData, productsData] = await Promise.all([
@@ -64,7 +68,7 @@ const VendorDashboardPage = () => {
 
   useEffect(() => {
     loadData();
-  }, [orderFilter]);
+  }, [orderFilter, user]);
 
   const handleUpdateStatus = async (orderId, newStatus) => {
     setUpdatingOrderId(orderId);
@@ -100,8 +104,121 @@ const VendorDashboardPage = () => {
     (p.brand && p.brand.toLowerCase().includes(productSearch.toLowerCase()))
   );
 
+  if (!user) {
+    return (
+      <div className="container" style={{ padding: '60px 16px', maxWidth: '520px', margin: '0 auto', textAlign: 'center' }}>
+        <div
+          className="card"
+          style={{
+            padding: '40px 32px',
+            borderRadius: '24px',
+            background: '#ffffff',
+            boxShadow: '0 20px 40px -15px rgba(22, 163, 74, 0.15)',
+            border: '1px solid #dcfce7',
+          }}
+        >
+          <div
+            style={{
+              width: '72px',
+              height: '72px',
+              borderRadius: '20px',
+              background: '#f0fdf4',
+              color: '#16a34a',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 20px',
+            }}
+          >
+            <Store size={38} />
+          </div>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0f172a' }}>Vendor / Merchant Hub</h2>
+          <p style={{ color: '#64748b', fontSize: '0.92rem', marginTop: '10px', lineHeight: 1.55 }}>
+            Access order fulfillment pipelines, dispatch shipments, track gross sales metrics, and manage product inventory.
+          </p>
+          <div style={{ marginTop: '28px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <button
+              onClick={async () => {
+                const res = await login({ email: 'vendor@casa.in', password: 'Vendor@Casa2026' });
+                if (res.success) {
+                  success('Welcome to CASA Vendor Hub! Demo session started.');
+                }
+              }}
+              className="btn btn-primary"
+              style={{
+                padding: '13px',
+                borderRadius: '12px',
+                background: 'linear-gradient(135deg, #16a34a, #15803d)',
+                border: 'none',
+                fontWeight: 800,
+                fontSize: '0.95rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                boxShadow: '0 8px 20px -4px rgba(22, 163, 74, 0.4)',
+              }}
+            >
+              <Sparkles size={17} /> ⚡ 1-Click Launch Vendor Demo
+            </button>
+            <Link
+              to="/login?redirect=/vendor"
+              className="btn btn-outline"
+              style={{ padding: '12px', borderRadius: '12px', fontWeight: 700 }}
+            >
+              Sign In with Other Account
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container" style={{ padding: '24px 16px 60px' }}>
+      {/* Non-vendor role warning banner with 1-click switch */}
+      {user.role !== 'vendor' && user.role !== 'admin' && (
+        <div
+          style={{
+            background: '#fffbeb',
+            border: '1.5px solid #fde68a',
+            borderRadius: '14px',
+            padding: '14px 20px',
+            marginBottom: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '12px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <AlertCircle size={20} color="#d97706" />
+            <div>
+              <strong style={{ color: '#92400e', fontSize: '0.9rem' }}>You are viewing with account: {user.name} ({user.role.toUpperCase()})</strong>
+              <div style={{ color: '#b45309', fontSize: '0.8rem' }}>Switch your persona to Vendor Partner to manage order shipments and product catalog.</div>
+            </div>
+          </div>
+          <button
+            onClick={async () => {
+              await switchRole('vendor');
+              success('Switched to Vendor Partner persona!');
+            }}
+            className="btn"
+            style={{
+              background: '#d97706',
+              color: '#ffffff',
+              border: 'none',
+              padding: '8px 14px',
+              borderRadius: '8px',
+              fontWeight: 700,
+              fontSize: '0.8rem',
+            }}
+          >
+            ⚡ Switch to Vendor Partner (1-Click)
+          </button>
+        </div>
+      )}
       <style>{`
         .vendor-stat-card {
           transition: transform 0.22s ease, box-shadow 0.22s ease;
