@@ -8,6 +8,12 @@ import {
   Plus,
   Trash2,
   Shield,
+  ShieldCheck,
+  Truck,
+  Bike,
+  Store,
+  PackageCheck,
+  Zap,
   Save,
   Camera,
   Check,
@@ -48,7 +54,10 @@ const UserProfilePage = () => {
   const { success, error } = useToast();
   const { language, setLanguage, openLanguageModal, primaryColor } = useStore();
 
-  // Active section tab: 'profile' | 'addresses' | 'security' | 'settings'
+  const isDelivery = user?.role === 'delivery';
+  const isVendor = user?.role === 'vendor';
+
+  // Active section tab: 'profile' | 'addresses' | 'delivery-hub' | 'vendor-hub' | 'security' | 'settings'
   const [activeSection, setActiveSection] = useState('profile');
 
   // Edit Mode toggle for personal info (prevents accidental direct editing)
@@ -59,6 +68,8 @@ const UserProfilePage = () => {
   const [name, setName] = useState(user?.name || '');
   const [phone, setPhone] = useState(user?.phone || '');
   const [avatar, setAvatar] = useState(user?.avatar || '');
+  const [vehicleType, setVehicleType] = useState(user?.vehicleType || 'Two-Wheeler Bike');
+  const [vendorStoreName, setVendorStoreName] = useState(user?.vendorStoreName || '');
   const [savingProfile, setSavingProfile] = useState(false);
 
   // Address States
@@ -82,6 +93,8 @@ const UserProfilePage = () => {
       setName(user.name || '');
       setPhone(user.phone || '');
       setAvatar(user.avatar || '');
+      setVehicleType(user.vehicleType || 'Two-Wheeler Bike');
+      setVendorStoreName(user.vendorStoreName || '');
 
       setLoadingAddresses(true);
       authService
@@ -96,6 +109,8 @@ const UserProfilePage = () => {
     setName(user?.name || '');
     setPhone(user?.phone || '');
     setAvatar(user?.avatar || '');
+    setVehicleType(user?.vehicleType || 'Two-Wheeler Bike');
+    setVendorStoreName(user?.vendorStoreName || '');
     setIsEditingProfile(false);
   };
 
@@ -148,7 +163,14 @@ const UserProfilePage = () => {
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     setSavingProfile(true);
-    const res = await updateProfile({ name, phone, avatar });
+    const res = await updateProfile({
+      name,
+      phone,
+      avatar,
+      vehicleType,
+      vendorStoreName,
+      preferredLanguage: language
+    });
     setSavingProfile(false);
     if (res?.success) {
       success('Profile details saved successfully!');
@@ -382,14 +404,22 @@ const UserProfilePage = () => {
       {/* Main Title Section */}
       <div style={{ marginBottom: '20px' }}>
         <h1 className="profile-title" style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.025em', margin: 0 }}>
-          Account Settings & Addresses
+          {isDelivery
+            ? 'Delivery Partner Profile & Fleet Details'
+            : isVendor
+            ? 'Merchant Store Profile & Operations'
+            : 'Account Settings & Addresses'}
         </h1>
         <p style={{ color: '#64748b', fontSize: '0.85rem', marginTop: '4px', margin: '4px 0 0 0' }}>
-          Manage your personal credentials, contact details, and saved delivery destinations.
+          {isDelivery
+            ? 'Manage your courier rider credentials, assigned vehicle, and express delivery performance.'
+            : isVendor
+            ? 'Manage your merchant credentials, seller branding, and marketplace fulfillment.'
+            : 'Manage your personal credentials, contact details, and saved delivery destinations.'}
         </p>
       </div>
 
-      {/* VIP Customer Overview Header Banner */}
+      {/* Overview Header Banner */}
       <div className="profile-header-card">
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
           {/* Avatar with Ring Badge & Click to Upload */}
@@ -415,16 +445,37 @@ const UserProfilePage = () => {
             </span>
           </div>
 
-          {/* User Details & Status */}
+          {/* User Details & Status Badges */}
           <div style={{ flex: '1 1 200px', minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
               <h2 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a', margin: 0, wordBreak: 'break-word' }}>
-                {name || 'CASA Customer'}
+                {name || (isDelivery ? 'Express Rider' : isVendor ? 'Verified Merchant' : 'CASA Customer')}
               </h2>
               {isAdmin ? (
                 <span style={adminBadge}>
                   <Shield size={11} /> ADMIN
                 </span>
+              ) : isDelivery ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                  <span style={deliveryBadge}>
+                    <Truck size={12} color="#059669" /> EXPRESS RIDER
+                  </span>
+                  <span style={dutyBadge}>
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', display: 'inline-block' }} /> ON DUTY
+                  </span>
+                  <span style={vehicleBadge}>
+                    <Bike size={11} color="#0284c7" /> {vehicleType || 'Two-Wheeler Bike'}
+                  </span>
+                </div>
+              ) : isVendor ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                  <span style={vendorBadge}>
+                    <Store size={12} color="#c2410c" /> VERIFIED SELLER
+                  </span>
+                  <span style={dutyBadge}>
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', display: 'inline-block' }} /> STORE ACTIVE
+                  </span>
+                </div>
               ) : (
                 <span style={shopperBadge}>
                   <Sparkles size={11} color="#4338ca" /> VIP SHOPPER
@@ -441,10 +492,15 @@ const UserProfilePage = () => {
                   <Phone size={13} color="#64748b" style={{ flexShrink: 0 }} /> +91 {phone}
                 </span>
               )}
+              {isVendor && vendorStoreName && (
+                <span style={{ fontSize: '0.8rem', color: '#ea580c', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <Store size={12} /> {vendorStoreName}
+                </span>
+              )}
             </div>
           </div>
 
-          {/* Quick Account Shortcuts & Edit Profile Toggle */}
+          {/* Role-Specific Action Shortcuts */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', width: 'auto' }}>
             <button
               type="button"
@@ -456,8 +512,8 @@ const UserProfilePage = () => {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '5px',
-                padding: '7px 12px',
-                borderRadius: '9px',
+                padding: '8px 13px',
+                borderRadius: '10px',
                 background: isEditingProfile ? '#eff6ff' : '#f8fafc',
                 border: isEditingProfile ? '1.5px solid #2563eb' : '1px solid #e2e8f0',
                 color: isEditingProfile ? '#2563eb' : '#334155',
@@ -470,14 +526,59 @@ const UserProfilePage = () => {
               <Edit3 size={14} color="#2563eb" />
               <span>{isEditingProfile ? 'Editing Mode' : 'Edit Profile'}</span>
             </button>
-            <Link to="/orders" style={shortcutBtn}>
-              <ShoppingBag size={14} color="#2563eb" />
-              <span>Orders</span>
-            </Link>
-            <Link to="/wishlist" style={shortcutBtn}>
-              <Heart size={14} color="#e11d48" />
-              <span>Wishlist</span>
-            </Link>
+
+            {isDelivery ? (
+              <Link
+                to="/delivery"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '8px 15px',
+                  borderRadius: '10px',
+                  background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                  color: '#ffffff',
+                  fontSize: '0.8rem',
+                  fontWeight: 800,
+                  textDecoration: 'none',
+                  boxShadow: '0 3px 10px rgba(5, 150, 105, 0.28)',
+                }}
+              >
+                <Truck size={14} color="#ffffff" />
+                <span>Delivery Runs Dashboard</span>
+              </Link>
+            ) : isVendor ? (
+              <Link
+                to="/vendor"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '8px 15px',
+                  borderRadius: '10px',
+                  background: 'linear-gradient(135deg, #ea580c 0%, #c2410c 100%)',
+                  color: '#ffffff',
+                  fontSize: '0.8rem',
+                  fontWeight: 800,
+                  textDecoration: 'none',
+                  boxShadow: '0 3px 10px rgba(234, 88, 12, 0.28)',
+                }}
+              >
+                <Store size={14} color="#ffffff" />
+                <span>Vendor Hub</span>
+              </Link>
+            ) : (
+              <>
+                <Link to="/orders" style={shortcutBtn}>
+                  <ShoppingBag size={14} color="#2563eb" />
+                  <span>Orders</span>
+                </Link>
+                <Link to="/wishlist" style={shortcutBtn}>
+                  <Heart size={14} color="#e11d48" />
+                  <span>Wishlist</span>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -495,24 +596,56 @@ const UserProfilePage = () => {
           }}
         >
           <User size={15} color={activeSection === 'profile' ? '#2563eb' : '#64748b'} />
-          <span className="tab-desktop-text">Personal Info</span>
-          <span className="tab-mobile-text">Profile</span>
+          <span className="tab-desktop-text">{isDelivery ? 'Rider & Vehicle Info' : isVendor ? 'Merchant & Store Info' : 'Personal Info'}</span>
+          <span className="tab-mobile-text">{isDelivery ? 'Rider' : isVendor ? 'Store' : 'Profile'}</span>
         </button>
 
-        <button
-          type="button"
-          onClick={() => setActiveSection('addresses')}
-          className="profile-tab-button"
-          style={{
-            background: activeSection === 'addresses' ? '#ffffff' : 'transparent',
-            color: activeSection === 'addresses' ? '#0f172a' : '#64748b',
-            boxShadow: activeSection === 'addresses' ? '0 2px 8px rgba(15, 23, 42, 0.08)' : 'none',
-          }}
-        >
-          <MapPin size={15} color={activeSection === 'addresses' ? '#2563eb' : '#64748b'} />
-          <span className="tab-desktop-text">Delivery Addresses ({addresses.length})</span>
-          <span className="tab-mobile-text">Addresses ({addresses.length})</span>
-        </button>
+        {isDelivery ? (
+          <button
+            type="button"
+            onClick={() => setActiveSection('delivery-hub')}
+            className="profile-tab-button"
+            style={{
+              background: activeSection === 'delivery-hub' ? '#ffffff' : 'transparent',
+              color: activeSection === 'delivery-hub' ? '#0f172a' : '#64748b',
+              boxShadow: activeSection === 'delivery-hub' ? '0 2px 8px rgba(15, 23, 42, 0.08)' : 'none',
+            }}
+          >
+            <Truck size={15} color={activeSection === 'delivery-hub' ? '#059669' : '#64748b'} />
+            <span className="tab-desktop-text">Rider Hub & Deliveries</span>
+            <span className="tab-mobile-text">Rider Hub</span>
+          </button>
+        ) : isVendor ? (
+          <button
+            type="button"
+            onClick={() => setActiveSection('vendor-hub')}
+            className="profile-tab-button"
+            style={{
+              background: activeSection === 'vendor-hub' ? '#ffffff' : 'transparent',
+              color: activeSection === 'vendor-hub' ? '#0f172a' : '#64748b',
+              boxShadow: activeSection === 'vendor-hub' ? '0 2px 8px rgba(15, 23, 42, 0.08)' : 'none',
+            }}
+          >
+            <Store size={15} color={activeSection === 'vendor-hub' ? '#ea580c' : '#64748b'} />
+            <span className="tab-desktop-text">Store & Catalog Hub</span>
+            <span className="tab-mobile-text">Vendor Hub</span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setActiveSection('addresses')}
+            className="profile-tab-button"
+            style={{
+              background: activeSection === 'addresses' ? '#ffffff' : 'transparent',
+              color: activeSection === 'addresses' ? '#0f172a' : '#64748b',
+              boxShadow: activeSection === 'addresses' ? '0 2px 8px rgba(15, 23, 42, 0.08)' : 'none',
+            }}
+          >
+            <MapPin size={15} color={activeSection === 'addresses' ? '#2563eb' : '#64748b'} />
+            <span className="tab-desktop-text">Delivery Addresses ({addresses.length})</span>
+            <span className="tab-mobile-text">Addresses ({addresses.length})</span>
+          </button>
+        )}
 
         <button
           type="button"
@@ -680,6 +813,103 @@ const UserProfilePage = () => {
                 />
               </div>
             </div>
+
+            {/* Delivery Partner Specific Fleet & Operational Fields */}
+            {isDelivery && (
+              <div className="profile-grid-2">
+                <div style={fieldGroup}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <label style={fieldLabel}>Rider Vehicle Type {isEditingProfile && '*'}</label>
+                    {!isEditingProfile && (
+                      <span style={{ fontSize: '0.72rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                        <Lock size={11} /> Locked (Click Edit)
+                      </span>
+                    )}
+                  </div>
+                  <div className={`profile-input-box ${!isEditingProfile ? 'profile-input-locked' : ''}`}>
+                    <Bike size={16} color={isEditingProfile ? '#059669' : '#94a3b8'} style={{ flexShrink: 0 }} />
+                    {isEditingProfile ? (
+                      <select
+                        value={vehicleType}
+                        onChange={(e) => setVehicleType(e.target.value)}
+                        className="profile-native-input"
+                        style={{ background: 'transparent', cursor: 'pointer', fontWeight: 600 }}
+                      >
+                        <option value="Two-Wheeler Bike">Two-Wheeler Motorcycle / Bike</option>
+                        <option value="Scooter">Scooter / Moped</option>
+                        <option value="Electric Vehicle (EV)">Electric Two-Wheeler (EV)</option>
+                        <option value="Commercial 3-Wheeler">Commercial 3-Wheeler Auto</option>
+                        <option value="Delivery Van">Delivery Cargo Van</option>
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        disabled
+                        value={vehicleType || 'Two-Wheeler Bike'}
+                        className="profile-native-input"
+                        style={{ color: '#0f172a', fontWeight: 600 }}
+                      />
+                    )}
+                  </div>
+                </div>
+
+                <div style={fieldGroup}>
+                  <label style={fieldLabel}>Assigned Hub / Service Territory</label>
+                  <div className="profile-input-box profile-input-locked">
+                    <MapPin size={16} color="#059669" style={{ flexShrink: 0 }} />
+                    <input
+                      type="text"
+                      disabled
+                      value="Central Indore Express Hub (PIN: 452001)"
+                      className="profile-native-input"
+                      style={{ color: '#0f172a', fontWeight: 600 }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Vendor Specific Store Branding Fields */}
+            {isVendor && (
+              <div className="profile-grid-2">
+                <div style={fieldGroup}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <label style={fieldLabel}>Merchant Store Name {isEditingProfile && '*'}</label>
+                    {!isEditingProfile && (
+                      <span style={{ fontSize: '0.72rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                        <Lock size={11} /> Locked (Click Edit)
+                      </span>
+                    )}
+                  </div>
+                  <div className={`profile-input-box ${!isEditingProfile ? 'profile-input-locked' : ''}`}>
+                    <Store size={16} color={isEditingProfile ? '#ea580c' : '#94a3b8'} style={{ flexShrink: 0 }} />
+                    <input
+                      type="text"
+                      disabled={!isEditingProfile}
+                      value={vendorStoreName}
+                      onChange={(e) => setVendorStoreName(e.target.value)}
+                      className="profile-native-input"
+                      placeholder="e.g. Aarav Luxury Handlooms"
+                      style={{ fontWeight: 600 }}
+                    />
+                  </div>
+                </div>
+
+                <div style={fieldGroup}>
+                  <label style={fieldLabel}>Marketplace Fulfillment Channel</label>
+                  <div className="profile-input-box profile-input-locked">
+                    <Truck size={16} color="#ea580c" style={{ flexShrink: 0 }} />
+                    <input
+                      type="text"
+                      disabled
+                      value="CASA Direct Hub Pickup & Courier Dispatch"
+                      className="profile-native-input"
+                      style={{ color: '#0f172a', fontWeight: 600 }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Avatar Section: File Upload, URL & Presets */}
             <div style={fieldGroup}>
@@ -951,7 +1181,228 @@ const UserProfilePage = () => {
         </div>
       )}
 
-      {/* TAB 2: SAVED DELIVERY ADDRESSES */}
+      {/* TAB 2 FOR DELIVERY PARTNER: RIDER HUB & PERFORMANCE */}
+      {activeSection === 'delivery-hub' && (
+        <div className="profile-content-card">
+          <div style={cardHeaderRow}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Truck size={18} color="#059669" />
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                  CASA Express Delivery Operations Hub
+                </h3>
+              </div>
+              <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '3px 0 0 0' }}>
+                Manage your active delivery runs, pickup queue from sellers, and doorstep settlements.
+              </p>
+            </div>
+
+            <Link
+              to="/delivery"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '8px 16px',
+                borderRadius: '10px',
+                background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                color: '#ffffff',
+                fontSize: '0.825rem',
+                fontWeight: 800,
+                textDecoration: 'none',
+                boxShadow: '0 3px 10px rgba(5, 150, 105, 0.28)',
+              }}
+            >
+              <ExternalLink size={14} />
+              <span>Launch Live Delivery Dashboard</span>
+            </Link>
+          </div>
+
+          {/* Quick Metrics & Payout Strip */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '12px',
+              marginBottom: '20px',
+            }}
+          >
+            <div
+              style={{
+                padding: '14px 16px',
+                borderRadius: '12px',
+                background: '#f0fdf4',
+                border: '1px solid #bbf7d0',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '4px',
+              }}
+            >
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#166534', textTransform: 'uppercase' }}>
+                Doorstep Payout Rate
+              </span>
+              <span style={{ fontSize: '1.4rem', fontWeight: 900, color: '#15803d' }}>₹65 / Order</span>
+              <span style={{ fontSize: '0.72rem', color: '#166534' }}>+ Weekly Fuel & Peak hour surge bonuses</span>
+            </div>
+
+            <div
+              style={{
+                padding: '14px 16px',
+                borderRadius: '12px',
+                background: '#eff6ff',
+                border: '1px solid #bfdbfe',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '4px',
+              }}
+            >
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#1e40af', textTransform: 'uppercase' }}>
+                Assigned Vehicle
+              </span>
+              <span style={{ fontSize: '1.1rem', fontWeight: 900, color: '#1d4ed8', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Bike size={18} /> {vehicleType || 'Two-Wheeler Bike'}
+              </span>
+              <span style={{ fontSize: '0.72rem', color: '#1e40af' }}>Fuel allowance eligible</span>
+            </div>
+
+            <div
+              style={{
+                padding: '14px 16px',
+                borderRadius: '12px',
+                background: '#faf5ff',
+                border: '1px solid #e9d5ff',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '4px',
+              }}
+            >
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6b21a8', textTransform: 'uppercase' }}>
+                Express Delivery SLA
+              </span>
+              <span style={{ fontSize: '1.25rem', fontWeight: 900, color: '#7e22ce' }}>Same-Day / 24h</span>
+              <span style={{ fontSize: '0.72rem', color: '#6b21a8' }}>98.4% on-time milestone rating</span>
+            </div>
+          </div>
+
+          {/* Flipkart-Style 4-Step Courier Protocols */}
+          <div
+            style={{
+              padding: '16px',
+              borderRadius: '14px',
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
+            }}
+          >
+            <h4 style={{ fontSize: '0.9rem', fontWeight: 800, color: '#0f172a', margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <PackageCheck size={16} color="#059669" />
+              Flipkart-Style Courier Field Workflow Checkpoints
+            </h4>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px' }}>
+              <div style={{ padding: '12px 14px', borderRadius: '10px', background: '#ffffff', border: '1px solid #e2e8f0' }}>
+                <strong style={{ fontSize: '0.82rem', color: '#0f172a', display: 'block', marginBottom: '3px' }}>1. Hub & Merchant Pickup</strong>
+                <span style={{ fontSize: '0.75rem', color: '#64748b', lineHeight: 1.4 }}>
+                  Collect packed parcels from CASA merchant hubs with tamper-proof security seals intact.
+                </span>
+              </div>
+              <div style={{ padding: '12px 14px', borderRadius: '10px', background: '#ffffff', border: '1px solid #e2e8f0' }}>
+                <strong style={{ fontSize: '0.82rem', color: '#0f172a', display: 'block', marginBottom: '3px' }}>2. Accept & Out for Delivery</strong>
+                <span style={{ fontSize: '0.75rem', color: '#64748b', lineHeight: 1.4 }}>
+                  Click "Accept Order" and switch status to "Out for delivery" to notify customer with live tracking.
+                </span>
+              </div>
+              <div style={{ padding: '12px 14px', borderRadius: '10px', background: '#ffffff', border: '1px solid #e2e8f0' }}>
+                <strong style={{ fontSize: '0.82rem', color: '#0f172a', display: 'block', marginBottom: '3px' }}>3. OTP Handshake & COD Collection</strong>
+                <span style={{ fontSize: '0.75rem', color: '#64748b', lineHeight: 1.4 }}>
+                  Verify delivery OTP from customer, collect exact cash on COD shipments, and complete handoff.
+                </span>
+              </div>
+            </div>
+
+            <div style={{ marginTop: '16px', textAlign: 'center' }}>
+              <Link
+                to="/delivery"
+                style={{
+                  ...primaryBtnStyle,
+                  background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                  textDecoration: 'none',
+                  padding: '10px 24px',
+                }}
+              >
+                <Truck size={16} /> Open Delivery Dashboard Now
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 2 FOR VENDOR: STORE & OPERATIONS HUB */}
+      {activeSection === 'vendor-hub' && (
+        <div className="profile-content-card">
+          <div style={cardHeaderRow}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Store size={18} color="#ea580c" />
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                  CASA Merchant Operations & Store Hub
+                </h3>
+              </div>
+              <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '3px 0 0 0' }}>
+                Manage incoming orders, catalog pricing, inventory stock, and courier handovers.
+              </p>
+            </div>
+
+            <Link
+              to="/vendor"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '8px 16px',
+                borderRadius: '10px',
+                background: 'linear-gradient(135deg, #ea580c 0%, #c2410c 100%)',
+                color: '#ffffff',
+                fontSize: '0.825rem',
+                fontWeight: 800,
+                textDecoration: 'none',
+                boxShadow: '0 3px 10px rgba(234, 88, 12, 0.28)',
+              }}
+            >
+              <ExternalLink size={14} />
+              <span>Open Vendor Dashboard</span>
+            </Link>
+          </div>
+
+          <div
+            style={{
+              padding: '16px',
+              borderRadius: '14px',
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              textAlign: 'center',
+            }}
+          >
+            <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#0f172a', margin: '0 0 8px 0' }}>
+              Merchant Fulfillment Workstation
+            </h4>
+            <p style={{ fontSize: '0.8rem', color: '#64748b', maxWidth: '500px', margin: '0 auto 16px' }}>
+              Process customer orders through Confirmed → Processing → Packed. Once marked Packed, CASA Express Couriers automatically receive the pickup dispatch!
+            </p>
+            <Link
+              to="/vendor"
+              style={{
+                ...primaryBtnStyle,
+                background: 'linear-gradient(135deg, #ea580c 0%, #c2410c 100%)',
+                textDecoration: 'none',
+                padding: '10px 24px',
+              }}
+            >
+              <Store size={16} /> Manage Store & Orders
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 2: SAVED DELIVERY ADDRESSES (For regular shoppers) */}
       {activeSection === 'addresses' && (
         <div className="profile-content-card">
           <div style={cardHeaderRow}>
@@ -1605,8 +2056,60 @@ const adminBadge = {
   fontSize: '0.68rem',
   fontWeight: 800,
   padding: '2px 7px',
-  borderRadius: '999px',
+  borderRadius: '9999px',
   border: '1px solid #fde68a',
+};
+
+const deliveryBadge = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '5px',
+  background: '#ecfdf5',
+  color: '#065f46',
+  fontSize: '0.68rem',
+  fontWeight: 800,
+  padding: '3px 8px',
+  borderRadius: '9999px',
+  border: '1px solid #a7f3d0',
+};
+
+const vendorBadge = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '5px',
+  background: '#fff7ed',
+  color: '#c2410c',
+  fontSize: '0.68rem',
+  fontWeight: 800,
+  padding: '3px 8px',
+  borderRadius: '9999px',
+  border: '1px solid #fed7aa',
+};
+
+const dutyBadge = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '4px',
+  background: '#f0fdf4',
+  color: '#15803d',
+  fontSize: '0.68rem',
+  fontWeight: 800,
+  padding: '3px 8px',
+  borderRadius: '9999px',
+  border: '1px solid #bbf7d0',
+};
+
+const vehicleBadge = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '4px',
+  background: '#f0f9ff',
+  color: '#0369a1',
+  fontSize: '0.68rem',
+  fontWeight: 800,
+  padding: '3px 8px',
+  borderRadius: '9999px',
+  border: '1px solid #bae6fd',
 };
 
 const shopperBadge = {
@@ -1618,7 +2121,7 @@ const shopperBadge = {
   fontSize: '0.68rem',
   fontWeight: 800,
   padding: '2px 7px',
-  borderRadius: '999px',
+  borderRadius: '9999px',
   border: '1px solid #c7d2fe',
 };
 
