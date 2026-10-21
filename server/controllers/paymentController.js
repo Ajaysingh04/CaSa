@@ -86,6 +86,15 @@ exports.verifyPayment = async (req, res, next) => {
         return res.status(404).json({ success: false, message: 'Order not found' });
       }
 
+      // Idempotency: If order is already verified and marked as paid, return early
+      if (order.paymentStatus === 'paid') {
+        return res.status(200).json({
+          success: true,
+          message: 'Payment already verified (idempotent)',
+          data: order
+        });
+      }
+
       order.paymentStatus = 'paid';
       order.orderStatus = 'Confirmed';
       order.paymentDetails = {
@@ -95,9 +104,12 @@ exports.verifyPayment = async (req, res, next) => {
         paidAt: new Date()
       };
       order.statusHistory.push({
+        fromStatus: 'Pending',
         status: 'Confirmed',
+        timestamp: new Date(),
         note: `Payment verified successfully via ${mode === 'simulated_test_mode' ? 'Razorpay Simulated Sandbox' : 'Razorpay Gateway'} (Ref: ${razorpayPaymentId})`,
-        updatedBy: 'Payment Gateway'
+        updatedBy: 'Payment Gateway',
+        reason: 'Payment verified and captured'
       });
 
       await order.save();
@@ -121,6 +133,14 @@ exports.verifyPayment = async (req, res, next) => {
       const order = dataStore.orders.find(o => o._id === orderId || o.orderNumber === orderId);
       if (!order) {
         return res.status(404).json({ success: false, message: 'Order not found' });
+      }
+
+      if (order.paymentStatus === 'paid') {
+        return res.status(200).json({
+          success: true,
+          message: 'Payment already verified (idempotent)',
+          data: order
+        });
       }
 
       order.paymentStatus = 'paid';

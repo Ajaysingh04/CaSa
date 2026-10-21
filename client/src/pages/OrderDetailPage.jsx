@@ -198,6 +198,35 @@ const OrderDetailPage = () => {
           </div>
         )}
 
+        {/* Delivery Attempt Failed Alert */}
+        {order.orderStatus === 'Delivery Attempt Failed' && (
+          <div style={{ ...cancelledAlertBox, background: '#fef2f2', border: '1px solid #fee2e2' }}>
+            <AlertTriangle size={20} color="#dc2626" />
+            <div>
+              <strong style={{ color: '#991b1b' }}>Doorstep Delivery Attempt Failed</strong>
+              <div style={{ fontSize: '0.85rem', color: '#b91c1c', marginTop: '2px' }}>
+                Reason: {order.failedAttemptReason || 'Customer unreachable / premises locked'}
+              </div>
+              <div style={{ fontSize: '0.78rem', color: '#7f1d1d', marginTop: '4px' }}>
+                CASA Express Courier has scheduled an automatic reattempt for tomorrow. You do not need to take any action.
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* RTO Alert */}
+        {order.orderStatus === 'RTO - Return to Hub' && (
+          <div style={{ ...cancelledAlertBox, background: '#fff7ed', border: '1px solid #ffedd5' }}>
+            <RotateCcw size={20} color="#ea580c" />
+            <div>
+              <strong style={{ color: '#9a3412' }}>Shipment Return-To-Origin (RTO) Initiated</strong>
+              <div style={{ fontSize: '0.85rem', color: '#c2410c', marginTop: '2px' }}>
+                The package is being safely routed back to the merchant fulfillment hub. Any online payment will be refunded once the hub receives the parcel.
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Return & Refund in Progress Alert */}
         {order.orderStatus === 'Return requested' && (
           <div style={{ ...cancelledAlertBox, background: '#fffbeb', border: '1px solid #fef3c7' }}>
@@ -252,9 +281,26 @@ const OrderDetailPage = () => {
               <div key={idx} style={orderItemRow}>
                 <img src={item.image} alt={item.name} style={orderItemImg} />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <Link to={`/product/${item.slug}`} style={itemTitleLink}>
-                    {item.name}
-                  </Link>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                    <Link to={`/product/${item.slug}`} style={itemTitleLink}>
+                      {item.name}
+                    </Link>
+                    {item.shipmentStatus && (
+                      <span
+                        style={{
+                          fontSize: '0.72rem',
+                          fontWeight: 700,
+                          padding: '2px 8px',
+                          borderRadius: '6px',
+                          background: item.shipmentStatus === 'Delivered' ? '#dcfce7' : item.shipmentStatus === 'Cancelled' ? '#fee2e2' : '#dbeafe',
+                          color: item.shipmentStatus === 'Delivered' ? '#15803d' : item.shipmentStatus === 'Cancelled' ? '#dc2626' : '#1d4ed8',
+                          flexShrink: 0
+                        }}
+                      >
+                        {item.shipmentStatus}
+                      </span>
+                    )}
+                  </div>
                   {item.selectedVariant && Object.keys(item.selectedVariant).length > 0 && (
                     <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '2px' }}>
                       {Object.entries(item.selectedVariant)
@@ -270,21 +316,33 @@ const OrderDetailPage = () => {
             ))}
           </div>
 
-          {/* Status timeline notes */}
+          {/* Status timeline notes with actor & reason */}
           {order.statusHistory && order.statusHistory.length > 0 && (
             <div style={{ marginTop: '24px', borderTop: '1px solid #f1f5f9', paddingTop: '16px' }}>
               <h4 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '12px' }}>
-                Shipment Activity Log
+                Shipment Activity Log & Audit Trail
               </h4>
               <div style={activityLogList}>
                 {order.statusHistory.map((hist, i) => (
                   <div key={i} style={activityLogRow}>
                     <div style={activityDot} />
-                    <div>
-                      <strong style={{ fontSize: '0.85rem', color: '#0f172a' }}>{hist.status}</strong>
-                      <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <strong style={{ fontSize: '0.85rem', color: '#0f172a' }}>{hist.status}</strong>
+                        {hist.updatedBy && (
+                          <span style={{ fontSize: '0.7rem', color: '#64748b', background: '#f1f5f9', padding: '1px 6px', borderRadius: '4px' }}>
+                            by {hist.updatedBy}
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: '0.78rem', color: '#475569', marginTop: '2px' }}>
                         {formatDateTime(hist.timestamp)} {hist.note ? `— ${hist.note}` : ''}
                       </div>
+                      {hist.reason && (
+                        <div style={{ fontSize: '0.75rem', color: '#991b1b', fontStyle: 'italic', marginTop: '2px' }}>
+                          Reason: {hist.reason}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}

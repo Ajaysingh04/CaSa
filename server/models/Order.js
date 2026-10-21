@@ -12,14 +12,39 @@ const orderItemSchema = new mongoose.Schema({
   price: { type: Number, required: true },
   quantity: { type: Number, required: true, min: 1 },
   selectedVariant: { type: Map, of: String, default: {} },
-  subtotal: { type: Number, required: true }
+  subtotal: { type: Number, required: true },
+  vendor: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  shipmentStatus: {
+    type: String,
+    enum: [
+      'Confirmed',
+      'Processing',
+      'Packed',
+      'Ready for pickup',
+      'Picked up',
+      'In transit',
+      'Shipped',
+      'Out for delivery',
+      'Delivered',
+      'Delivery Attempt Failed',
+      'RTO - Return to Hub',
+      'Cancelled'
+    ],
+    default: 'Confirmed'
+  },
+  trackingNumber: { type: String, default: '' }
 });
 
 const statusHistorySchema = new mongoose.Schema({
+  fromStatus: { type: String, default: '' },
   status: { type: String, required: true },
   timestamp: { type: Date, default: Date.now },
   note: { type: String, default: '' },
-  updatedBy: { type: String, default: 'System' }
+  updatedBy: { type: String, default: 'System' },
+  reason: { type: String, default: '' }
 });
 
 const orderSchema = new mongoose.Schema(
@@ -28,6 +53,10 @@ const orderSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true
+    },
+    idempotencyKey: {
+      type: String,
+      sparse: true
     },
     user: {
       type: mongoose.Schema.Types.ObjectId,
@@ -97,13 +126,22 @@ const orderSchema = new mongoose.Schema(
         'Confirmed',
         'Processing',
         'Packed',
+        'Ready for pickup',
+        'Picked up',
+        'In transit',
         'Shipped',
         'Out for delivery',
         'Delivered',
         'Delivery Attempt Failed',
         'RTO - Return to Hub',
+        'RTO Completed',
+        'Cancellation requested',
         'Cancelled',
         'Return requested',
+        'Return approved',
+        'Return picked up',
+        'Return received',
+        'Refund pending',
         'Refunded'
       ],
       default: 'Confirmed'

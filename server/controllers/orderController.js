@@ -4,28 +4,28 @@ const Cart = require('../models/Cart');
 const Coupon = require('../models/Coupon');
 const { getDBStatus } = require('../config/db');
 const dataStore = require('../services/dataStore');
+const {
+  applyStatusTransition,
+  canTransition,
+  isAuthorizedForTransition,
+  recalculateMultiVendorOrderStatus
+} = require('../services/orderLifecycleService');
 
-// Helper to validate status transitions
-const validTransitions = {
-  Pending: ['Confirmed', 'Cancelled'],
-  Confirmed: ['Processing', 'Cancelled'],
-  Processing: ['Packed', 'Cancelled'],
-  Packed: ['Shipped', 'Cancelled'],
-  Shipped: ['Out for delivery'],
-  'Out for delivery': ['Delivered'],
-  Delivered: ['Return requested'],
-  'Return requested': ['Refunded', 'Delivered'],
-  Cancelled: [],
-  Refunded: []
-};
-
-// @desc    Create new order
+// @desc    Create new order with idempotency check
 // @route   POST /api/orders
 // @access  Private
 exports.createOrder = async (req, res, next) => {
   try {
     const userId = req.user._id;
-    const { items, shippingAddress, paymentMethod = 'razorpay', couponCode } = req.body;
+    const {
+      items,
+      shippingAddress,
+      paymentMethod = 'razorpay',
+      couponCode,
+      idempotencyKey
+    } = req.body;
+
+    const key = idempotencyKey || req.headers['x-idempotency-key'];
 
     if (!items || items.length === 0) {
       return res.status(400).json({ success: false, message: 'No order items specified' });
@@ -35,6 +35,18 @@ exports.createOrder = async (req, res, next) => {
     }
 
     if (getDBStatus()) {
+      // Idempotency: Return existing order if already submitted
+      if (key) {
+        const existingOrder = await Order.findOne({ user: userId, idempotencyKey: key });
+        if (existingOrder) {
+          return res.status(200).json({
+            success: true,
+            message: 'Order already created (idempotent response)',
+            data: existingOrder
+          });
+        }
+      }
+
       // Validate stock and compute real price server-side
       const validatedItems = [];
       let itemsPrice = 0;
@@ -67,7 +79,9 @@ exports.createOrder = async (req, res, next) => {
           price: unitPrice,
           quantity: item.quantity,
           selectedVariant: item.selectedVariant || {},
-          subtotal
+          subtotal,
+          vendor: product.vendor || undefined,
+          shipmentStatus: 'Confirmed'
         });
       }
 
@@ -94,11 +108,12 @@ exports.createOrder = async (req, res, next) => {
       const totalPrice = Math.max(0, itemsPrice + shippingPrice - discountPrice);
       const orderNumber = `CASA-${Date.now().toString().slice(-6)}-${Math.floor(1000 + Math.random() * 9000)}`;
 
-      // Initial status
+      // Initial status: online orders start in Pending (awaiting payment verification); COD is Confirmed
       const initialStatus = paymentMethod === 'cod' ? 'Confirmed' : 'Pending';
 
       const order = await Order.create({
         orderNumber,
+        idempotencyKey: key || undefined,
         user: userId,
         items: validatedItems,
         shippingAddress,
@@ -114,8 +129,11 @@ exports.createOrder = async (req, res, next) => {
         deliveryProofOtp: Math.floor(1000 + Math.random() * 9000).toString(),
         statusHistory: [
           {
+            fromStatus: '',
             status: initialStatus,
-            note: paymentMethod === 'cod' ? 'Order confirmed with Cash on Delivery' : 'Order created, awaiting payment verification'
+            timestamp: new Date(),
+            note: paymentMethod === 'cod' ? 'Order confirmed with Cash on Delivery' : 'Order created, awaiting payment verification',
+            updatedBy: `${req.user.name} (Customer)`
           }
         ],
         estimatedDeliveryDate: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000)
@@ -134,6 +152,17 @@ exports.createOrder = async (req, res, next) => {
       return res.status(201).json({ success: true, data: order });
     } else {
       // In-Memory store
+      if (key) {
+        const existingOrder = (dataStore.orders || []).find(o => o.user === userId && o.idempotencyKey === key);
+        if (existingOrder) {
+          return res.status(200).json({
+            success: true,
+            message: 'Order already created (idempotent response)',
+            data: existingOrder
+          });
+        }
+      }
+
       const validatedItems = [];
       let itemsPrice = 0;
 
@@ -166,7 +195,9 @@ exports.createOrder = async (req, res, next) => {
           price: unitPrice,
           quantity: item.quantity,
           selectedVariant: item.selectedVariant || {},
-          subtotal
+          subtotal,
+          vendor: product.vendor,
+          shipmentStatus: 'Confirmed'
         });
       }
 
@@ -184,7 +215,6 @@ exports.createOrder = async (req, res, next) => {
           } else if (coupon.discountType === 'fixed') {
             discountPrice = coupon.discountAmount;
           }
-          coupon.usedCount = (coupon.usedCount || 0) + 1;
         }
       }
 
@@ -195,6 +225,7 @@ exports.createOrder = async (req, res, next) => {
       const newOrder = {
         _id: dataStore.generateId(),
         orderNumber,
+        idempotencyKey: key,
         user: userId,
         items: validatedItems,
         shippingAddress,
@@ -210,28 +241,24 @@ exports.createOrder = async (req, res, next) => {
         deliveryProofOtp: Math.floor(1000 + Math.random() * 9000).toString(),
         statusHistory: [
           {
+            fromStatus: '',
             status: initialStatus,
             timestamp: new Date().toISOString(),
-            note: paymentMethod === 'cod' ? 'Order confirmed with Cash on Delivery' : 'Order created, awaiting payment verification'
+            note: paymentMethod === 'cod' ? 'Order confirmed with Cash on Delivery' : 'Order created, awaiting payment verification',
+            updatedBy: `${req.user.name} (Customer)`
           }
         ],
         estimatedDeliveryDate: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString(),
         createdAt: new Date().toISOString()
       };
 
-      // Deduct stock
+      // Deduct stock in memory
       for (const item of validatedItems) {
-        const prod = dataStore.products.find(p => p._id === item.product);
-        if (prod) {
-          prod.stock = Math.max(0, prod.stock - item.quantity);
-        }
+        const p = dataStore.products.find(prod => prod._id === item.product);
+        if (p) p.stock -= item.quantity;
       }
 
       dataStore.orders.unshift(newOrder);
-
-      // Clear user cart
-      dataStore.carts.set(userId, { items: [], coupon: null });
-
       return res.status(201).json({ success: true, data: newOrder });
     }
   } catch (err) {
@@ -239,7 +266,7 @@ exports.createOrder = async (req, res, next) => {
   }
 };
 
-// @desc    Get user orders
+// @desc    Get logged in user orders
 // @route   GET /api/orders/myorders
 // @access  Private
 exports.getMyOrders = async (req, res, next) => {
@@ -250,7 +277,7 @@ exports.getMyOrders = async (req, res, next) => {
       const orders = await Order.find({ user: userId }).sort({ createdAt: -1 });
       return res.status(200).json({ success: true, count: orders.length, data: orders });
     } else {
-      const orders = dataStore.orders.filter(o => o.user === userId);
+      const orders = (dataStore.orders || []).filter(o => o.user === userId);
       return res.status(200).json({ success: true, count: orders.length, data: orders });
     }
   } catch (err) {
@@ -271,19 +298,23 @@ exports.getOrderById = async (req, res, next) => {
         return res.status(404).json({ success: false, message: 'Order not found' });
       }
 
-      // Check permission: owner or admin
-      if (order.user._id.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+      // Check permission: owner, admin, or assigned delivery/vendor
+      const isOwner = order.user._id.toString() === req.user._id.toString();
+      const isPrivileged = ['admin', 'vendor', 'delivery'].includes(req.user.role);
+      if (!isOwner && !isPrivileged) {
         return res.status(403).json({ success: false, message: 'Not authorized to view this order' });
       }
 
       return res.status(200).json({ success: true, data: order });
     } else {
-      const order = dataStore.orders.find(o => o._id === id || o.orderNumber === id);
+      const order = (dataStore.orders || []).find(o => o._id === id || o.orderNumber === id);
       if (!order) {
         return res.status(404).json({ success: false, message: 'Order not found' });
       }
 
-      if (order.user !== req.user._id && req.user.role !== 'admin') {
+      const isOwner = order.user === req.user._id;
+      const isPrivileged = ['admin', 'vendor', 'delivery'].includes(req.user.role);
+      if (!isOwner && !isPrivileged) {
         return res.status(403).json({ success: false, message: 'Not authorized to view this order' });
       }
 
@@ -294,7 +325,129 @@ exports.getOrderById = async (req, res, next) => {
   }
 };
 
-// @desc    Cancel order (if not already shipped)
+// @desc    Update order status through central state machine
+// @route   PUT /api/orders/:id/status
+// @access  Private (Admin / Vendor / Delivery / Customer)
+exports.updateOrderStatus = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { status, note = '', reason = '' } = req.body;
+
+    if (!status) {
+      return res.status(400).json({ success: false, message: 'Target status is required.' });
+    }
+
+    if (getDBStatus()) {
+      const order = await Order.findById(id);
+      if (!order) {
+        return res.status(404).json({ success: false, message: 'Order not found' });
+      }
+
+      try {
+        applyStatusTransition(order, status, req.user.name, req.user.role, note, reason);
+      } catch (err) {
+        return res.status(400).json({ success: false, message: err.message });
+      }
+
+      await order.save();
+      return res.status(200).json({ success: true, data: order });
+    } else {
+      const order = (dataStore.orders || []).find(o => o._id === id || o.orderNumber === id);
+      if (!order) {
+        return res.status(404).json({ success: false, message: 'Order not found' });
+      }
+
+      try {
+        applyStatusTransition(order, status, req.user.name, req.user.role, note, reason);
+      } catch (err) {
+        return res.status(400).json({ success: false, message: err.message });
+      }
+
+      return res.status(200).json({ success: true, data: order });
+    }
+  } catch (err) {
+    next(err);
+  }
+};
+
+// @desc    Update individual item shipment status (multi-vendor partial shipments)
+// @route   PUT /api/orders/:id/items/:itemId/shipment
+// @access  Private (Vendor / Admin)
+exports.updateItemShipmentStatus = async (req, res, next) => {
+  try {
+    const { id, itemId } = req.params;
+    const { shipmentStatus, trackingNumber } = req.body;
+
+    if (!shipmentStatus) {
+      return res.status(400).json({ success: false, message: 'Shipment status is required.' });
+    }
+
+    if (getDBStatus()) {
+      const order = await Order.findById(id);
+      if (!order) {
+        return res.status(404).json({ success: false, message: 'Order not found' });
+      }
+
+      const item = order.items.id(itemId) || order.items.find(i => i._id.toString() === itemId);
+      if (!item) {
+        return res.status(404).json({ success: false, message: 'Item not found in order' });
+      }
+
+      // Check vendor authorization if actor is vendor
+      if (req.user.role === 'vendor' && item.vendor && item.vendor.toString() !== req.user._id.toString()) {
+        return res.status(403).json({ success: false, message: 'Not authorized to modify another vendor shipment' });
+      }
+
+      item.shipmentStatus = shipmentStatus;
+      if (trackingNumber) item.trackingNumber = trackingNumber;
+
+      // Recalculate root order status
+      const newOrderStatus = recalculateMultiVendorOrderStatus(order);
+      if (newOrderStatus !== order.orderStatus) {
+        applyStatusTransition(
+          order,
+          newOrderStatus,
+          req.user.name,
+          req.user.role,
+          `Item "${item.name}" updated to ${shipmentStatus}`
+        );
+      }
+
+      await order.save();
+      return res.status(200).json({ success: true, data: order });
+    } else {
+      const order = (dataStore.orders || []).find(o => o._id === id || o.orderNumber === id);
+      if (!order) {
+        return res.status(404).json({ success: false, message: 'Order not found' });
+      }
+
+      const item = order.items.find(i => i._id === itemId || i.product === itemId);
+      if (!item) {
+        return res.status(404).json({ success: false, message: 'Item not found in order' });
+      }
+
+      item.shipmentStatus = shipmentStatus;
+      if (trackingNumber) item.trackingNumber = trackingNumber;
+
+      const newOrderStatus = recalculateMultiVendorOrderStatus(order);
+      if (newOrderStatus !== order.orderStatus) {
+        applyStatusTransition(
+          order,
+          newOrderStatus,
+          req.user.name,
+          req.user.role,
+          `Item "${item.name}" updated to ${shipmentStatus}`
+        );
+      }
+
+      return res.status(200).json({ success: true, data: order });
+    }
+  } catch (err) {
+    next(err);
+  }
+};
+
+// @desc    Cancel order (if permitted by lifecycle rules)
 // @route   PUT /api/orders/:id/cancel
 // @access  Private
 exports.cancelOrder = async (req, res, next) => {
@@ -320,13 +473,14 @@ exports.cancelOrder = async (req, res, next) => {
         });
       }
 
-      order.orderStatus = 'Cancelled';
-      order.cancellationReason = reason;
-      order.statusHistory.push({
-        status: 'Cancelled',
-        note: reason,
-        updatedBy: req.user.name
-      });
+      applyStatusTransition(
+        order,
+        'Cancelled',
+        req.user.name,
+        req.user.role,
+        reason,
+        reason
+      );
 
       // Restore inventory
       for (const item of order.items) {
@@ -338,7 +492,7 @@ exports.cancelOrder = async (req, res, next) => {
       await order.save();
       return res.status(200).json({ success: true, data: order });
     } else {
-      const order = dataStore.orders.find(o => o._id === id || o.orderNumber === id);
+      const order = (dataStore.orders || []).find(o => o._id === id || o.orderNumber === id);
       if (!order) {
         return res.status(404).json({ success: false, message: 'Order not found' });
       }
@@ -355,21 +509,18 @@ exports.cancelOrder = async (req, res, next) => {
         });
       }
 
-      order.orderStatus = 'Cancelled';
-      order.cancellationReason = reason;
-      order.statusHistory.push({
-        status: 'Cancelled',
-        timestamp: new Date().toISOString(),
-        note: reason,
-        updatedBy: req.user.name
-      });
+      applyStatusTransition(
+        order,
+        'Cancelled',
+        req.user.name,
+        req.user.role,
+        reason,
+        reason
+      );
 
-      // Restore stock
       for (const item of order.items) {
-        const prod = dataStore.products.find(p => p._id === item.product);
-        if (prod) {
-          prod.stock += item.quantity;
-        }
+        const prod = (dataStore.products || []).find(p => p._id === item.product);
+        if (prod) prod.stock += item.quantity;
       }
 
       return res.status(200).json({ success: true, data: order });
@@ -414,20 +565,20 @@ exports.requestReturn = async (req, res, next) => {
         });
       }
 
-      order.orderStatus = 'Return requested';
-      order.returnReason = reason;
       order.returnType = returnType;
-      order.refundStatus = 'initiated';
-      order.statusHistory.push({
-        status: 'Return requested',
-        note: `Customer requested ${returnType}: ${reason}`,
-        updatedBy: req.user.name || 'Customer'
-      });
+      applyStatusTransition(
+        order,
+        'Return requested',
+        req.user.name,
+        req.user.role,
+        `Customer requested ${returnType}: ${reason}`,
+        reason
+      );
 
       await order.save();
       return res.status(200).json({ success: true, data: order });
     } else {
-      const order = dataStore.orders.find(o => o._id === id || o.orderNumber === id);
+      const order = (dataStore.orders || []).find(o => o._id === id || o.orderNumber === id);
       if (!order) {
         return res.status(404).json({ success: false, message: 'Order not found' });
       }
@@ -443,17 +594,15 @@ exports.requestReturn = async (req, res, next) => {
         });
       }
 
-      order.orderStatus = 'Return requested';
-      order.returnReason = reason;
       order.returnType = returnType;
-      order.refundStatus = 'initiated';
-      order.statusHistory = order.statusHistory || [];
-      order.statusHistory.push({
-        status: 'Return requested',
-        timestamp: new Date().toISOString(),
-        note: `Customer requested ${returnType}: ${reason}`,
-        updatedBy: req.user.name || 'Customer'
-      });
+      applyStatusTransition(
+        order,
+        'Return requested',
+        req.user.name,
+        req.user.role,
+        `Customer requested ${returnType}: ${reason}`,
+        reason
+      );
 
       return res.status(200).json({ success: true, data: order });
     }
