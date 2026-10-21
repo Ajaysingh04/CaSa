@@ -260,19 +260,56 @@ const Header = ({ onToggleMobileMenu }) => {
             display: flex !important;
           }
         }
-        @media (max-width: 640px) {
+        @media (max-width: 768px) {
           .header-container-responsive {
-            height: 62px !important;
-            gap: 10px !important;
+            display: flex !important;
+            flex-wrap: wrap !important;
+            height: auto !important;
+            min-height: 58px !important;
+            padding-top: 8px !important;
+            padding-bottom: 8px !important;
+            column-gap: 8px !important;
+            row-gap: 8px !important;
+            align-items: center !important;
+          }
+          .header-mobile-menu-btn {
+            order: 1 !important;
+          }
+          .header-logo-container {
+            order: 2 !important;
           }
           .header-logo-text {
+            display: flex !important;
+          }
+          .header-logo-text span:last-child {
             display: none !important;
           }
           .header-action-group-responsive {
-            gap: 8px !important;
+            order: 3 !important;
+            margin-left: auto !important;
+            gap: 10px !important;
+          }
+          .header-action-label {
+            display: none !important;
           }
           .header-search-container {
-            min-width: 0 !important;
+            order: 4 !important;
+            flex: 0 0 100% !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            margin-top: 2px !important;
+          }
+          .header-search-form {
+            width: 100% !important;
+            border-radius: 10px !important;
+            box-shadow: 0 1px 4px rgba(15, 23, 42, 0.05) !important;
+          }
+          .header-search-input {
+            padding: 9px 14px !important;
+            font-size: 0.875rem !important;
+          }
+          .header-search-btn {
+            padding: 9px 16px !important;
           }
         }
       `}</style>
@@ -287,7 +324,7 @@ const Header = ({ onToggleMobileMenu }) => {
         </button>
 
         {/* CASA Logo */}
-        <Link to="/" style={logoContainerStyle}>
+        <Link to="/" className="header-logo-container" style={logoContainerStyle}>
           <div style={{ ...logoMarkStyle, background: primaryColor || '#1d4ed8' }}>
             {(storeName || 'C')[0]?.toUpperCase()}
           </div>
@@ -328,9 +365,10 @@ const Header = ({ onToggleMobileMenu }) => {
 
         {/* Live Search Bar */}
         <div className="header-search-container" style={searchContainerStyle} ref={searchRef}>
-          <form onSubmit={handleSearchSubmit} style={searchFormStyle}>
+          <form onSubmit={handleSearchSubmit} className="header-search-form" style={searchFormStyle}>
             <input
               type="text"
+              className="header-search-input"
               placeholder={t('searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -339,6 +377,7 @@ const Header = ({ onToggleMobileMenu }) => {
             />
             <button
               type="submit"
+              className="header-search-btn"
               style={{ ...searchBtnStyle, background: primaryColor || '#1d4ed8' }}
               aria-label="Search"
             >
@@ -665,6 +704,7 @@ const searchContainerStyle = {
   position: 'relative',
   flex: 1,
   maxWidth: '620px',
+  minWidth: 0,
 };
 
 const searchFormStyle = {
@@ -674,7 +714,8 @@ const searchFormStyle = {
   borderRadius: '10px',
   border: '2px solid #cbd5e1',
   overflow: 'hidden',
-  transition: 'border-color 0.2s',
+  transition: 'border-color 0.2s, box-shadow 0.2s',
+  width: '100%',
 };
 
 const searchInputStyle = {
@@ -682,6 +723,7 @@ const searchInputStyle = {
   outline: 'none',
   padding: '10px 16px',
   width: '100%',
+  minWidth: 0,
   fontSize: '0.875rem',
   color: '#0f172a',
 };
