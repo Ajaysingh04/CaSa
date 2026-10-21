@@ -7,6 +7,7 @@ const Refund = require('../models/Refund');
 const ReturnRequest = require('../models/ReturnRequest');
 const Shipment = require('../models/Shipment');
 const Vendor = require('../models/Vendor');
+const AuditLog = require('../models/AuditLog');
 const AuditService = require('../services/auditService');
 const { getDBStatus } = require('../config/db');
 const dataStore = require('../services/dataStore');
@@ -840,12 +841,14 @@ exports.deleteProduct = async (req, res, next) => {
   }
 };
 
-// @desc    Get all registered users with role and search filter
+// @desc    Get all registered users with role, search filter and pagination
 // @route   GET /api/admin/users
 // @access  Private/Admin
 exports.getAllUsers = async (req, res, next) => {
   try {
-    const { role, search } = req.query;
+    const { role, search, page = 1, limit = 50 } = req.query;
+    const pageNum = parseInt(page, 10);
+    const limitNum = parseInt(limit, 10);
 
     if (getDBStatus()) {
       const query = {};
@@ -860,8 +863,21 @@ exports.getAllUsers = async (req, res, next) => {
         ];
       }
 
-      const users = await User.find(query).select('-password').sort({ createdAt: -1 });
-      return res.status(200).json({ success: true, count: users.length, data: users });
+      const total = await User.countDocuments(query);
+      const users = await User.find(query)
+        .select('-password')
+        .sort({ createdAt: -1 })
+        .skip((pageNum - 1) * limitNum)
+        .limit(limitNum);
+
+      return res.status(200).json({
+        success: true,
+        count: users.length,
+        total,
+        page: pageNum,
+        pages: Math.ceil(total / limitNum) || 1,
+        data: users
+      });
     } else {
       let users = dataStore.users.map(u => {
         const { password, ...safe } = u;
@@ -879,7 +895,72 @@ exports.getAllUsers = async (req, res, next) => {
         );
       }
 
-      return res.status(200).json({ success: true, count: users.length, data: users });
+      const total = users.length;
+      const paginated = users.slice((pageNum - 1) * limitNum, pageNum * limitNum);
+
+      return res.status(200).json({
+        success: true,
+        count: paginated.length,
+        total,
+        page: pageNum,
+        pages: Math.ceil(total / limitNum) || 1,
+        data: paginated
+      });
+    }
+  } catch (err) {
+    next(err);
+  }
+};
+
+// @desc    Get system audit logs with pagination and filtering
+// @route   GET /api/admin/audit-logs
+// @access  Private/Admin
+exports.getAuditLogs = async (req, res, next) => {
+  try {
+    const { action, entityType, search, page = 1, limit = 25 } = req.query;
+    const pageNum = parseInt(page, 10);
+    const limitNum = parseInt(limit, 10);
+
+    if (getDBStatus()) {
+      const query = {};
+      if (action && action !== 'ALL') {
+        query.action = action;
+      }
+      if (entityType && entityType !== 'ALL') {
+        query.entityType = entityType;
+      }
+      if (search) {
+        query.$or = [
+          { entityId: { $regex: search, $options: 'i' } },
+          { performedByName: { $regex: search, $options: 'i' } },
+          { reason: { $regex: search, $options: 'i' } },
+          { action: { $regex: search, $options: 'i' } }
+        ];
+      }
+
+      const total = await AuditLog.countDocuments(query);
+      const logs = await AuditLog.find(query)
+        .sort({ createdAt: -1 })
+        .skip((pageNum - 1) * limitNum)
+        .limit(limitNum);
+
+      return res.status(200).json({
+        success: true,
+        count: logs.length,
+        total,
+        page: pageNum,
+        pages: Math.ceil(total / limitNum) || 1,
+        data: logs
+      });
+    } else {
+      return res.status(200).json({
+        success: true,
+        count: 0,
+        total: 0,
+        page: 1,
+        pages: 1,
+        data: []
+      });
     }
   } catch (err) {
     next(err);

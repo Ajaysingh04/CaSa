@@ -191,3 +191,101 @@ exports.verifyPayment = async (req, res, next) => {
     next(err);
   }
 };
+
+// @desc    Handle Razorpay Payment Gateway Webhook
+// @route   POST /api/payments/webhook
+// @access  Public (Signature-Verified)
+exports.handlePaymentWebhook = async (req, res, next) => {
+  try {
+    const signature = req.headers['x-razorpay-signature'];
+    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || process.env.RAZORPAY_KEY_SECRET;
+
+    if (!signature && webhookSecret && !webhookSecret.includes('placeholder')) {
+      return res.status(400).json({ success: false, message: 'Missing Razorpay signature header' });
+    }
+
+    if (webhookSecret && !webhookSecret.includes('placeholder') && signature) {
+      const crypto = require('crypto');
+      const expectedSignature = crypto
+        .createHmac('sha256', webhookSecret)
+        .update(typeof req.body === 'string' ? req.body : JSON.stringify(req.body))
+        .digest('hex');
+
+      if (expectedSignature !== signature) {
+        return res.status(400).json({ success: false, message: 'Invalid webhook signature' });
+      }
+    }
+
+    const event = req.body?.event;
+    const payload = req.body?.payload;
+
+    if (event === 'payment.captured' || event === 'order.paid') {
+      const paymentEntity = payload?.payment?.entity || {};
+      const rzpOrderId = paymentEntity.order_id;
+      const rzpPaymentId = paymentEntity.id;
+      const orderId = paymentEntity.notes?.orderId;
+
+      if (getDBStatus()) {
+        const query = orderId ? { _id: orderId } : { 'paymentDetails.razorpayOrderId': rzpOrderId };
+        const order = await Order.findOne(query);
+
+        if (order && order.paymentStatus !== 'paid') {
+          order.paymentStatus = 'paid';
+          order.orderStatus = 'Confirmed';
+          order.paymentDetails = {
+            razorpayOrderId: rzpOrderId,
+            razorpayPaymentId: rzpPaymentId,
+            paidAt: new Date()
+          };
+          order.statusHistory.push({
+            fromStatus: 'Pending',
+            status: 'Confirmed',
+            timestamp: new Date(),
+            note: `Payment verified via webhook '${event}' (Ref: ${rzpPaymentId})`,
+            updatedBy: 'Razorpay Webhook',
+            reason: 'Webhook event payment.captured'
+          });
+          await order.save();
+
+          await Payment.findOneAndUpdate(
+            { razorpayOrderId: rzpOrderId },
+            {
+              order: order._id,
+              user: order.user,
+              razorpayOrderId: rzpOrderId,
+              razorpayPaymentId: rzpPaymentId,
+              amount: order.totalPrice,
+              status: 'captured'
+            },
+            { upsert: true }
+          );
+
+          await AuditService.logEvent({
+            action: 'WEBHOOK_PAYMENT_CAPTURED',
+            entityType: 'Payment',
+            entityId: order._id,
+            performedByName: 'Razorpay Webhook Engine',
+            performedByRole: 'system',
+            newState: { paymentStatus: 'paid', razorpayPaymentId: rzpPaymentId },
+            reason: `Webhook confirmed payment event '${event}'`
+          });
+
+          await AuditService.createNotification({
+            recipient: order.user,
+            recipientRole: 'user',
+            title: 'Payment Confirmed',
+            message: `Your payment for Order #${order.orderNumber} was confirmed via payment gateway webhook.`,
+            type: 'payment_event',
+            data: { orderId: order._id, orderNumber: order.orderNumber }
+          });
+        }
+      }
+    }
+
+    return res.status(200).json({ status: 'ok', received: true });
+  } catch (err) {
+    console.error('Webhook error:', err);
+    return res.status(500).json({ success: false, message: 'Webhook processing error' });
+  }
+};
+

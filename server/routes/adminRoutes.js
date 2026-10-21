@@ -19,15 +19,17 @@ const {
   updateUserRole,
   deleteUser,
   getSettings,
-  updateSettings
+  updateSettings,
+  getAuditLogs
 } = require('../controllers/adminController');
 const { protect, authorize } = require('../middleware/auth');
 
 router.use(protect);
 router.use(authorize('admin'));
 
-// Admin Dashboard stats
+// Admin Dashboard stats & Audit trail
 router.get('/stats', getDashboardStats);
+router.get('/audit-logs', getAuditLogs);
 
 // Admin Orders & Shipments
 router.get('/orders', getAllOrders);

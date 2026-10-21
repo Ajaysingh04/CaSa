@@ -9,9 +9,10 @@ const {
   createVendorProduct,
   getVendorFinancials
 } = require('../controllers/vendorController');
-const { protect } = require('../middleware/auth');
+const { protect, authorize } = require('../middleware/auth');
 
 router.use(protect);
+router.use(authorize('vendor', 'admin'));
 
 router.get('/stats', getVendorStats);
 router.get('/orders', getVendorOrders);

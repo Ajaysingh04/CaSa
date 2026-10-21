@@ -19,6 +19,7 @@ const adminRoutes = require('./routes/adminRoutes');
 const bannerRoutes = require('./routes/bannerRoutes');
 const vendorRoutes = require('./routes/vendorRoutes');
 const deliveryRoutes = require('./routes/deliveryRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 const { getPublicSettings } = require('./controllers/adminController');
 
 const app = express();
@@ -127,6 +128,7 @@ const registerRoutes = (prefix = '') => {
   app.use(`${prefix}/banners`, bannerRoutes);
   app.use(`${prefix}/vendor`, vendorRoutes);
   app.use(`${prefix}/delivery`, deliveryRoutes);
+  app.use(`${prefix}/notifications`, notificationRoutes);
 };
 
 // Register for standard `/api` prefix

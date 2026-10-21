@@ -1,5 +1,7 @@
 const Order = require('../models/Order');
 const User = require('../models/User');
+const Shipment = require('../models/Shipment');
+const AuditService = require('../services/auditService');
 const { getDBStatus } = require('../config/db');
 const dataStore = require('../services/dataStore');
 
@@ -313,6 +315,19 @@ exports.updateDeliveryStatus = async (req, res, next) => {
         return res.status(404).json({ success: false, message: 'Order not found' });
       }
 
+      // Authorization & object ownership: Only assigned delivery partner or admin can update
+      if (req.user.role === 'delivery' || req.user.role === 'delivery_partner') {
+        if (
+          order.assignedDeliveryPartner &&
+          order.assignedDeliveryPartner.toString() !== req.user._id.toString()
+        ) {
+          return res.status(403).json({
+            success: false,
+            message: 'Unauthorized: You are not the assigned delivery partner for this parcel.'
+          });
+        }
+      }
+
       if (status === 'Delivered') {
         if (order.deliveryProofOtp && otp && otp.trim() !== order.deliveryProofOtp.trim()) {
           return res.status(400).json({
@@ -334,6 +349,7 @@ exports.updateDeliveryStatus = async (req, res, next) => {
         order.reattemptDate = new Date(Date.now() + 24 * 60 * 60 * 1000); // scheduled for next day
       }
 
+      const prevStatus = order.orderStatus;
       order.orderStatus = status;
 
       let historyNote = note;
@@ -358,6 +374,60 @@ exports.updateDeliveryStatus = async (req, res, next) => {
       });
 
       await order.save();
+
+      // Sync canonical Shipment document
+      try {
+        const shipmentStatusMap = {
+          'Shipped': 'IN_TRANSIT',
+          'Out for delivery': 'OUT_FOR_DELIVERY',
+          'Delivered': 'DELIVERED',
+          'Delivery Attempt Failed': 'DELIVERY_FAILED',
+          'RTO - Return to Hub': 'RTO_INITIATED'
+        };
+        const mappedStatus = shipmentStatusMap[status] || 'IN_TRANSIT';
+
+        await Shipment.findOneAndUpdate(
+          { order: order._id },
+          {
+            $set: { status: mappedStatus },
+            $push: {
+              events: {
+                status: mappedStatus,
+                timestamp: new Date(),
+                location: req.user.assignedZone || 'Central Delivery Hub',
+                remarks: historyNote,
+                scannedBy: req.user._id
+              }
+            }
+          }
+        );
+      } catch (err) {
+        console.warn('Shipment sync warning:', err.message);
+      }
+
+      // Record business event in AuditLog
+      await AuditService.logEvent({
+        action: `DELIVERY_STATUS_${status.toUpperCase().replace(/[^A-Z0-9]/g, '_')}`,
+        entityType: 'Shipment',
+        entityId: order._id,
+        performedBy: req.user._id,
+        performedByName: req.user.name || 'Delivery Partner',
+        performedByRole: req.user.role,
+        previousState: { orderStatus: prevStatus },
+        newState: { orderStatus: status },
+        reason: historyNote
+      });
+
+      // Notify customer of delivery updates
+      await AuditService.createNotification({
+        recipient: order.user,
+        recipientRole: 'user',
+        title: status === 'Delivered' ? 'Parcel Delivered! 🎉' : `Order Update: ${status}`,
+        message: historyNote,
+        type: status === 'Delivered' ? 'delivery_alert' : 'order_status',
+        data: { orderId: order._id, orderNumber: order.orderNumber }
+      });
+
       return res.status(200).json({ success: true, data: order });
     } else {
       const order = dataStore.orders.find(o => o._id === id || o.orderNumber === id);

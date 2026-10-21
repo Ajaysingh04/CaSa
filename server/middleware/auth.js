@@ -45,6 +45,16 @@ const protect = async (req, res, next) => {
       });
     }
 
+    // Server-side check for suspended or deactivated accounts
+    if (req.user.isActive === false || req.user.status === 'suspended') {
+      return res.status(403).json({
+        success: false,
+        message: req.user.suspensionReason
+          ? `Your account has been suspended: ${req.user.suspensionReason}`
+          : 'Your account has been suspended by administration. Please contact support.'
+      });
+    }
+
     next();
   } catch (err) {
     return res.status(401).json({

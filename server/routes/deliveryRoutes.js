@@ -10,9 +10,10 @@ const {
   updateDeliveryStatus,
   getDeliveryEarnings
 } = require('../controllers/deliveryController');
-const { protect } = require('../middleware/auth');
+const { protect, authorize } = require('../middleware/auth');
 
 router.use(protect);
+router.use(authorize('delivery', 'delivery_partner', 'admin'));
 
 router.get('/stats', getDeliveryStats);
 router.put('/duty-status', toggleDutyStatus);

@@ -1,5 +1,6 @@
 const Order = require('../models/Order');
 const Product = require('../models/Product');
+const AuditService = require('../services/auditService');
 const { getDBStatus } = require('../config/db');
 const dataStore = require('../services/dataStore');
 
@@ -64,12 +65,14 @@ exports.getVendorStats = async (req, res, next) => {
   }
 };
 
-// @desc    Get Vendor Orders (Fulfillment List)
+// @desc    Get Vendor Orders (Fulfillment List with Vendor Isolation)
 // @route   GET /api/vendor/orders
 // @access  Private (Vendor / Admin)
 exports.getVendorOrders = async (req, res, next) => {
   try {
-    const { status } = req.query;
+    const { status, page = 1, limit = 20 } = req.query;
+    const pageNum = parseInt(page, 10);
+    const limitNum = parseInt(limit, 10);
 
     if (getDBStatus()) {
       const query = {};
@@ -77,13 +80,27 @@ exports.getVendorOrders = async (req, res, next) => {
         query.orderStatus = status;
       }
 
+      // Vendor Data Isolation Rule: Only fetch orders that contain items from this vendor
+      if (req.user.role === 'vendor') {
+        query.$or = [
+          { 'items.vendor': req.user._id },
+          { 'items.vendor': null } // Fallback for backward compatibility
+        ];
+      }
+
+      const total = await Order.countDocuments(query);
       const orders = await Order.find(query)
         .populate('user', 'name email phone')
-        .sort({ createdAt: -1 });
+        .sort({ createdAt: -1 })
+        .skip((pageNum - 1) * limitNum)
+        .limit(limitNum);
 
       return res.status(200).json({
         success: true,
         count: orders.length,
+        total,
+        page: pageNum,
+        pages: Math.ceil(total / limitNum) || 1,
         data: orders
       });
     } else {
@@ -94,6 +111,9 @@ exports.getVendorOrders = async (req, res, next) => {
       return res.status(200).json({
         success: true,
         count: orders.length,
+        total: orders.length,
+        page: 1,
+        pages: 1,
         data: orders
       });
     }
@@ -195,11 +215,43 @@ exports.updateVendorProduct = async (req, res, next) => {
         return res.status(404).json({ success: false, message: 'Product not found' });
       }
 
+      // Vendor Data Isolation Rule: Only allow vendor to modify their own products
+      if (
+        req.user.role === 'vendor' &&
+        product.vendor &&
+        product.vendor.toString() !== req.user._id.toString()
+      ) {
+        return res.status(403).json({
+          success: false,
+          message: 'Unauthorized: You are only permitted to modify your own products.'
+        });
+      }
+
+      const oldStock = product.stock;
       if (stock !== undefined) product.stock = Number(stock);
       if (price !== undefined) product.price = Number(price);
       if (discountPrice !== undefined) product.discountPrice = Number(discountPrice);
 
       await product.save();
+
+      // Record stock change in inventory ledger
+      if (stock !== undefined && Number(stock) !== oldStock) {
+        const diff = Number(stock) - oldStock;
+        await AuditService.recordInventoryMovement({
+          product: product._id,
+          productName: product.name,
+          sku: product.sku || product.slug,
+          vendor: product.vendor,
+          movementType: 'manual_adjustment',
+          quantityChanged: diff,
+          previousStock: oldStock,
+          newStock: Number(stock),
+          reason: 'Vendor inventory manual adjustment',
+          actor: req.user.name || 'Vendor',
+          actorId: req.user._id
+        });
+      }
+
       return res.status(200).json({ success: true, data: product });
     } else {
       const product = dataStore.products.find(p => p._id === id || p.slug === id);
