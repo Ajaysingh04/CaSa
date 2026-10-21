@@ -143,7 +143,7 @@ exports.verifyPayment = async (req, res, next) => {
         recipientRole: 'user',
         title: 'Payment Confirmed',
         message: `Your payment of ₹${order.totalPrice} for Order #${order.orderNumber} has been received.`,
-        type: 'payment',
+        type: 'payment_event',
         data: { orderId: order._id, orderNumber: order.orderNumber, paymentId: razorpayPaymentId }
       });
 

@@ -362,8 +362,9 @@ exports.getOrderById = async (req, res, next) => {
       }
 
       // Check permission: owner, admin, or assigned delivery/vendor
-      const isOwner = order.user._id.toString() === req.user._id.toString();
-      const isPrivileged = ['admin', 'vendor', 'delivery'].includes(req.user.role);
+      const orderUserId = order.user?._id ? order.user._id.toString() : (order.user ? order.user.toString() : null);
+      const isOwner = orderUserId && req.user?._id && orderUserId === req.user._id.toString();
+      const isPrivileged = ['admin', 'super_admin', 'vendor', 'delivery'].includes(req.user?.role);
       if (!isOwner && !isPrivileged) {
         return res.status(403).json({ success: false, message: 'Not authorized to view this order' });
       }

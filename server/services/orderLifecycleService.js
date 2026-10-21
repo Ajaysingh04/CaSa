@@ -169,13 +169,13 @@ function recalculateMultiVendorOrderStatus(order) {
     return 'Shipped';
   }
 
-  // If any item is Packed
-  if (statuses.some(s => ['Packed', 'Ready for pickup'].includes(s))) {
+  // If all items are packed or ready for pickup
+  if (statuses.every(s => ['Packed', 'Ready for pickup'].includes(s))) {
     return 'Packed';
   }
 
-  // If any item is Processing
-  if (statuses.some(s => s === 'Processing')) {
+  // If partially packed or processing
+  if (statuses.some(s => ['Packed', 'Ready for pickup', 'Processing'].includes(s))) {
     return 'Processing';
   }
 

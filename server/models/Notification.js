@@ -25,6 +25,9 @@ const notificationSchema = new mongoose.Schema(
       enum: [
         'order_status',
         'payment_event',
+        'payment',
+        'order',
+        'delivery',
         'shipment_dispatch',
         'delivery_alert',
         'return_update',

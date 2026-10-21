@@ -285,6 +285,7 @@ exports.assignDeliveryPartner = async (req, res, next) => {
     const { id } = req.params;
     const { partnerId, reason = 'Assigned by Operations Admin' } = req.body;
 
+    if (getDBStatus()) {
       const partnerUser = partnerId || req.body.deliveryPartnerId;
       if (!partnerUser) {
         return res.status(400).json({ success: false, message: 'Delivery partner ID is required.' });
