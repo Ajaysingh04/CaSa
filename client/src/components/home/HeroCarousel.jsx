@@ -17,6 +17,145 @@ const fallbackBanners = [
   },
 ];
 
+const carouselWrapperStyle = {
+  position: 'relative',
+  width: '100%',
+  overflow: 'hidden',
+  background: '#09101d',
+  userSelect: 'none',
+};
+
+const slideBgStyle = {
+  position: 'absolute',
+  inset: 0,
+  backgroundSize: 'cover',
+  backgroundPosition: 'center center',
+  filter: 'saturate(1.08) contrast(1.02)',
+};
+
+const contentContainerStyle = {
+  position: 'relative',
+  zIndex: 10,
+};
+
+const contentBoxStyle = {
+  maxWidth: '580px',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '14px',
+};
+
+const tagStyle = {
+  alignSelf: 'flex-start',
+  background: 'rgba(15, 23, 42, 0.65)',
+  color: '#fed7aa',
+  border: '1.5px solid rgba(249, 115, 22, 0.7)',
+  padding: '4px 12px',
+  borderRadius: '9999px',
+  fontWeight: '800',
+  fontSize: '0.74rem',
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '5px',
+  letterSpacing: '0.04em',
+  textTransform: 'uppercase',
+  backdropFilter: 'blur(6px)',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+};
+
+const badgeStyle = {
+  alignSelf: 'flex-start',
+  background: 'rgba(15, 23, 42, 0.65)',
+  color: '#fef08a',
+  border: '1.5px solid rgba(245, 158, 11, 0.7)',
+  padding: '4px 12px',
+  borderRadius: '9999px',
+  fontWeight: '700',
+  fontSize: '0.74rem',
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '5px',
+  letterSpacing: '0.04em',
+  textTransform: 'uppercase',
+  backdropFilter: 'blur(6px)',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+};
+
+const subtitleStyle = {
+  maxWidth: '560px',
+  lineHeight: 1.6,
+};
+
+const btnRowStyle = {
+  marginTop: '8px',
+  display: 'flex',
+  gap: '12px',
+  flexWrap: 'wrap',
+};
+
+const navBtnStyle = {
+  position: 'absolute',
+  top: '50%',
+  transform: 'translateY(-50%)',
+  zIndex: 20,
+  width: '44px',
+  height: '44px',
+  borderRadius: '50%',
+  background: 'rgba(255, 255, 255, 0.18)',
+  backdropFilter: 'blur(8px)',
+  WebkitBackdropFilter: 'blur(8px)',
+  border: '1px solid rgba(255, 255, 255, 0.35)',
+  color: '#ffffff',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  cursor: 'pointer',
+  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
+};
+
+const prevBtnStyle = {
+  ...navBtnStyle,
+  left: '20px',
+};
+
+const nextBtnStyle = {
+  ...navBtnStyle,
+  right: '20px',
+};
+
+const dotsContainerStyle = {
+  position: 'absolute',
+  bottom: '18px',
+  left: '50%',
+  transform: 'translateX(-50%)',
+  zIndex: 20,
+  display: 'flex',
+  gap: '8px',
+  alignItems: 'center',
+  background: 'rgba(0, 0, 0, 0.35)',
+  backdropFilter: 'blur(6px)',
+  padding: '4px 12px',
+  borderRadius: '9999px',
+  border: '1px solid rgba(255, 255, 255, 0.15)',
+};
+
+const dotStyle = {
+  height: '7px',
+  borderRadius: '4px',
+  border: 'none',
+  cursor: 'pointer',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  padding: 0,
+};
+
+const counterStyle = {
+  color: 'rgba(255, 255, 255, 0.75)',
+  fontSize: '0.72rem',
+  fontWeight: '700',
+  marginLeft: '6px',
+  letterSpacing: '0.04em',
+};
+
 const HeroCarousel = ({ banners = [], loading = false }) => {
   const activeBanners = banners && banners.length > 0 ? banners : (loading ? [] : fallbackBanners);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -327,138 +466,6 @@ const HeroCarousel = ({ banners = [], loading = false }) => {
       </div>
     </div>
   );
-};
-
-const carouselWrapperStyle = {
-  position: 'relative',
-  width: '100%',
-  overflow: 'hidden',
-  background: '#09101d',
-  userSelect: 'none',
-};
-
-const slideBgStyle = {
-  position: 'absolute',
-  inset: 0,
-  backgroundSize: 'cover',
-  backgroundPosition: 'center center',
-  filter: 'saturate(1.08) contrast(1.02)',
-};
-
-const contentContainerStyle = {
-  position: 'relative',
-  zIndex: 10,
-};
-
-const tagStyle = {
-  alignSelf: 'flex-start',
-  background: 'rgba(15, 23, 42, 0.65)',
-  color: '#fed7aa',
-  border: '1.5px solid rgba(249, 115, 22, 0.7)',
-  padding: '4px 12px',
-  borderRadius: '9999px',
-  fontWeight: '800',
-  fontSize: '0.74rem',
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: '5px',
-  letterSpacing: '0.04em',
-  textTransform: 'uppercase',
-  backdropFilter: 'blur(6px)',
-  boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-};
-
-const badgeStyle = {
-  alignSelf: 'flex-start',
-  background: 'rgba(15, 23, 42, 0.65)',
-  color: '#fef08a',
-  border: '1.5px solid rgba(245, 158, 11, 0.7)',
-  padding: '4px 12px',
-  borderRadius: '9999px',
-  fontWeight: '700',
-  fontSize: '0.74rem',
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: '5px',
-  letterSpacing: '0.04em',
-  textTransform: 'uppercase',
-  backdropFilter: 'blur(6px)',
-  boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-};
-
-const subtitleStyle = {
-  maxWidth: '560px',
-  lineHeight: 1.6,
-};
-
-const btnRowStyle = {
-  marginTop: '8px',
-  display: 'flex',
-  gap: '12px',
-  flexWrap: 'wrap',
-};
-
-const navBtnStyle = {
-  position: 'absolute',
-  top: '50%',
-  transform: 'translateY(-50%)',
-  zIndex: 20,
-  width: '44px',
-  height: '44px',
-  borderRadius: '50%',
-  background: 'rgba(255, 255, 255, 0.18)',
-  backdropFilter: 'blur(8px)',
-  WebkitBackdropFilter: 'blur(8px)',
-  border: '1px solid rgba(255, 255, 255, 0.35)',
-  color: '#ffffff',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  cursor: 'pointer',
-  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
-};
-
-const prevBtnStyle = {
-  ...navBtnStyle,
-  left: '20px',
-};
-
-const nextBtnStyle = {
-  ...navBtnStyle,
-  right: '20px',
-};
-
-const dotsContainerStyle = {
-  position: 'absolute',
-  bottom: '18px',
-  left: '50%',
-  transform: 'translateX(-50%)',
-  zIndex: 20,
-  display: 'flex',
-  gap: '8px',
-  alignItems: 'center',
-  background: 'rgba(0, 0, 0, 0.35)',
-  backdropFilter: 'blur(6px)',
-  padding: '4px 12px',
-  borderRadius: '9999px',
-  border: '1px solid rgba(255, 255, 255, 0.15)',
-};
-
-const dotStyle = {
-  height: '7px',
-  borderRadius: '4px',
-  border: 'none',
-  cursor: 'pointer',
-  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-  padding: 0,
-};
-
-const counterStyle = {
-  color: 'rgba(255, 255, 255, 0.75)',
-  fontSize: '0.72rem',
-  fontWeight: '700',
-  marginLeft: '6px',
-  letterSpacing: '0.04em',
 };
 
 export default HeroCarousel;
