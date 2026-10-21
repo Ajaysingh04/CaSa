@@ -53,15 +53,22 @@ export const AuthProvider = ({ children }) => {
       success(`Welcome back, ${data.user.name || 'User'}!`);
       return { success: true, user: data.user };
     } catch (err) {
-      console.error('Login error details:', err);
+      console.error('Login error details:', {
+        status: err.response?.status,
+        data: err.response?.data,
+        message: err.message,
+        code: err.code
+      });
       let msg = err.response?.data?.message;
       if (!msg) {
-        if (err.response?.status === 401) {
+        if (typeof err.response?.data === 'string' && err.response.data.trim() && !err.response.data.includes('<!DOCTYPE')) {
+          msg = err.response.data.replace(/<[^>]+>/g, '').slice(0, 120);
+        } else if (err.response?.status === 401) {
           msg = 'Invalid email or password. Please check your credentials.';
         } else if (err.response?.status === 500) {
-          msg = 'Server connection error. Please try again.';
+          msg = 'Internal server error. Please try again.';
         } else if (err.code === 'ERR_NETWORK') {
-          msg = 'Cannot connect to backend server. Please verify backend is running.';
+          msg = 'Cannot connect to backend server. Please check your connection.';
         } else {
           msg = err.message || 'Login failed. Please try again.';
         }
