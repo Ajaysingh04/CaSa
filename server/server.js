@@ -10,19 +10,22 @@ const server = http.createServer(app);
 // Initialize Socket.IO Real-Time Engine
 initSocket(server);
 
-// Connect to MongoDB
-connectDB().then(() => {
-  server.listen(PORT, () => {
-    console.log(`====================================================`);
-    console.log(`🚀 CASA E-Commerce Server running on port ${PORT}`);
-    console.log(`📡 API Health: http://localhost:${PORT}/api/health`);
-    console.log(`⚡ Real-Time WebSockets: Active (Socket.IO)`);
-    console.log(`🛒 Mode: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`====================================================`);
-  });
+// Start HTTP server immediately so port 5000 is never unavailable during DB connection or reload
+server.listen(PORT, () => {
+  console.log(`====================================================`);
+  console.log(`🚀 CASA E-Commerce Server running on port ${PORT}`);
+  console.log(`📡 API Health: http://localhost:${PORT}/api/health`);
+  console.log(`⚡ Real-Time WebSockets: Active (Socket.IO)`);
+  console.log(`🛒 Mode: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`====================================================`);
+});
 
-  // Handle unhandled promise rejections
-  process.on('unhandledRejection', (err) => {
-    console.error(`[Unhandled Rejection]: ${err.message}`);
-  });
+// Connect to MongoDB asynchronously
+connectDB().catch((err) => {
+  console.error(`[MongoDB Connection Error]: ${err.message}`);
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (err) => {
+  console.error(`[Unhandled Rejection]: ${err.message}`);
 });
