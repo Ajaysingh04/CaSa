@@ -273,7 +273,7 @@ exports.getMe = async (req, res, next) => {
 // @access  Private
 exports.updateProfile = async (req, res, next) => {
   try {
-    const { name, phone, avatar, preferredLanguage, vehicleType, vendorStoreName } = req.body;
+    const { name, phone, avatar, preferredLanguage, vehicleType, vendorStoreName, vendorDetails } = req.body;
 
     if (getDBStatus()) {
       const user = await User.findById(req.user._id);
@@ -287,6 +287,12 @@ exports.updateProfile = async (req, res, next) => {
       if (preferredLanguage) user.preferredLanguage = preferredLanguage;
       if (vehicleType) user.vehicleType = vehicleType;
       if (vendorStoreName) user.vendorStoreName = vendorStoreName;
+      if (vendorDetails) {
+        user.vendorDetails = {
+          ...(user.vendorDetails || {}),
+          ...vendorDetails
+        };
+      }
 
       await user.save();
       return res.status(200).json({ success: true, user });
@@ -302,6 +308,12 @@ exports.updateProfile = async (req, res, next) => {
       if (preferredLanguage) dataStore.users[userIndex].preferredLanguage = preferredLanguage;
       if (vehicleType) dataStore.users[userIndex].vehicleType = vehicleType;
       if (vendorStoreName) dataStore.users[userIndex].vendorStoreName = vendorStoreName;
+      if (vendorDetails) {
+        dataStore.users[userIndex].vendorDetails = {
+          ...(dataStore.users[userIndex].vendorDetails || {}),
+          ...vendorDetails
+        };
+      }
 
       const { password, ...safeUser } = dataStore.users[userIndex];
       return res.status(200).json({ success: true, user: safeUser });

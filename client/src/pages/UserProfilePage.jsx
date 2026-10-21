@@ -40,6 +40,7 @@ import { useToast } from '../context/ToastContext';
 import { useStore } from '../context/StoreContext';
 import { authService } from '../services/authService';
 import { LANGUAGE_OPTIONS } from '../components/common/LanguageModal';
+import ProfessionalVendorProfile from '../components/profile/ProfessionalVendorProfile';
 
 const AVATAR_PRESETS = [
   'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80',
@@ -419,8 +420,23 @@ const UserProfilePage = () => {
         </p>
       </div>
 
-      {/* Overview Header Banner */}
-      <div className="profile-header-card">
+      {/* If logged-in user is a Vendor, render the dedicated B2B Professional Merchant Profile */}
+      {isVendor ? (
+        <ProfessionalVendorProfile
+          user={user}
+          onProfileUpdated={(updatedUser) => {
+            if (updatedUser) {
+              if (updatedUser.name) setName(updatedUser.name);
+              if (updatedUser.phone) setPhone(updatedUser.phone);
+              if (updatedUser.vendorStoreName) setVendorStoreName(updatedUser.vendorStoreName);
+              if (updatedUser.avatar) setAvatar(updatedUser.avatar);
+            }
+          }}
+        />
+      ) : (
+        <>
+          {/* Overview Header Banner */}
+          <div className="profile-header-card">
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
           {/* Avatar with Ring Badge & Click to Upload */}
           <div
@@ -2004,6 +2020,8 @@ const UserProfilePage = () => {
             </div>
           </div>
         </div>
+      )}
+        </>
       )}
     </div>
   );

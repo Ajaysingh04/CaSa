@@ -40,6 +40,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: ''
     },
+    vendorDetails: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {}
+    },
     vehicleType: {
       type: String,
       default: 'Bike'
