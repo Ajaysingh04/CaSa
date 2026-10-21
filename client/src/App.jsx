@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ToastProvider } from './context/ToastContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { NotificationProvider } from './context/NotificationContext';
 import { CartProvider } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
 import { StoreProvider } from './context/StoreContext';
@@ -60,9 +61,10 @@ function App() {
     <BrowserRouter>
       <ToastProvider>
         <AuthProvider>
-          <CartProvider>
-            <WishlistProvider>
-              <StoreProvider>
+          <NotificationProvider>
+            <CartProvider>
+              <WishlistProvider>
+                <StoreProvider>
                 <Routes>
                   {/* Storefront Layout Routes */}
                   <Route path="/" element={<MainLayout />}>
@@ -115,8 +117,9 @@ function App() {
               </StoreProvider>
             </WishlistProvider>
           </CartProvider>
-        </AuthProvider>
-      </ToastProvider>
+        </NotificationProvider>
+      </AuthProvider>
+    </ToastProvider>
     </BrowserRouter>
   );
 }

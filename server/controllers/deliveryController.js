@@ -2,6 +2,7 @@ const Order = require('../models/Order');
 const User = require('../models/User');
 const Shipment = require('../models/Shipment');
 const AuditService = require('../services/auditService');
+const socketService = require('../services/socketService');
 const { getDBStatus } = require('../config/db');
 const dataStore = require('../services/dataStore');
 
@@ -427,6 +428,12 @@ exports.updateDeliveryStatus = async (req, res, next) => {
         type: status === 'Delivered' ? 'delivery_alert' : 'order_status',
         data: { orderId: order._id, orderNumber: order.orderNumber }
       });
+
+      // Real-time WebSocket milestone update
+      try {
+        socketService.emitDeliveryMilestone(order, { status, note: historyNote });
+        socketService.emitOrderStatusUpdate(order);
+      } catch (e) {}
 
       return res.status(200).json({ success: true, data: order });
     } else {

@@ -9,6 +9,7 @@ const Shipment = require('../models/Shipment');
 const Vendor = require('../models/Vendor');
 const AuditLog = require('../models/AuditLog');
 const AuditService = require('../services/auditService');
+const socketService = require('../services/socketService');
 const { getDBStatus } = require('../config/db');
 const dataStore = require('../services/dataStore');
 const {
@@ -381,6 +382,13 @@ exports.assignDeliveryPartner = async (req, res, next) => {
       });
 
       await order.save();
+
+      // Real-time dispatch to delivery partner and admin
+      try {
+        socketService.emitDeliveryTaskAssigned(order, partner._id);
+        socketService.emitOrderStatusUpdate(order);
+      } catch (e) {}
+
       return res.status(200).json({ success: true, data: order });
     } else {
       const order = (dataStore.orders || []).find(o => o._id === id || o.orderNumber === id);

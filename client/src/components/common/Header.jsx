@@ -16,10 +16,13 @@ import {
   Sparkles,
   Store,
   Truck,
+  Bell,
+  CheckCheck,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
+import { useNotifications } from '../../context/NotificationContext';
 import { useToast } from '../../context/ToastContext';
 import { useStore } from '../../context/StoreContext';
 import { productService } from '../../services/productService';
@@ -31,6 +34,9 @@ const Header = ({ onToggleMobileMenu }) => {
   const { success } = useToast();
   const { cartCount, openDrawer } = useCart();
   const { wishlistCount } = useWishlist();
+  const { notifications = [], unreadCount = 0, markAsRead, markAllAsRead } = useNotifications();
+  const [showNotifications, setShowNotifications] = useState(false);
+  const notifRef = useRef(null);
   const { storeName, storeTagline, primaryColor, t } = useStore();
 
   // Location State (persisted in localStorage)
@@ -198,6 +204,9 @@ const Header = ({ onToggleMobileMenu }) => {
       }
       if (userMenuRef.current && !userMenuRef.current.contains(e.target)) {
         setShowUserMenu(false);
+      }
+      if (notifRef.current && !notifRef.current.contains(e.target)) {
+        setShowNotifications(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -540,6 +549,156 @@ const Header = ({ onToggleMobileMenu }) => {
             </div>
             <span className="header-action-label" style={actionLabelStyle}>{t('cart')}</span>
           </button>
+
+          {/* Real-Time Live Notification Alerts */}
+          {user && (
+            <div style={{ position: 'relative' }} ref={notifRef}>
+              <button
+                onClick={() => setShowNotifications(!showNotifications)}
+                style={actionItemStyle}
+                title="Notifications & Live Alerts"
+              >
+                <div style={{ position: 'relative' }}>
+                  <Bell size={22} />
+                  {unreadCount > 0 && (
+                    <span style={{
+                      ...badgeCountStyle,
+                      background: '#ef4444',
+                      color: '#ffffff',
+                      animation: 'pulse 1.8s infinite'
+                    }}>
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
+                </div>
+                <span className="header-action-label" style={actionLabelStyle}>Alerts</span>
+              </button>
+
+              {/* Notification Dropdown */}
+              {showNotifications && (
+                <div style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 12px)',
+                  right: '-60px',
+                  width: '360px',
+                  maxWidth: '90vw',
+                  background: '#ffffff',
+                  borderRadius: '16px',
+                  boxShadow: '0 20px 40px -10px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.06)',
+                  zIndex: 1000,
+                  overflow: 'hidden'
+                }}>
+                  <div style={{
+                    padding: '14px 16px',
+                    borderBottom: '1px solid #f1f5f9',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    background: '#f8fafc'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <strong style={{ fontSize: '0.95rem', color: '#0f172a' }}>Live Alerts</strong>
+                      {unreadCount > 0 && (
+                        <span style={{
+                          background: '#fee2e2',
+                          color: '#dc2626',
+                          fontSize: '0.72rem',
+                          fontWeight: 700,
+                          padding: '2px 8px',
+                          borderRadius: '12px'
+                        }}>
+                          {unreadCount} unread
+                        </span>
+                      )}
+                    </div>
+                    {unreadCount > 0 && (
+                      <button
+                        onClick={markAllAsRead}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#2563eb',
+                          fontSize: '0.75rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}
+                      >
+                        <CheckCheck size={14} />
+                        <span>Mark all read</span>
+                      </button>
+                    )}
+                  </div>
+
+                  <div style={{ maxHeight: '360px', overflowY: 'auto' }}>
+                    {notifications.length === 0 ? (
+                      <div style={{ padding: '36px 20px', textAlign: 'center', color: '#94a3b8' }}>
+                        <Bell size={32} style={{ margin: '0 auto 10px', opacity: 0.3 }} />
+                        <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#64748b' }}>No notifications yet</div>
+                        <div style={{ fontSize: '0.75rem', marginTop: '4px' }}>Real-time order & delivery alerts will appear here.</div>
+                      </div>
+                    ) : (
+                      notifications.slice(0, 15).map((notif) => (
+                        <div
+                          key={notif._id || notif.id}
+                          onClick={() => {
+                            if (!notif.isRead && markAsRead) markAsRead(notif._id);
+                            if (notif.data?.orderId) {
+                              navigate(`/orders/${notif.data.orderId}`);
+                              setShowNotifications(false);
+                            }
+                          }}
+                          style={{
+                            padding: '12px 16px',
+                            borderBottom: '1px solid #f1f5f9',
+                            background: notif.isRead ? '#ffffff' : '#f0f9ff',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            gap: '12px',
+                            alignItems: 'flex-start'
+                          }}
+                        >
+                          <div style={{
+                            width: '32px',
+                            height: '32px',
+                            borderRadius: '50%',
+                            background: notif.isRead ? '#f1f5f9' : '#e0f2fe',
+                            color: notif.isRead ? '#64748b' : '#0284c7',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0
+                          }}>
+                            {notif.type === 'delivery_alert' || notif.type === 'shipment_dispatch' ? (
+                              <Truck size={16} />
+                            ) : (
+                              <Package size={16} />
+                            )}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                              <strong style={{ fontSize: '0.825rem', color: '#0f172a' }}>{notif.title}</strong>
+                              {!notif.isRead && (
+                                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#0284c7', flexShrink: 0 }} />
+                              )}
+                            </div>
+                            <p style={{ margin: '3px 0 0', fontSize: '0.78rem', color: '#475569', lineHeight: 1.4 }}>
+                              {notif.message}
+                            </p>
+                            <span style={{ fontSize: '0.68rem', color: '#94a3b8', marginTop: '4px', display: 'block' }}>
+                              {notif.createdAt ? new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now'}
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Account Dropdown */}
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '8px' }} ref={userMenuRef}>

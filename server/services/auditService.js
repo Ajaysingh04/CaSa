@@ -2,6 +2,7 @@ const AuditLog = require('../models/AuditLog');
 const Inventory = require('../models/Inventory');
 const Notification = require('../models/Notification');
 const Commission = require('../models/Commission');
+const socketService = require('./socketService');
 
 /**
  * System Audit & Business Event Logging Service
@@ -95,7 +96,7 @@ class AuditService {
     data = {}
   }) {
     try {
-      return await Notification.create({
+      const notification = await Notification.create({
         recipient,
         recipientRole,
         title,
@@ -103,6 +104,15 @@ class AuditService {
         type,
         data
       });
+
+      // Emit real-time notification via WebSocket
+      try {
+        socketService.emitNotification(notification);
+      } catch (e) {
+        // Safe fallback if socket is not active
+      }
+
+      return notification;
     } catch (err) {
       console.error('Failed to create notification:', err.message);
       return null;

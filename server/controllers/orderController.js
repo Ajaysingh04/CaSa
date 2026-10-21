@@ -11,6 +11,7 @@ const {
   recalculateMultiVendorOrderStatus
 } = require('../services/orderLifecycleService');
 const AuditService = require('../services/auditService');
+const socketService = require('../services/socketService');
 
 // @desc    Create new order with idempotency check
 // @route   POST /api/orders
@@ -204,6 +205,12 @@ exports.createOrder = async (req, res, next) => {
 
       // Clear user cart
       await Cart.findOneAndUpdate({ user: userId }, { items: [], coupon: null });
+
+      // Real-time broadcast
+      try {
+        socketService.emitNewOrder(order);
+        socketService.emitOrderStatusUpdate(order);
+      } catch (e) {}
 
       return res.status(201).json({ success: true, data: order });
     } else {
@@ -578,6 +585,7 @@ exports.cancelOrder = async (req, res, next) => {
       });
 
       await order.save();
+      try { socketService.emitOrderStatusUpdate(order); } catch (e) {}
       return res.status(200).json({ success: true, data: order });
     } else {
       const order = (dataStore.orders || []).find(o => o._id === id || o.orderNumber === id);

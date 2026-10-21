@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { orderService } from '../services/orderService';
 import { useToast } from '../context/ToastContext';
+import { getSocket, joinOrderRoom, leaveOrderRoom } from '../services/socketService';
 import { formatINR, formatDateTime, formatDate } from '../utils/formatters';
 
 const standardSteps = ['Confirmed', 'Processing', 'Packed', 'Shipped', 'Out for delivery', 'Delivered'];
@@ -48,6 +49,27 @@ const OrderDetailPage = () => {
     };
 
     fetchOrder();
+
+    // Truthful real-time tracking: subscribe to this order's live milestones
+    if (id) {
+      joinOrderRoom(id);
+      const socket = getSocket();
+
+      const handleUpdate = (data) => {
+        if (data.orderId === id || data.orderNumber === id) {
+          fetchOrder();
+        }
+      };
+
+      socket.on('order_status_update', handleUpdate);
+      socket.on('delivery_milestone', handleUpdate);
+
+      return () => {
+        leaveOrderRoom(id);
+        socket.off('order_status_update', handleUpdate);
+        socket.off('delivery_milestone', handleUpdate);
+      };
+    }
   }, [id]);
 
   const handleCancelOrder = async () => {
