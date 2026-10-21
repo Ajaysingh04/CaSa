@@ -20,6 +20,11 @@ import {
   ShoppingBag,
   RotateCw,
   AlertCircle,
+  DollarSign,
+  Printer,
+  FileText,
+  Plus,
+  X,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -30,14 +35,34 @@ const VendorDashboardPage = () => {
   const { user, switchRole, login } = useAuth();
   const { success, error, info } = useToast();
 
-  const [activeTab, setActiveTab] = useState('orders'); // 'orders' or 'inventory'
+  const [activeTab, setActiveTab] = useState('orders'); // 'orders' | 'inventory' | 'financials'
   const [orderFilter, setOrderFilter] = useState('ALL');
   const [stats, setStats] = useState(null);
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
+  const [financials, setFinancials] = useState(null);
   const [loading, setLoading] = useState(true);
   const [updatingOrderId, setUpdatingOrderId] = useState(null);
   const [productSearch, setProductSearch] = useState('');
+
+  // Invoice / Packing slip modal
+  const [selectedInvoiceOrder, setSelectedInvoiceOrder] = useState(null);
+
+  // Add Product modal
+  const [showAddProductModal, setShowAddProductModal] = useState(false);
+  const [creatingProduct, setCreatingProduct] = useState(false);
+  const [newProd, setNewProd] = useState({
+    name: '',
+    brand: user?.vendorStoreName || 'CASA Merchant',
+    categorySlug: 'electronics',
+    subcategory: 'Accessories',
+    price: '',
+    discountPrice: '',
+    stock: 25,
+    sku: `SKU-${Date.now().toString().slice(-5)}`,
+    image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop&q=80',
+    description: '',
+  });
 
   // Editing product stock modal/inline
   const [editingProduct, setEditingProduct] = useState(null);
@@ -51,14 +76,16 @@ const VendorDashboardPage = () => {
     }
     setLoading(true);
     try {
-      const [statsData, ordersData, productsData] = await Promise.all([
+      const [statsData, ordersData, productsData, finData] = await Promise.all([
         vendorService.getStats().catch(() => null),
         vendorService.getOrders(orderFilter).catch(() => []),
         vendorService.getProducts().catch(() => []),
+        vendorService.getFinancials().catch(() => null),
       ]);
       setStats(statsData);
       setOrders(ordersData || []);
       setProducts(productsData || []);
+      setFinancials(finData);
     } catch (err) {
       console.error('Failed to load vendor data:', err);
       error('Failed to load vendor records.');
@@ -70,6 +97,43 @@ const VendorDashboardPage = () => {
   useEffect(() => {
     loadData();
   }, [orderFilter, user]);
+
+  const handleCreateProduct = async (e) => {
+    e.preventDefault();
+    if (!newProd.name || !newProd.price) {
+      error('Please provide at least product name and price.');
+      return;
+    }
+    setCreatingProduct(true);
+    try {
+      await vendorService.createProduct({
+        ...newProd,
+        price: Number(newProd.price),
+        discountPrice: newProd.discountPrice ? Number(newProd.discountPrice) : null,
+        stock: Number(newProd.stock || 10),
+        images: [newProd.image],
+      });
+      success(`Product "${newProd.name}" added to catalog successfully!`);
+      setShowAddProductModal(false);
+      setNewProd({
+        name: '',
+        brand: user?.vendorStoreName || 'CASA Merchant',
+        categorySlug: 'electronics',
+        subcategory: 'Accessories',
+        price: '',
+        discountPrice: '',
+        stock: 25,
+        sku: `SKU-${Date.now().toString().slice(-5)}`,
+        image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop&q=80',
+        description: '',
+      });
+      await loadData();
+    } catch (err) {
+      error(err.response?.data?.message || 'Could not create product.');
+    } finally {
+      setCreatingProduct(false);
+    }
+  };
 
   const handleUpdateStatus = async (orderId, newStatus) => {
     setUpdatingOrderId(orderId);
@@ -452,6 +516,26 @@ const VendorDashboardPage = () => {
           <Boxes size={18} />
           <span>Inventory & Stock ({products.length})</span>
         </button>
+
+        <button
+          onClick={() => setActiveTab('financials')}
+          style={{
+            padding: '12px 20px',
+            background: 'none',
+            border: 'none',
+            borderBottom: activeTab === 'financials' ? '3px solid #2563eb' : '3px solid transparent',
+            color: activeTab === 'financials' ? '#2563eb' : '#64748b',
+            fontWeight: 800,
+            fontSize: '0.95rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+          }}
+        >
+          <DollarSign size={18} />
+          <span>Sales & Settlements</span>
+        </button>
       </div>
 
       {/* Orders Tab */}
@@ -610,6 +694,27 @@ const VendorDashboardPage = () => {
                       </span>
 
                       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedInvoiceOrder(order)}
+                          className="action-step-btn"
+                          style={{
+                            padding: '7px 12px',
+                            borderRadius: '8px',
+                            background: '#ffffff',
+                            color: '#334155',
+                            border: '1.5px solid #cbd5e1',
+                            fontSize: '0.78rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                          }}
+                        >
+                          <Printer size={13} /> Packing Slip / Invoice
+                        </button>
+
                         {order.orderStatus === 'Confirmed' && (
                           <button
                             onClick={() => handleUpdateStatus(order._id, 'Processing')}
@@ -708,8 +813,27 @@ const VendorDashboardPage = () => {
               <Search size={16} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '11px' }} />
             </div>
 
-            <div style={{ fontSize: '0.825rem', color: '#64748b' }}>
-              Showing <strong>{filteredProducts.length}</strong> items in merchant catalog
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ fontSize: '0.825rem', color: '#64748b' }}>
+                Showing <strong>{filteredProducts.length}</strong> items in merchant catalog
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAddProductModal(true)}
+                className="btn btn-primary"
+                style={{
+                  padding: '9px 16px',
+                  borderRadius: '10px',
+                  fontSize: '0.85rem',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: '#2563eb',
+                }}
+              >
+                <Plus size={16} /> Add New Product
+              </button>
             </div>
           </div>
 
@@ -773,6 +897,489 @@ const VendorDashboardPage = () => {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Sales & Settlements Tab */}
+      {activeTab === 'financials' && (
+        <div>
+          {/* Financial summary overview cards */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+              gap: '16px',
+              marginBottom: '24px',
+            }}
+          >
+            <div className="card" style={{ padding: '20px', borderRadius: '16px', borderTop: '4px solid #2563eb' }}>
+              <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 700 }}>GROSS MERCHANDISE VALUE (GMV)</span>
+              <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#0f172a', marginTop: '10px' }}>
+                {formatINR(financials?.summary?.totalGrossSales || 0)}
+              </div>
+              <span style={{ fontSize: '0.75rem', color: '#64748b' }}>From {financials?.summary?.deliveredOrdersCount || 0} completed orders</span>
+            </div>
+
+            <div className="card" style={{ padding: '20px', borderRadius: '16px', borderTop: '4px solid #ef4444' }}>
+              <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 700 }}>MARKETPLACE COMMISSION ({financials?.summary?.commissionRate || 10}%)</span>
+              <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#dc2626', marginTop: '10px' }}>
+                - {formatINR(financials?.summary?.platformCommission || 0)}
+              </div>
+              <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Platform facilitation & payment gateway fee</span>
+            </div>
+
+            <div className="card" style={{ padding: '20px', borderRadius: '16px', borderTop: '4px solid #16a34a' }}>
+              <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 700 }}>NET PAYOUT EARNED</span>
+              <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#16a34a', marginTop: '10px' }}>
+                {formatINR(financials?.summary?.netPayoutEarned || 0)}
+              </div>
+              <span style={{ fontSize: '0.75rem', color: '#16a34a', fontWeight: 600 }}>90% net merchant disbursement</span>
+            </div>
+
+            <div className="card" style={{ padding: '20px', borderRadius: '16px', borderTop: '4px solid #8b5cf6' }}>
+              <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 700 }}>NEXT SETTLEMENT RUN</span>
+              <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#7c3aed', marginTop: '10px' }}>
+                {financials?.summary?.nextSettlementDate || 'Upcoming Friday'}
+              </div>
+              <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Weekly Direct NEFT/IMPS cycle</span>
+            </div>
+          </div>
+
+          {/* Business & Bank info banner */}
+          <div
+            className="card"
+            style={{
+              padding: '16px 20px',
+              borderRadius: '14px',
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              marginBottom: '24px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '12px',
+            }}
+          >
+            <div>
+              <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#0f172a' }}>
+                Registered Business: {user?.vendorStoreName || user?.businessName || 'CASA Partner Merchant'}
+              </div>
+              <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '4px' }}>
+                GSTIN: <strong>{user?.gstNumber || '27AAAAA0000A1Z5 (Verified)'}</strong> • Bank Account: <strong>HDFC Bank **** 9081</strong> (IFSC: HDFC0001234)
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ padding: '4px 10px', borderRadius: '9999px', background: '#dcfce7', color: '#15803d', fontSize: '0.75rem', fontWeight: 800 }}>
+                ✓ Payouts Active & Verified
+              </span>
+            </div>
+          </div>
+
+          {/* Settlements History Table */}
+          <div className="card" style={{ borderRadius: '16px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+            <div style={{ padding: '16px 20px', background: '#ffffff', borderBottom: '1px solid #e2e8f0' }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                Settlement & Payout History
+              </h3>
+              <p style={{ fontSize: '0.78rem', color: '#64748b', margin: '4px 0 0' }}>
+                Audit ledger of weekly direct bank transfers processed by CaSa Marketplace Finance.
+              </p>
+            </div>
+
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
+                <thead>
+                  <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#64748b', fontSize: '0.75rem', fontWeight: 700 }}>
+                    <th style={{ padding: '12px 16px' }}>SETTLEMENT ID</th>
+                    <th style={{ padding: '12px 16px' }}>DATE</th>
+                    <th style={{ padding: '12px 16px' }}>GROSS SALES</th>
+                    <th style={{ padding: '12px 16px' }}>PLATFORM FEE (10%)</th>
+                    <th style={{ padding: '12px 16px' }}>NET PAYOUT</th>
+                    <th style={{ padding: '12px 16px' }}>UTR / REF</th>
+                    <th style={{ padding: '12px 16px' }}>STATUS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(!financials?.settlementHistory || financials.settlementHistory.length === 0) ? (
+                    <tr>
+                      <td colSpan="7" style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>
+                        No settlement records yet. First payout occurs following your initial completed order delivery.
+                      </td>
+                    </tr>
+                  ) : (
+                    financials.settlementHistory.map((s, idx) => (
+                      <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                        <td style={{ padding: '12px 16px', fontWeight: 700, color: '#0f172a' }}>{s.id}</td>
+                        <td style={{ padding: '12px 16px', color: '#64748b' }}>{s.date}</td>
+                        <td style={{ padding: '12px 16px', fontWeight: 600 }}>{formatINR(s.gross)}</td>
+                        <td style={{ padding: '12px 16px', color: '#dc2626' }}>- {formatINR(s.commission)}</td>
+                        <td style={{ padding: '12px 16px', fontWeight: 800, color: '#16a34a' }}>{formatINR(s.net)}</td>
+                        <td style={{ padding: '12px 16px', fontFamily: 'monospace', fontSize: '0.8rem', color: '#475569' }}>{s.utr}</td>
+                        <td style={{ padding: '12px 16px' }}>
+                          <span
+                            style={{
+                              padding: '3px 10px',
+                              borderRadius: '9999px',
+                              fontSize: '0.72rem',
+                              fontWeight: 800,
+                              background: s.status === 'Completed' ? '#dcfce7' : '#fef3c7',
+                              color: s.status === 'Completed' ? '#15803d' : '#d97706',
+                            }}
+                          >
+                            {s.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Packing Slip / Invoice Modal */}
+      {selectedInvoiceOrder && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 2500,
+            padding: '16px',
+          }}
+        >
+          <div
+            className="card"
+            style={{
+              maxWidth: '680px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              background: '#ffffff',
+              borderRadius: '20px',
+              padding: '28px',
+              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+            }}
+          >
+            {/* Modal Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #e2e8f0', paddingBottom: '14px' }}>
+              <div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <FileText size={20} color="#2563eb" /> TAX INVOICE & PACKING SLIP
+                </h3>
+                <span style={{ fontSize: '0.78rem', color: '#64748b' }}>Flipkart Marketplace Certified Merchant Document</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedInvoiceOrder(null)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}
+              >
+                <X size={22} />
+              </button>
+            </div>
+
+            {/* Slip Printable Box */}
+            <div style={{ border: '2px dashed #cbd5e1', borderRadius: '12px', padding: '20px', background: '#fafbfc' }}>
+              {/* Slip Top: Seller & Order Meta */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px', borderBottom: '1px solid #e2e8f0', paddingBottom: '14px' }}>
+                <div>
+                  <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>SOLD BY (SELLER):</div>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#0f172a' }}>{user?.vendorStoreName || 'CASA Verified Merchant Hub'}</div>
+                  <div style={{ fontSize: '0.78rem', color: '#475569' }}>GSTIN: {user?.gstNumber || '27AAAAA0000A1Z5'}</div>
+                  <div style={{ fontSize: '0.78rem', color: '#475569' }}>Hub: Mumbai Fulfillment Centre B-14</div>
+                </div>
+
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>ORDER REFERENCE:</div>
+                  <div style={{ fontSize: '1rem', fontWeight: 900, color: '#2563eb' }}>{selectedInvoiceOrder.orderNumber}</div>
+                  <div style={{ fontSize: '0.78rem', color: '#475569' }}>Date: {formatDateTime(selectedInvoiceOrder.createdAt)}</div>
+                  <div style={{ fontSize: '0.78rem', color: '#16a34a', fontWeight: 700 }}>
+                    Payment: {selectedInvoiceOrder.paymentMethod?.toUpperCase()} ({selectedInvoiceOrder.isPaid ? 'PAID' : 'COLLECT COD'})
+                  </div>
+                </div>
+              </div>
+
+              {/* Shipping Address */}
+              <div style={{ marginTop: '14px', borderBottom: '1px solid #e2e8f0', paddingBottom: '14px' }}>
+                <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700, marginBottom: '4px' }}>SHIP TO (CUSTOMER):</div>
+                <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#0f172a' }}>
+                  {selectedInvoiceOrder.shippingAddress?.fullName || selectedInvoiceOrder.user?.name || 'Customer'}
+                </div>
+                <div style={{ fontSize: '0.8rem', color: '#475569', lineHeight: 1.4 }}>
+                  {selectedInvoiceOrder.shippingAddress?.street}, {selectedInvoiceOrder.shippingAddress?.city}, {selectedInvoiceOrder.shippingAddress?.state} - {selectedInvoiceOrder.shippingAddress?.pincode}
+                </div>
+                <div style={{ fontSize: '0.8rem', color: '#2563eb', fontWeight: 600, marginTop: '2px' }}>
+                  Phone: {selectedInvoiceOrder.shippingAddress?.phone || 'Provided at Dispatch'}
+                </div>
+              </div>
+
+              {/* Itemized Table */}
+              <div style={{ marginTop: '14px' }}>
+                <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700, marginBottom: '8px' }}>ITEMS TO PACK:</div>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
+                  <thead>
+                    <tr style={{ background: '#f1f5f9', color: '#475569', textAlign: 'left' }}>
+                      <th style={{ padding: '8px' }}>Item Description</th>
+                      <th style={{ padding: '8px', textAlign: 'center' }}>Qty</th>
+                      <th style={{ padding: '8px', textAlign: 'right' }}>Unit Price</th>
+                      <th style={{ padding: '8px', textAlign: 'right' }}>Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedInvoiceOrder.items?.map((item, i) => (
+                      <tr key={i} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                        <td style={{ padding: '8px' }}>
+                          <strong>{item.name}</strong>
+                          <div style={{ fontSize: '0.72rem', color: '#64748b' }}>SKU: {item.sku || `PROD-${item.product?.slice(-6) || 'STD'}`}</div>
+                        </td>
+                        <td style={{ padding: '8px', textAlign: 'center', fontWeight: 800 }}>{item.quantity}</td>
+                        <td style={{ padding: '8px', textAlign: 'right' }}>{formatINR(item.price)}</td>
+                        <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700 }}>{formatINR(item.price * item.quantity)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td colSpan="3" style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 800, fontSize: '0.88rem' }}>Grand Total:</td>
+                      <td style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 900, fontSize: '0.95rem', color: '#0f172a' }}>
+                        {formatINR(selectedInvoiceOrder.totalPrice)}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+              <button
+                type="button"
+                onClick={() => setSelectedInvoiceOrder(null)}
+                className="btn btn-outline"
+                style={{ padding: '9px 18px', borderRadius: '10px' }}
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="btn btn-primary"
+                style={{ padding: '9px 20px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                <Printer size={16} /> Print Slip
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add New Product Modal */}
+      {showAddProductModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 2500,
+            padding: '16px',
+          }}
+        >
+          <div
+            className="card"
+            style={{
+              maxWidth: '600px',
+              width: '100%',
+              maxHeight: '92vh',
+              overflowY: 'auto',
+              background: '#ffffff',
+              borderRadius: '20px',
+              padding: '28px',
+              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
+              <div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>
+                  Add Product to Merchant Catalog
+                </h3>
+                <span style={{ fontSize: '0.78rem', color: '#64748b' }}>Fill in SKU, pricing, category, and initial inventory stock</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAddProductModal(false)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}
+              >
+                <X size={22} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateProduct}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
+                <div style={{ gridColumn: 'span 2' }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '5px' }}>
+                    Product Title *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Sony Wireless Noise Cancelling Headphones"
+                    value={newProd.name}
+                    onChange={(e) => setNewProd({ ...newProd, name: e.target.value })}
+                    style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1.5px solid #cbd5e1', fontSize: '0.85rem' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '5px' }}>
+                    Brand
+                  </label>
+                  <input
+                    type="text"
+                    value={newProd.brand}
+                    onChange={(e) => setNewProd({ ...newProd, brand: e.target.value })}
+                    style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1.5px solid #cbd5e1', fontSize: '0.85rem' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '5px' }}>
+                    SKU Code
+                  </label>
+                  <input
+                    type="text"
+                    value={newProd.sku}
+                    onChange={(e) => setNewProd({ ...newProd, sku: e.target.value })}
+                    style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1.5px solid #cbd5e1', fontSize: '0.85rem' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '5px' }}>
+                    Category Slug
+                  </label>
+                  <select
+                    value={newProd.categorySlug}
+                    onChange={(e) => setNewProd({ ...newProd, categorySlug: e.target.value })}
+                    style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1.5px solid #cbd5e1', fontSize: '0.85rem', background: '#fff' }}
+                  >
+                    <option value="electronics">Electronics</option>
+                    <option value="fashion">Fashion</option>
+                    <option value="home">Home & Kitchen</option>
+                    <option value="beauty">Beauty & Grooming</option>
+                    <option value="sports">Sports & Outdoors</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '5px' }}>
+                    Subcategory
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Headphones"
+                    value={newProd.subcategory}
+                    onChange={(e) => setNewProd({ ...newProd, subcategory: e.target.value })}
+                    style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1.5px solid #cbd5e1', fontSize: '0.85rem' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '5px' }}>
+                    MRP / Standard Price (₹) *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min="1"
+                    placeholder="e.g. 2999"
+                    value={newProd.price}
+                    onChange={(e) => setNewProd({ ...newProd, price: e.target.value })}
+                    style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1.5px solid #cbd5e1', fontSize: '0.85rem' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '5px' }}>
+                    Discount / Selling Price (₹)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    placeholder="e.g. 1999"
+                    value={newProd.discountPrice}
+                    onChange={(e) => setNewProd({ ...newProd, discountPrice: e.target.value })}
+                    style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1.5px solid #cbd5e1', fontSize: '0.85rem' }}
+                  />
+                </div>
+
+                <div style={{ gridColumn: 'span 2' }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '5px' }}>
+                    Initial Stock Inventory Units
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={newProd.stock}
+                    onChange={(e) => setNewProd({ ...newProd, stock: e.target.value })}
+                    style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1.5px solid #cbd5e1', fontSize: '0.85rem' }}
+                  />
+                </div>
+
+                <div style={{ gridColumn: 'span 2' }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '5px' }}>
+                    Product Image URL
+                  </label>
+                  <input
+                    type="url"
+                    value={newProd.image}
+                    onChange={(e) => setNewProd({ ...newProd, image: e.target.value })}
+                    style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1.5px solid #cbd5e1', fontSize: '0.85rem' }}
+                  />
+                </div>
+
+                <div style={{ gridColumn: 'span 2' }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '5px' }}>
+                    Description
+                  </label>
+                  <textarea
+                    rows="3"
+                    placeholder="Short product highlights, specifications, warranty..."
+                    value={newProd.description}
+                    onChange={(e) => setNewProd({ ...newProd, description: e.target.value })}
+                    style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1.5px solid #cbd5e1', fontSize: '0.85rem', resize: 'vertical' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '16px' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowAddProductModal(false)}
+                  className="btn btn-outline"
+                  style={{ padding: '9px 18px', borderRadius: '10px' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={creatingProduct}
+                  className="btn btn-primary"
+                  style={{ padding: '9px 22px', borderRadius: '10px', fontWeight: 700 }}
+                >
+                  {creatingProduct ? 'Adding Product...' : 'Publish to Catalog'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

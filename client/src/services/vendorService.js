@@ -29,5 +29,15 @@ export const vendorService = {
   updateProduct: async (productId, data) => {
     const res = await api.put(`/vendor/products/${productId}`, data);
     return res.data.data;
+  },
+
+  createProduct: async (productData) => {
+    const res = await api.post('/vendor/products', productData);
+    return res.data.data;
+  },
+
+  getFinancials: async () => {
+    const res = await api.get('/vendor/financials');
+    return res.data.data;
   }
 };

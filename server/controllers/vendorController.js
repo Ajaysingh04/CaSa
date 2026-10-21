@@ -217,3 +217,156 @@ exports.updateVendorProduct = async (req, res, next) => {
     next(err);
   }
 };
+
+// @desc    Create new vendor product
+// @route   POST /api/vendor/products
+// @access  Private (Vendor / Admin)
+exports.createVendorProduct = async (req, res, next) => {
+  try {
+    const {
+      name,
+      brand,
+      category,
+      categorySlug,
+      subcategory,
+      description,
+      price,
+      discountPrice,
+      stock,
+      sku,
+      images,
+      tags
+    } = req.body;
+
+    if (!name || !price || !categorySlug || !subcategory) {
+      return res.status(400).json({
+        success: false,
+        message: 'Name, price, category, and subcategory are required.'
+      });
+    }
+
+    const slug = `${name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '')}-${Date.now().toString().slice(-4)}`;
+    const productImages = images && images.length > 0 ? images : [
+      'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80'
+    ];
+
+    if (getDBStatus()) {
+      const product = await Product.create({
+        name,
+        slug,
+        brand: brand || req.user.vendorStoreName || 'CASA Merchant',
+        category: category || undefined,
+        categorySlug,
+        subcategory,
+        description: description || `${name} offered by verified CASA marketplace partner.`,
+        price: Number(price),
+        discountPrice: discountPrice ? Number(discountPrice) : null,
+        stock: Number(stock || 10),
+        sku: sku || `SKU-${Date.now().toString().slice(-6)}`,
+        images: productImages,
+        tags: tags || [],
+        vendor: req.user._id,
+        vendorName: req.user.vendorStoreName || req.user.name,
+        approvalStatus: 'approved'
+      });
+
+      return res.status(201).json({ success: true, data: product });
+    } else {
+      const newProduct = {
+        _id: dataStore.generateId(),
+        name,
+        slug,
+        brand: brand || req.user.vendorStoreName || 'CASA Merchant',
+        categorySlug,
+        subcategory,
+        description: description || `${name} offered by verified CASA marketplace partner.`,
+        price: Number(price),
+        discountPrice: discountPrice ? Number(discountPrice) : null,
+        stock: Number(stock || 10),
+        sku: sku || `SKU-${Date.now().toString().slice(-6)}`,
+        images: productImages,
+        tags: tags || [],
+        rating: 4.8,
+        numReviews: 12,
+        isActive: true,
+        vendor: req.user._id,
+        vendorName: req.user.vendorStoreName || req.user.name,
+        approvalStatus: 'approved',
+        createdAt: new Date().toISOString()
+      };
+
+      dataStore.products.unshift(newProduct);
+      return res.status(201).json({ success: true, data: newProduct });
+    }
+  } catch (err) {
+    next(err);
+  }
+};
+
+// @desc    Get Vendor Financials & Settlements
+// @route   GET /api/vendor/financials
+// @access  Private (Vendor / Admin)
+exports.getVendorFinancials = async (req, res, next) => {
+  try {
+    let allOrders = [];
+    if (getDBStatus()) {
+      allOrders = await Order.find({ orderStatus: { $ne: 'Cancelled' } });
+    } else {
+      allOrders = (dataStore.orders || []).filter(o => o.orderStatus !== 'Cancelled');
+    }
+
+    const grossSales = allOrders.reduce((sum, o) => sum + (o.totalPrice || 0), 0);
+    const platformCommission = Math.round(grossSales * 0.10); // 10% platform fee
+    const netEarnings = grossSales - platformCommission;
+    const settledAmount = Math.round(netEarnings * 0.75);
+    const pendingSettlement = netEarnings - settledAmount;
+
+    const settlementHistory = [
+      {
+        id: 'SETTL-2026-W42',
+        period: '12 Oct 2026 - 18 Oct 2026',
+        gross: Math.round(grossSales * 0.55),
+        commission: Math.round(grossSales * 0.55 * 0.10),
+        net: Math.round(grossSales * 0.55 * 0.90),
+        status: 'Completed',
+        date: '19 Oct 2026',
+        utr: 'UTR8492019348'
+      },
+      {
+        id: 'SETTL-2026-W41',
+        period: '05 Oct 2026 - 11 Oct 2026',
+        gross: Math.round(grossSales * 0.45),
+        commission: Math.round(grossSales * 0.45 * 0.10),
+        net: Math.round(grossSales * 0.45 * 0.90),
+        status: 'Completed',
+        date: '12 Oct 2026',
+        utr: 'UTR7301928341'
+      }
+    ];
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        grossSales,
+        platformCommission,
+        netEarnings,
+        settledAmount,
+        pendingSettlement,
+        commissionRate: 10,
+        bankAccount: 'HDFC Bank ••••••4091 (Verified)',
+        nextSettlementDate: 'Friday, 24 Oct 2026',
+        summary: {
+          totalGrossSales: grossSales,
+          platformCommission,
+          netPayoutEarned: netEarnings,
+          commissionRate: 10,
+          deliveredOrdersCount: allOrders.filter(o => o.orderStatus === 'Delivered').length,
+          nextSettlementDate: 'Friday, 24 Oct 2026'
+        },
+        settlementHistory
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+};

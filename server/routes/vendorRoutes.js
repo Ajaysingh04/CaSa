@@ -5,7 +5,9 @@ const {
   getVendorOrders,
   updateVendorOrderStatus,
   getVendorProducts,
-  updateVendorProduct
+  updateVendorProduct,
+  createVendorProduct,
+  getVendorFinancials
 } = require('../controllers/vendorController');
 const { protect } = require('../middleware/auth');
 
@@ -15,6 +17,8 @@ router.get('/stats', getVendorStats);
 router.get('/orders', getVendorOrders);
 router.put('/orders/:id/status', updateVendorOrderStatus);
 router.get('/products', getVendorProducts);
+router.post('/products', createVendorProduct);
 router.put('/products/:id', updateVendorProduct);
+router.get('/financials', getVendorFinancials);
 
 module.exports = router;
