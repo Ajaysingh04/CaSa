@@ -3,12 +3,19 @@ const router = express.Router();
 const {
   getDashboardStats,
   getAllOrders,
+  assignDeliveryPartner,
+  adminOverrideOrderStatus,
   updateOrderStatus,
   deleteOrder,
+  getReturnsAndRefunds,
+  handleReturnAction,
   createProduct,
   updateProduct,
+  manageProductApproval,
   deleteProduct,
   getAllUsers,
+  manageUserStatus,
+  manageVendorStatus,
   updateUserRole,
   deleteUser,
   getSettings,
@@ -22,18 +29,27 @@ router.use(authorize('admin'));
 // Admin Dashboard stats
 router.get('/stats', getDashboardStats);
 
-// Admin Orders
+// Admin Orders & Shipments
 router.get('/orders', getAllOrders);
 router.put('/orders/:id/status', updateOrderStatus);
+router.put('/orders/:id/assign-delivery', assignDeliveryPartner);
+router.put('/orders/:id/override', adminOverrideOrderStatus);
 router.delete('/orders/:id', deleteOrder);
 
-// Admin Products CRUD
+// Returns & Refunds
+router.get('/returns', getReturnsAndRefunds);
+router.put('/orders/:id/return-action', handleReturnAction);
+
+// Admin Products CRUD & Approval
 router.post('/products', createProduct);
 router.put('/products/:id', updateProduct);
+router.put('/products/:id/approval', manageProductApproval);
 router.delete('/products/:id', deleteProduct);
 
-// Admin Users
+// Admin Users & Vendors
 router.get('/users', getAllUsers);
+router.put('/users/:id/status', manageUserStatus);
+router.put('/vendors/:id/status', manageVendorStatus);
 router.put('/users/:id/role', updateUserRole);
 router.delete('/users/:id', deleteUser);
 

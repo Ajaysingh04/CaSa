@@ -30,6 +30,8 @@ import {
   Clock,
   Layers,
   Trash2,
+  Truck,
+  Store,
 } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 
@@ -99,6 +101,75 @@ const AdminUsersPage = () => {
     }
   };
 
+  const handleToggleStatus = async (targetUser) => {
+    const isCurrentlyActive = targetUser.isActive !== false;
+    let reason = '';
+    if (isCurrentlyActive) {
+      reason = window.prompt(`Enter recorded reason for suspending "${targetUser.name}":`);
+      if (reason === null) return;
+      if (!reason.trim()) reason = 'Administrative suspension';
+    }
+
+    try {
+      await adminService.manageUserStatus(targetUser._id, {
+        isActive: !isCurrentlyActive,
+        suspensionReason: reason,
+      });
+      success(
+        `Account "${targetUser.name}" has been ${isCurrentlyActive ? 'suspended' : 'reactivated'}.`
+      );
+      setUsers((prev) =>
+        prev.map((u) =>
+          u._id === targetUser._id
+            ? { ...u, isActive: !isCurrentlyActive, suspensionReason: reason }
+            : u
+        )
+      );
+      if (selectedUser?._id === targetUser._id) {
+        setSelectedUser((prev) => ({
+          ...prev,
+          isActive: !isCurrentlyActive,
+          suspensionReason: reason,
+        }));
+      }
+    } catch (err) {
+      error(err.response?.data?.message || 'Failed to update account status');
+    }
+  };
+
+  const handleVendorApproval = async (targetUser, status) => {
+    let reason = '';
+    if (status === 'rejected' || status === 'suspended') {
+      reason = window.prompt(`Enter reason for ${status} vendor status:`);
+      if (reason === null) return;
+      if (!reason.trim()) reason = `Vendor ${status} by admin`;
+    }
+
+    try {
+      await adminService.manageVendorStatus(targetUser._id, {
+        vendorApprovalStatus: status,
+        suspensionReason: reason,
+      });
+      success(`Vendor "${targetUser.name}" status updated to ${status.toUpperCase()}`);
+      setUsers((prev) =>
+        prev.map((u) =>
+          u._id === targetUser._id
+            ? { ...u, vendorApprovalStatus: status, suspensionReason: reason }
+            : u
+        )
+      );
+      if (selectedUser?._id === targetUser._id) {
+        setSelectedUser((prev) => ({
+          ...prev,
+          vendorApprovalStatus: status,
+          suspensionReason: reason,
+        }));
+      }
+    } catch (err) {
+      error(err.response?.data?.message || 'Failed to update vendor status');
+    }
+  };
+
   const handleDeleteUser = async (targetUser) => {
     if (
       !window.confirm(
@@ -154,6 +225,8 @@ const AdminUsersPage = () => {
   const metrics = useMemo(() => {
     const total = enrichedUsers.length;
     const customers = enrichedUsers.filter((u) => u.role === 'user');
+    const vendors = enrichedUsers.filter((u) => u.role === 'vendor');
+    const riders = enrichedUsers.filter((u) => u.role === 'delivery');
     const admins = enrichedUsers.filter((u) => u.role === 'admin');
     const buyers = customers.filter((u) => u.ordersCount > 0);
     const totalLTV = enrichedUsers.reduce((sum, u) => sum + (u.totalSpent || 0), 0);
@@ -162,6 +235,8 @@ const AdminUsersPage = () => {
     return {
       total,
       customersCount: customers.length,
+      vendorsCount: vendors.length,
+      ridersCount: riders.length,
       adminsCount: admins.length,
       buyersCount: buyers.length,
       totalLTV,
@@ -515,6 +590,8 @@ const AdminUsersPage = () => {
           {[
             { id: 'all', label: 'All Accounts', count: metrics.total },
             { id: 'user', label: 'Customers', count: metrics.customersCount },
+            { id: 'vendor', label: 'Vendors', count: metrics.vendorsCount },
+            { id: 'delivery', label: 'Delivery Riders', count: metrics.ridersCount },
             { id: 'admin', label: 'Store Admins', count: metrics.adminsCount },
           ].map((tab) => {
             const isActive = roleFilter === tab.id;
@@ -879,27 +956,116 @@ const AdminUsersPage = () => {
                         </div>
                       </td>
 
-                      {/* Column 3: Role Chip */}
+                      {/* Column 3: Role Chip & Account Status */}
                       <td style={tableCellStyle}>
-                        <span
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '5px',
-                            padding: '4px 10px',
-                            borderRadius: '999px',
-                            fontSize: '0.75rem',
-                            fontWeight: 700,
-                            letterSpacing: '0.02em',
-                            textTransform: 'uppercase',
-                            background: isAdmin ? '#fef3c7' : '#e0e7ff',
-                            color: isAdmin ? '#b45309' : '#3730a3',
-                            border: isAdmin ? '1px solid #fde68a' : '1px solid #c7d2fe',
-                          }}
-                        >
-                          {isAdmin ? <ShieldCheck size={13} /> : <UserCheck size={13} />}
-                          <span>{isAdmin ? 'Store Admin' : 'Shopper'}</span>
-                        </span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-start' }}>
+                          <span
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '5px',
+                              padding: '4px 10px',
+                              borderRadius: '999px',
+                              fontSize: '0.75rem',
+                              fontWeight: 700,
+                              letterSpacing: '0.02em',
+                              textTransform: 'uppercase',
+                              background:
+                                user.role === 'admin'
+                                  ? '#fef3c7'
+                                  : user.role === 'vendor'
+                                  ? '#faf5ff'
+                                  : user.role === 'delivery'
+                                  ? '#ecfeff'
+                                  : '#e0e7ff',
+                              color:
+                                user.role === 'admin'
+                                  ? '#b45309'
+                                  : user.role === 'vendor'
+                                  ? '#7e22ce'
+                                  : user.role === 'delivery'
+                                  ? '#0e7490'
+                                  : '#3730a3',
+                              border:
+                                user.role === 'admin'
+                                  ? '1px solid #fde68a'
+                                  : user.role === 'vendor'
+                                  ? '1px solid #e9d5ff'
+                                  : user.role === 'delivery'
+                                  ? '1px solid #a5f3fc'
+                                  : '1px solid #c7d2fe',
+                            }}
+                          >
+                            {user.role === 'admin' && <ShieldCheck size={13} />}
+                            {user.role === 'vendor' && <Store size={13} />}
+                            {user.role === 'delivery' && <Truck size={13} />}
+                            {user.role === 'user' && <UserCheck size={13} />}
+                            <span>
+                              {user.role === 'admin'
+                                ? 'Store Admin'
+                                : user.role === 'vendor'
+                                ? 'Vendor / Seller'
+                                : user.role === 'delivery'
+                                ? 'Delivery Rider'
+                                : 'Shopper'}
+                            </span>
+                          </span>
+
+                          {/* Account Active / Suspended badge */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <span
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                fontSize: '0.7rem',
+                                fontWeight: 700,
+                                padding: '1px 6px',
+                                borderRadius: '4px',
+                                background: user.isActive !== false ? '#f0fdf4' : '#fef2f2',
+                                color: user.isActive !== false ? '#16a34a' : '#dc2626',
+                                border: `1px solid ${user.isActive !== false ? '#bbf7d0' : '#fecaca'}`,
+                              }}
+                              title={user.isActive === false ? `Reason: ${user.suspensionReason || 'Administrative'}` : 'Account active'}
+                            >
+                              <span style={{ width: 6, height: 6, borderRadius: '50%', background: user.isActive !== false ? '#16a34a' : '#dc2626' }} />
+                              {user.isActive !== false ? 'Active' : 'Suspended'}
+                            </span>
+
+                            {user.role === 'vendor' && user.vendorApprovalStatus && (
+                              <span
+                                style={{
+                                  fontSize: '0.7rem',
+                                  fontWeight: 700,
+                                  padding: '1px 6px',
+                                  borderRadius: '4px',
+                                  background:
+                                    user.vendorApprovalStatus === 'approved'
+                                      ? '#f0fdf4'
+                                      : user.vendorApprovalStatus === 'rejected'
+                                      ? '#fef2f2'
+                                      : '#fffbeb',
+                                  color:
+                                    user.vendorApprovalStatus === 'approved'
+                                      ? '#15803d'
+                                      : user.vendorApprovalStatus === 'rejected'
+                                      ? '#b91c1c'
+                                      : '#b45309',
+                                  border: `1px solid ${
+                                    user.vendorApprovalStatus === 'approved'
+                                      ? '#bbf7d0'
+                                      : user.vendorApprovalStatus === 'rejected'
+                                      ? '#fecaca'
+                                      : '#fde68a'
+                                  }`,
+                                  textTransform: 'capitalize',
+                                }}
+                              >
+                                {user.vendorApprovalStatus}
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </td>
 
                       {/* Column 4: Activity & LTV */}
@@ -965,26 +1131,74 @@ const AdminUsersPage = () => {
                             <span>Profile</span>
                           </button>
 
+                          {/* Suspend / Reactivate Account Button */}
                           <button
-                            onClick={() => handleToggleRole(user)}
+                            onClick={() => handleToggleStatus(user)}
                             style={{
                               display: 'inline-flex',
                               alignItems: 'center',
                               gap: '4px',
                               padding: '5px 9px',
                               borderRadius: '8px',
-                              background: isAdmin ? '#fef3c7' : '#eff6ff',
-                              border: isAdmin ? '1px solid #fde68a' : '1px solid #bfdbfe',
-                              color: isAdmin ? '#b45309' : '#1d4ed8',
+                              background: user.isActive !== false ? '#fff7ed' : '#f0fdf4',
+                              border: `1px solid ${user.isActive !== false ? '#ffedd5' : '#bbf7d0'}`,
+                              color: user.isActive !== false ? '#ea580c' : '#16a34a',
                               fontSize: '0.75rem',
                               fontWeight: 700,
                               cursor: 'pointer',
                             }}
-                            title={isAdmin ? 'Demote to regular shopper' : 'Promote to Store Administrator'}
+                            title={user.isActive !== false ? 'Suspend account with recorded reason' : 'Reactivate account'}
                           >
-                            {isAdmin ? <UserCheck size={13} /> : <ShieldCheck size={13} />}
-                            <span>{isAdmin ? 'Demote' : 'Make Admin'}</span>
+                            {user.isActive !== false ? <UserX size={13} /> : <UserCheck size={13} />}
+                            <span>{user.isActive !== false ? 'Suspend' : 'Reactivate'}</span>
                           </button>
+
+                          {/* If vendor, show quick approve */}
+                          {user.role === 'vendor' && user.vendorApprovalStatus !== 'approved' && (
+                            <button
+                              onClick={() => handleVendorApproval(user, 'approved')}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                padding: '5px 9px',
+                                borderRadius: '8px',
+                                background: '#f0fdf4',
+                                border: '1px solid #bbf7d0',
+                                color: '#16a34a',
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                              }}
+                              title="Approve Vendor Onboarding"
+                            >
+                              <Check size={13} />
+                              <span>Approve</span>
+                            </button>
+                          )}
+
+                          {user.role !== 'vendor' && user.role !== 'delivery' && (
+                            <button
+                              onClick={() => handleToggleRole(user)}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                padding: '5px 9px',
+                                borderRadius: '8px',
+                                background: isAdmin ? '#fef3c7' : '#eff6ff',
+                                border: isAdmin ? '1px solid #fde68a' : '1px solid #bfdbfe',
+                                color: isAdmin ? '#b45309' : '#1d4ed8',
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                              }}
+                              title={isAdmin ? 'Demote to regular shopper' : 'Promote to Store Administrator'}
+                            >
+                              {isAdmin ? <UserCheck size={13} /> : <ShieldCheck size={13} />}
+                              <span>{isAdmin ? 'Demote' : 'Make Admin'}</span>
+                            </button>
+                          )}
 
                           <button
                             onClick={() => handleDeleteUser(user)}
@@ -1252,13 +1466,63 @@ const AdminUsersPage = () => {
                         fontSize: '0.72rem',
                         fontWeight: 700,
                         textTransform: 'uppercase',
-                        background: selectedUser.role === 'admin' ? '#fef3c7' : '#e0e7ff',
-                        color: selectedUser.role === 'admin' ? '#b45309' : '#3730a3',
+                        background:
+                          selectedUser.role === 'admin'
+                            ? '#fef3c7'
+                            : selectedUser.role === 'vendor'
+                            ? '#faf5ff'
+                            : selectedUser.role === 'delivery'
+                            ? '#ecfeff'
+                            : '#e0e7ff',
+                        color:
+                          selectedUser.role === 'admin'
+                            ? '#b45309'
+                            : selectedUser.role === 'vendor'
+                            ? '#7e22ce'
+                            : selectedUser.role === 'delivery'
+                            ? '#0e7490'
+                            : '#3730a3',
                       }}
                     >
-                      {selectedUser.role === 'admin' ? 'Store Admin' : 'Shopper'}
+                      {selectedUser.role === 'admin'
+                        ? 'Store Admin'
+                        : selectedUser.role === 'vendor'
+                        ? 'Vendor'
+                        : selectedUser.role === 'delivery'
+                        ? 'Delivery Rider'
+                        : 'Shopper'}
+                    </span>
+
+                    <span
+                      style={{
+                        padding: '2px 7px',
+                        borderRadius: '6px',
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        background: selectedUser.isActive !== false ? '#f0fdf4' : '#fef2f2',
+                        color: selectedUser.isActive !== false ? '#16a34a' : '#dc2626',
+                        border: `1px solid ${selectedUser.isActive !== false ? '#bbf7d0' : '#fecaca'}`,
+                      }}
+                    >
+                      {selectedUser.isActive !== false ? '● Active' : '● Suspended'}
                     </span>
                   </div>
+
+                  {selectedUser.isActive === false && selectedUser.suspensionReason && (
+                    <div
+                      style={{
+                        marginTop: '6px',
+                        padding: '6px 10px',
+                        background: '#fef2f2',
+                        borderRadius: '6px',
+                        border: '1px solid #fee2e2',
+                        fontSize: '0.78rem',
+                        color: '#b91c1c',
+                      }}
+                    >
+                      <strong>Suspension Reason:</strong> {selectedUser.suspensionReason}
+                    </div>
+                  )}
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '6px' }}>
                     <span style={{ fontSize: '0.85rem', color: '#475569', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -1270,6 +1534,32 @@ const AdminUsersPage = () => {
                       </span>
                     )}
                   </div>
+
+                  {selectedUser.role === 'vendor' && (
+                    <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569' }}>
+                        Vendor Approval: <strong style={{ textTransform: 'capitalize' }}>{selectedUser.vendorApprovalStatus || 'pending'}</strong>
+                      </span>
+                      <button
+                        onClick={() => handleVendorApproval(selectedUser, 'approved')}
+                        style={{ padding: '3px 8px', borderRadius: '6px', background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#16a34a', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer' }}
+                      >
+                        Approve
+                      </button>
+                      <button
+                        onClick={() => handleVendorApproval(selectedUser, 'rejected')}
+                        style={{ padding: '3px 8px', borderRadius: '6px', background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer' }}
+                      >
+                        Reject
+                      </button>
+                      <button
+                        onClick={() => handleVendorApproval(selectedUser, 'suspended')}
+                        style={{ padding: '3px 8px', borderRadius: '6px', background: '#f8fafc', border: '1px solid #cbd5e1', color: '#64748b', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer' }}
+                      >
+                        Suspend
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 

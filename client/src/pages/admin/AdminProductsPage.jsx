@@ -40,6 +40,7 @@ const AdminProductsPage = () => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedBrand, setSelectedBrand] = useState('');
   const [stockStatus, setStockStatus] = useState('all'); // 'all', 'instock', 'lowstock', 'outofstock'
+  const [approvalFilter, setApprovalFilter] = useState('all'); // 'all', 'approved', 'pending', 'rejected'
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [sortBy, setSortBy] = useState('newest'); // 'newest', 'price_asc', 'price_desc', 'stock_asc', 'stock_desc'
@@ -170,6 +171,12 @@ const AdminProductsPage = () => {
         if (stockStatus === 'lowstock' && ((p.stock || 0) <= 0 || (p.stock || 0) > 15)) return false;
         if (stockStatus === 'outofstock' && (p.stock || 0) > 0) return false;
 
+        // Approval status filter
+        if (approvalFilter !== 'all') {
+          const status = p.approvalStatus || 'approved';
+          if (status !== approvalFilter) return false;
+        }
+
         // Price filter
         const finalPrice = p.discountPrice || p.price || 0;
         if (minPrice && finalPrice < Number(minPrice)) return false;
@@ -189,7 +196,7 @@ const AdminProductsPage = () => {
         if (sortBy === 'stock_desc') return stockB - stockA;
         return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
       });
-  }, [products, search, selectedCategory, selectedBrand, stockStatus, minPrice, maxPrice, sortBy]);
+  }, [products, search, selectedCategory, selectedBrand, stockStatus, approvalFilter, minPrice, maxPrice, sortBy]);
 
   // Pagination logic
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / itemsPerPage));
@@ -203,6 +210,7 @@ const AdminProductsPage = () => {
     setSelectedCategory('');
     setSelectedBrand('');
     setStockStatus('all');
+    setApprovalFilter('all');
     setMinPrice('');
     setMaxPrice('');
     setSortBy('newest');
@@ -214,9 +222,32 @@ const AdminProductsPage = () => {
     selectedCategory,
     selectedBrand,
     stockStatus !== 'all',
+    approvalFilter !== 'all',
     minPrice,
     maxPrice,
   ].filter(Boolean).length;
+
+  const handleApprovalChange = async (productId, status) => {
+    let rejectionReason = '';
+    if (status === 'rejected') {
+      rejectionReason = window.prompt('Enter reason for rejecting this product listing:') || 'Content/listing policy rejection';
+    }
+
+    try {
+      await adminService.manageProductApproval(productId, {
+        approvalStatus: status,
+        rejectionReason,
+      });
+      success(`Product listing set to ${status.toUpperCase()}`);
+      setProducts((prev) =>
+        prev.map((p) =>
+          p._id === productId ? { ...p, approvalStatus: status, rejectionReason } : p
+        )
+      );
+    } catch (err) {
+      error(err.response?.data?.message || 'Failed to update product approval status');
+    }
+  };
 
   const handleCreateProduct = async (e) => {
     e.preventDefault();
@@ -623,6 +654,23 @@ const AdminProductsPage = () => {
             </select>
           </div>
 
+          {/* Moderation / Approval Filter */}
+          <div style={selectBox}>
+            <select
+              value={approvalFilter}
+              onChange={(e) => {
+                setApprovalFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              style={selectDropdown}
+            >
+              <option value="all">Moderation: All</option>
+              <option value="approved">Approved</option>
+              <option value="pending">Pending Review</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
+
           {/* Sort By */}
           <div style={selectBox}>
             <select
@@ -775,6 +823,7 @@ const AdminProductsPage = () => {
                   <th style={thStyle}>Brand</th>
                   <th style={thStyle}>Pricing</th>
                   <th style={thStyle}>Inventory Level</th>
+                  <th style={thStyle}>Approval Status</th>
                   <th style={thStyle}>Merchandising</th>
                   <th style={{ ...thStyle, textAlign: 'center' }}>Actions</th>
                 </tr>
@@ -891,6 +940,52 @@ const AdminProductsPage = () => {
                         </div>
                       </td>
 
+                      {/* Approval Status */}
+                      <td style={tdStyle}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', alignItems: 'flex-start' }}>
+                          <span
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              padding: '3px 8px',
+                              borderRadius: '999px',
+                              fontSize: '0.72rem',
+                              fontWeight: 700,
+                              textTransform: 'uppercase',
+                              background:
+                                (p.approvalStatus || 'approved') === 'approved'
+                                  ? '#f0fdf4'
+                                  : (p.approvalStatus === 'rejected')
+                                  ? '#fef2f2'
+                                  : '#fffbeb',
+                              color:
+                                (p.approvalStatus || 'approved') === 'approved'
+                                  ? '#15803d'
+                                  : (p.approvalStatus === 'rejected')
+                                  ? '#b91c1c'
+                                  : '#b45309',
+                              border: `1px solid ${
+                                (p.approvalStatus || 'approved') === 'approved'
+                                  ? '#bbf7d0'
+                                  : (p.approvalStatus === 'rejected')
+                                  ? '#fecaca'
+                                  : '#fde68a'
+                              }`,
+                            }}
+                          >
+                            {(p.approvalStatus || 'approved') === 'approved' && '✓ Approved'}
+                            {p.approvalStatus === 'pending' && '⏳ In Review'}
+                            {p.approvalStatus === 'rejected' && '✕ Rejected'}
+                          </span>
+                          {p.rejectionReason && (
+                            <span style={{ fontSize: '0.68rem', color: '#b91c1c', maxWidth: '120px' }}>
+                              {p.rejectionReason}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+
                       {/* Merchandising Badges */}
                       <td style={tdStyle}>
                         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
@@ -908,13 +1003,69 @@ const AdminProductsPage = () => {
 
                       {/* Actions */}
                       <td style={{ ...tdStyle, textAlign: 'center' }}>
-                        <button
-                          onClick={() => handleDeleteProduct(p._id, p.name)}
-                          style={deleteBtnStyle}
-                          title="Delete product"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                          {p.approvalStatus === 'pending' && (
+                            <>
+                              <button
+                                onClick={() => handleApprovalChange(p._id, 'approved')}
+                                style={{
+                                  padding: '5px 8px',
+                                  borderRadius: '6px',
+                                  background: '#f0fdf4',
+                                  border: '1px solid #bbf7d0',
+                                  color: '#16a34a',
+                                  fontSize: '0.75rem',
+                                  fontWeight: 700,
+                                  cursor: 'pointer',
+                                }}
+                                title="Approve Listing"
+                              >
+                                Approve
+                              </button>
+                              <button
+                                onClick={() => handleApprovalChange(p._id, 'rejected')}
+                                style={{
+                                  padding: '5px 8px',
+                                  borderRadius: '6px',
+                                  background: '#fef2f2',
+                                  border: '1px solid #fee2e2',
+                                  color: '#dc2626',
+                                  fontSize: '0.75rem',
+                                  fontWeight: 700,
+                                  cursor: 'pointer',
+                                }}
+                                title="Reject Listing"
+                              >
+                                Reject
+                              </button>
+                            </>
+                          )}
+                          {p.approvalStatus === 'rejected' && (
+                            <button
+                              onClick={() => handleApprovalChange(p._id, 'approved')}
+                              style={{
+                                padding: '5px 8px',
+                                borderRadius: '6px',
+                                background: '#eff6ff',
+                                border: '1px solid #bfdbfe',
+                                color: '#2563eb',
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                              }}
+                              title="Re-Approve Listing"
+                            >
+                              Re-Approve
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleDeleteProduct(p._id, p.name)}
+                            style={deleteBtnStyle}
+                            title="Delete product"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );

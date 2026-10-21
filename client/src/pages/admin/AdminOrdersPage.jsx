@@ -53,13 +53,22 @@ const AdminOrdersPage = () => {
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [deliveryPartners, setDeliveryPartners] = useState([]);
+  const [assignedRiderId, setAssignedRiderId] = useState('');
   const itemsPerPage = 8;
 
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const res = await adminService.getOrders();
-      setOrders(res.data || []);
+      const [res, usersRes] = await Promise.allSettled([
+        adminService.getOrders(),
+        adminService.getUsers(),
+      ]);
+      if (res.status === 'fulfilled') setOrders(res.value?.data || []);
+      if (usersRes.status === 'fulfilled') {
+        const riders = (usersRes.value || []).filter((u) => u.role === 'delivery');
+        setDeliveryPartners(riders);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -70,6 +79,91 @@ const AdminOrdersPage = () => {
   useEffect(() => {
     fetchOrders();
   }, []);
+
+  const handleAssignRider = async (orderId, riderId) => {
+    if (!riderId) {
+      error('Please select a delivery partner to assign');
+      return;
+    }
+    const reason = window.prompt('Enter instructions or dispatch reason for delivery partner:') || 'Direct admin dispatch';
+    try {
+      const res = await adminService.assignDeliveryPartner(orderId, {
+        deliveryPartnerId: riderId,
+        reason,
+      });
+      success('Delivery partner successfully assigned to order');
+      fetchOrders();
+      if (selectedOrder && selectedOrder._id === orderId) {
+        setSelectedOrder((prev) => ({
+          ...prev,
+          deliveryPartner: deliveryPartners.find((r) => r._id === riderId) || { _id: riderId },
+          orderStatus: res.data?.order?.orderStatus || prev.orderStatus,
+        }));
+      }
+    } catch (err) {
+      error(err.response?.data?.message || 'Failed to assign delivery partner');
+    }
+  };
+
+  const handleAdminOverride = async (orderId, newStatus) => {
+    const reason = window.prompt(`Enter mandatory audit reason for administratively overriding status to "${newStatus}":`);
+    if (!reason || !reason.trim()) {
+      error('Administrative override aborted: An audit reason is mandatory.');
+      return;
+    }
+
+    try {
+      await adminService.overrideOrderStatus(orderId, {
+        status: newStatus,
+        reason: reason.trim(),
+      });
+      success(`Order status successfully overridden to "${newStatus}"`);
+      fetchOrders();
+      if (selectedOrder && selectedOrder._id === orderId) {
+        setSelectedOrder((prev) => ({ ...prev, orderStatus: newStatus }));
+      }
+    } catch (err) {
+      error(err.response?.data?.message || 'Failed to override order status');
+    }
+  };
+
+  const handleReturnAction = async (orderId, action) => {
+    let refundAmount = null;
+    let reason = '';
+
+    if (action === 'refund') {
+      const input = window.prompt('Enter refund settlement amount (INR):', selectedOrder?.totalPrice || '');
+      if (input === null) return;
+      refundAmount = Number(input) || selectedOrder?.totalPrice;
+    } else if (action === 'reject') {
+      const input = window.prompt('Enter rejection reason for customer return:');
+      if (input === null) return;
+      reason = input || 'Return inspection failed policy check';
+    }
+
+    try {
+      await adminService.handleReturnAction(orderId, {
+        action,
+        refundAmount,
+        reason,
+      });
+      success(`Return workflow action "${action.toUpperCase()}" completed successfully.`);
+      fetchOrders();
+      if (selectedOrder && selectedOrder._id === orderId) {
+        const newStatus =
+          action === 'approve'
+            ? 'Return approved'
+            : action === 'receive'
+            ? 'Return received'
+            : action === 'refund'
+            ? 'Refunded'
+            : selectedOrder.orderStatus;
+        setSelectedOrder((prev) => ({ ...prev, orderStatus: newStatus }));
+      }
+    } catch (err) {
+      error(err.response?.data?.message || 'Failed to process return action');
+    }
+  };
 
   // Compute Overall Order Metrics
   const orderMetrics = useMemo(() => {
@@ -787,30 +881,305 @@ const AdminOrdersPage = () => {
                   </strong>
                 </div>
               </div>
-            </div>
 
-            {/* Quick Status Advance Buttons in Footer */}
-            <div style={modalFooter}>
-              <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>
-                Transition Order Status:
-              </span>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {['Confirmed', 'Processing', 'Packed', 'Shipped', 'Delivered'].map((step) => (
-                  <button
-                    key={step}
-                    onClick={() => handleStatusChange(selectedOrder._id, step)}
-                    disabled={selectedOrder.orderStatus === step}
+              {/* Delivery Partner Assignment Section */}
+              <div
+                style={{
+                  marginTop: '16px',
+                  padding: '16px',
+                  borderRadius: '12px',
+                  background: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Truck size={17} color="#2563eb" />
+                    <strong style={{ fontSize: '0.88rem', color: '#0f172a' }}>
+                      Delivery Partner Assignment
+                    </strong>
+                  </div>
+                  <span
                     style={{
-                      ...stepAdvanceBtn,
-                      background: selectedOrder.orderStatus === step ? '#2563eb' : '#ffffff',
-                      color: selectedOrder.orderStatus === step ? '#ffffff' : '#334155',
-                      borderColor: selectedOrder.orderStatus === step ? '#2563eb' : '#cbd5e1',
-                      cursor: selectedOrder.orderStatus === step ? 'default' : 'pointer',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      padding: '2px 8px',
+                      borderRadius: '6px',
+                      background: selectedOrder.deliveryPartner ? '#ecfeff' : '#fef2f2',
+                      color: selectedOrder.deliveryPartner ? '#0891b2' : '#dc2626',
                     }}
                   >
-                    {step}
+                    {selectedOrder.deliveryPartner
+                      ? `Assigned: ${selectedOrder.deliveryPartner.name || selectedOrder.deliveryPartner.phone || 'Partner'}`
+                      : 'Unassigned'}
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <select
+                    value={assignedRiderId}
+                    onChange={(e) => setAssignedRiderId(e.target.value)}
+                    style={{
+                      flex: 1,
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.825rem',
+                      background: '#ffffff',
+                      color: '#0f172a',
+                    }}
+                  >
+                    <option value="">-- Select Rider to Assign --</option>
+                    {deliveryPartners.map((rider) => (
+                      <option key={rider._id} value={rider._id}>
+                        {rider.name} ({rider.phone || 'No phone'}) - {rider.email}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={() => handleAssignRider(selectedOrder._id, assignedRiderId)}
+                    disabled={!assignedRiderId}
+                    style={{
+                      padding: '8px 14px',
+                      borderRadius: '8px',
+                      background: assignedRiderId ? '#2563eb' : '#e2e8f0',
+                      color: '#ffffff',
+                      border: 'none',
+                      fontSize: '0.825rem',
+                      fontWeight: 700,
+                      cursor: assignedRiderId ? 'pointer' : 'not-allowed',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                  >
+                    <Truck size={14} /> Assign Rider
                   </button>
-                ))}
+                </div>
+              </div>
+
+              {/* Returns & Refunds Workflow Section */}
+              {(selectedOrder.orderStatus?.toLowerCase().includes('return') ||
+                selectedOrder.orderStatus === 'Refund pending' ||
+                selectedOrder.orderStatus === 'Refunded') && (
+                <div
+                  style={{
+                    marginTop: '16px',
+                    padding: '16px',
+                    borderRadius: '12px',
+                    background: '#fffbeb',
+                    border: '1px solid #fde68a',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '10px',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <RotateCcw size={16} color="#b45309" />
+                      <strong style={{ fontSize: '0.88rem', color: '#92400e' }}>
+                        Customer Return & Refund Workflow
+                      </strong>
+                    </div>
+                    <span
+                      style={{
+                        fontSize: '0.75rem',
+                        fontWeight: 800,
+                        color: '#b45309',
+                        padding: '2px 8px',
+                        background: '#fef3c7',
+                        borderRadius: '4px',
+                      }}
+                    >
+                      Status: {selectedOrder.orderStatus}
+                    </span>
+                  </div>
+
+                  <p style={{ margin: 0, fontSize: '0.8rem', color: '#78350f' }}>
+                    Process reverse logistics, approve physical inspection at warehouse, and disburse gateway refund settlement.
+                  </p>
+
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '4px' }}>
+                    {selectedOrder.orderStatus === 'Return requested' && (
+                      <>
+                        <button
+                          onClick={() => handleReturnAction(selectedOrder._id, 'approve')}
+                          style={{
+                            padding: '7px 12px',
+                            background: '#16a34a',
+                            color: '#ffffff',
+                            border: 'none',
+                            borderRadius: '8px',
+                            fontSize: '0.8rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          ✓ Approve Return Request
+                        </button>
+                        <button
+                          onClick={() => handleReturnAction(selectedOrder._id, 'reject')}
+                          style={{
+                            padding: '7px 12px',
+                            background: '#dc2626',
+                            color: '#ffffff',
+                            border: 'none',
+                            borderRadius: '8px',
+                            fontSize: '0.8rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          ✕ Reject Return
+                        </button>
+                      </>
+                    )}
+
+                    {['Return approved', 'Return picked up'].includes(selectedOrder.orderStatus) && (
+                      <button
+                        onClick={() => handleReturnAction(selectedOrder._id, 'receive')}
+                        style={{
+                          padding: '7px 12px',
+                          background: '#0891b2',
+                          color: '#ffffff',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontSize: '0.8rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        📦 Mark Return Received at Hub
+                      </button>
+                    )}
+
+                    {['Return received', 'Refund pending'].includes(selectedOrder.orderStatus) && (
+                      <button
+                        onClick={() => handleReturnAction(selectedOrder._id, 'refund')}
+                        style={{
+                          padding: '7px 14px',
+                          background: '#2563eb',
+                          color: '#ffffff',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontSize: '0.8rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        💳 Disburse Refund ({formatINR(selectedOrder.totalPrice)})
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Status History / Audit Trail */}
+              {selectedOrder.statusHistory && selectedOrder.statusHistory.length > 0 && (
+                <div style={{ marginTop: '16px' }}>
+                  <h4 style={{ fontSize: '0.85rem', fontWeight: 800, color: '#0f172a', marginBottom: '8px' }}>
+                    Order Timeline & Audit History
+                  </h4>
+                  <div
+                    style={{
+                      maxHeight: '130px',
+                      overflowY: 'auto',
+                      background: '#f8fafc',
+                      borderRadius: '8px',
+                      border: '1px solid #e2e8f0',
+                      padding: '10px 14px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '8px',
+                    }}
+                  >
+                    {selectedOrder.statusHistory.map((h, i) => (
+                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem' }}>
+                        <div>
+                          <strong style={{ color: '#0f172a' }}>{h.status}</strong>
+                          {h.reason && <span style={{ color: '#64748b' }}> — {h.reason}</span>}
+                          {h.updatedBy && <span style={{ color: '#2563eb', fontWeight: 600 }}> ({h.updatedBy})</span>}
+                        </div>
+                        <span style={{ color: '#94a3b8', fontSize: '0.72rem' }}>
+                          {formatDateTime(h.changedAt || h.timestamp)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Quick Status Advance Buttons & Administrative Override in Footer */}
+            <div style={{ ...modalFooter, flexDirection: 'column', alignItems: 'stretch', gap: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>
+                  Standard Status Flow:
+                </span>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {['Confirmed', 'Processing', 'Packed', 'Shipped', 'Delivered'].map((step) => (
+                    <button
+                      key={step}
+                      onClick={() => handleStatusChange(selectedOrder._id, step)}
+                      disabled={selectedOrder.orderStatus === step}
+                      style={{
+                        ...stepAdvanceBtn,
+                        background: selectedOrder.orderStatus === step ? '#2563eb' : '#ffffff',
+                        color: selectedOrder.orderStatus === step ? '#ffffff' : '#334155',
+                        borderColor: selectedOrder.orderStatus === step ? '#2563eb' : '#cbd5e1',
+                        cursor: selectedOrder.orderStatus === step ? 'default' : 'pointer',
+                      }}
+                    >
+                      {step}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Administrative Status Override */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  paddingTop: '10px',
+                  borderTop: '1px solid #e2e8f0',
+                  flexWrap: 'wrap',
+                  gap: '8px',
+                }}
+              >
+                <span style={{ fontSize: '0.78rem', color: '#b91c1c', fontWeight: 700 }}>
+                  ⚠️ Administrative Override (Audit Logged):
+                </span>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <select
+                    id="adminOverrideSelect"
+                    defaultValue=""
+                    style={{
+                      padding: '5px 10px',
+                      borderRadius: '6px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.78rem',
+                      color: '#0f172a',
+                    }}
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        handleAdminOverride(selectedOrder._id, e.target.value);
+                        e.target.value = '';
+                      }
+                    }}
+                  >
+                    <option value="" disabled>-- Force Override Status --</option>
+                    {STATUS_GROUPS.filter((s) => s.id !== 'All').map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
           </div>

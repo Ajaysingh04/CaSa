@@ -66,9 +66,24 @@ const AdminDashboardPage = () => {
 
   const {
     totalRevenue = 0,
+    grossGMV = 0,
+    actualRevenue = 0,
+    refundedAmount = 0,
+    platformCommissions = 0,
+    deliveryFeesTotal = 0,
+    netSettlementDisbursed = 0,
     totalOrders = 0,
     totalProducts = 0,
     totalUsers = 0,
+    totalCustomers = 0,
+    totalVendors = 0,
+    totalDeliveryPartners = 0,
+    todayOrders = 0,
+    pendingOrders = 0,
+    successfulDeliveries = 0,
+    failedDeliveries = 0,
+    cancellations = 0,
+    returnsCount = 0,
     avgOrderValue = 0,
     lowStockProducts = [],
     topProducts = [],
@@ -572,6 +587,95 @@ const AdminDashboardPage = () => {
             <Link to="/admin/users" style={kpiActionLink}>
               Directory →
             </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Marketplace Multi-Stakeholder Ledger & Central Operational Health */}
+      <div
+        style={{
+          background: '#ffffff',
+          borderRadius: '20px',
+          border: '1px solid #e2e8f0',
+          padding: '20px 24px',
+          boxShadow: '0 2px 8px rgba(15, 23, 42, 0.03)',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+          <div>
+            <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <DollarSign size={18} color="#16a34a" /> Marketplace Financial Reconciliation & Net Settlement
+            </h3>
+            <span style={{ fontSize: '0.78rem', color: '#64748b' }}>
+              Real-time database reconciliation of Gross GMV, Collected Funds, Seller Disbursals, and Rider Fees
+            </span>
+          </div>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <span style={{ padding: '3px 10px', borderRadius: '6px', background: '#dbeafe', color: '#1d4ed8', fontSize: '0.75rem', fontWeight: 700 }}>
+              👥 {totalCustomers} Customers
+            </span>
+            <span style={{ padding: '3px 10px', borderRadius: '6px', background: '#fef3c7', color: '#b45309', fontSize: '0.75rem', fontWeight: 700 }}>
+              🏪 {totalVendors} Merchants
+            </span>
+            <span style={{ padding: '3px 10px', borderRadius: '6px', background: '#e0f2fe', color: '#0369a1', fontSize: '0.75rem', fontWeight: 700 }}>
+              🛵 {totalDeliveryPartners} Delivery Riders
+            </span>
+          </div>
+        </div>
+
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+            gap: '12px',
+          }}
+        >
+          <div style={{ background: '#f8fafc', padding: '12px 14px', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
+            <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>GROSS GMV</span>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', marginTop: '2px' }}>
+              {formatINR(grossGMV || totalRevenue)}
+            </div>
+            <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Total booked orders</span>
+          </div>
+
+          <div style={{ background: '#f0fdf4', padding: '12px 14px', borderRadius: '12px', border: '1px solid #dcfce7' }}>
+            <span style={{ fontSize: '0.72rem', color: '#166534', fontWeight: 700 }}>COLLECTED REVENUE</span>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#15803d', marginTop: '2px' }}>
+              {formatINR(actualRevenue || totalRevenue)}
+            </div>
+            <span style={{ fontSize: '0.7rem', color: '#15803d' }}>Paid Online + Verified COD</span>
+          </div>
+
+          <div style={{ background: '#eff6ff', padding: '12px 14px', borderRadius: '12px', border: '1px solid #dbeafe' }}>
+            <span style={{ fontSize: '0.72rem', color: '#1e40af', fontWeight: 700 }}>PLATFORM COMMISSION (10%)</span>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#2563eb', marginTop: '2px' }}>
+              +{formatINR(platformCommissions)}
+            </div>
+            <span style={{ fontSize: '0.7rem', color: '#2563eb' }}>CASA marketplace fee</span>
+          </div>
+
+          <div style={{ background: '#faf5ff', padding: '12px 14px', borderRadius: '12px', border: '1px solid #f3e8ff' }}>
+            <span style={{ fontSize: '0.72rem', color: '#6b21a8', fontWeight: 700 }}>SELLER NET PAYOUTS</span>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#7c3aed', marginTop: '2px' }}>
+              {formatINR(netSettlementDisbursed)}
+            </div>
+            <span style={{ fontSize: '0.7rem', color: '#7c3aed' }}>Disbursed to merchant bank accounts</span>
+          </div>
+
+          <div style={{ background: '#fff7ed', padding: '12px 14px', borderRadius: '12px', border: '1px solid #ffedd5' }}>
+            <span style={{ fontSize: '0.72rem', color: '#9a3412', fontWeight: 700 }}>RIDER DISPATCH FEES</span>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ea580c', marginTop: '2px' }}>
+              {formatINR(deliveryFeesTotal)}
+            </div>
+            <span style={{ fontSize: '0.7rem', color: '#ea580c' }}>₹65/successful drop</span>
+          </div>
+
+          <div style={{ background: '#fef2f2', padding: '12px 14px', borderRadius: '12px', border: '1px solid #fee2e2' }}>
+            <span style={{ fontSize: '0.72rem', color: '#991b1b', fontWeight: 700 }}>REFUND LIABILITIES</span>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#dc2626', marginTop: '2px' }}>
+              {formatINR(refundedAmount)}
+            </div>
+            <span style={{ fontSize: '0.7rem', color: '#dc2626' }}>Completed customer refunds</span>
           </div>
         </div>
       </div>

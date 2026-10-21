@@ -7,20 +7,41 @@ export const adminService = {
     return response.data.data;
   },
 
-  // Orders
+  // Orders & Shipments
   getOrders: async (params = {}) => {
     const response = await api.get('/admin/orders', { params });
     return response.data;
   },
 
-  updateOrderStatus: async (id, status, note = '') => {
-    const response = await api.put(`/admin/orders/${id}/status`, { status, note });
+  updateOrderStatus: async (id, status, note = '', reason = '') => {
+    const response = await api.put(`/admin/orders/${id}/status`, { status, note, reason });
+    return response.data.data;
+  },
+
+  assignDeliveryPartner: async (id, partnerId, reason = '') => {
+    const response = await api.put(`/admin/orders/${id}/assign-delivery`, { partnerId, reason });
+    return response.data.data;
+  },
+
+  overrideOrderStatus: async (id, status, reason, note = '') => {
+    const response = await api.put(`/admin/orders/${id}/override`, { status, reason, note });
     return response.data.data;
   },
 
   deleteOrder: async (id) => {
     const response = await api.delete(`/admin/orders/${id}`);
     return response.data;
+  },
+
+  // Returns & Refunds
+  getReturns: async () => {
+    const response = await api.get('/admin/returns');
+    return response.data.data;
+  },
+
+  handleReturnAction: async (id, action, reason = '') => {
+    const response = await api.put(`/admin/orders/${id}/return-action`, { action, reason });
+    return response.data.data;
   },
 
   // Products
@@ -34,14 +55,29 @@ export const adminService = {
     return response.data.data;
   },
 
+  manageProductApproval: async (id, approvalData) => {
+    const response = await api.put(`/admin/products/${id}/approval`, approvalData);
+    return response.data.data;
+  },
+
   deleteProduct: async (id) => {
     const response = await api.delete(`/admin/products/${id}`);
     return response.data;
   },
 
-  // Users
-  getUsers: async () => {
-    const response = await api.get('/admin/users');
+  // Users & Vendors
+  getUsers: async (params = {}) => {
+    const response = await api.get('/admin/users', { params });
+    return response.data.data;
+  },
+
+  manageUserStatus: async (id, isActive, suspensionReason = '') => {
+    const response = await api.put(`/admin/users/${id}/status`, { isActive, suspensionReason });
+    return response.data.data;
+  },
+
+  manageVendorStatus: async (id, vendorApprovalStatus, note = '') => {
+    const response = await api.put(`/admin/vendors/${id}/status`, { vendorApprovalStatus, note });
     return response.data.data;
   },
 
@@ -134,4 +170,3 @@ export const adminService = {
     return response.data;
   },
 };
-

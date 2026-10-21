@@ -5,22 +5,12 @@ const Category = require('../models/Category');
 const Setting = require('../models/Setting');
 const { getDBStatus } = require('../config/db');
 const dataStore = require('../services/dataStore');
+const {
+  applyStatusTransition,
+  canTransition
+} = require('../services/orderLifecycleService');
 
-// Valid status transitions
-const validTransitions = {
-  Pending: ['Confirmed', 'Cancelled'],
-  Confirmed: ['Processing', 'Cancelled'],
-  Processing: ['Packed', 'Cancelled'],
-  Packed: ['Shipped', 'Cancelled'],
-  Shipped: ['Out for delivery'],
-  'Out for delivery': ['Delivered'],
-  Delivered: ['Return requested'],
-  'Return requested': ['Refunded', 'Delivered'],
-  Cancelled: [],
-  Refunded: []
-};
-
-// @desc    Get Admin Dashboard Stats & Metrics
+// @desc    Get Admin Dashboard Stats & Complete Operational Analytics
 // @route   GET /api/admin/stats
 // @access  Private/Admin
 exports.getDashboardStats = async (req, res, next) => {
@@ -28,29 +18,48 @@ exports.getDashboardStats = async (req, res, next) => {
     if (getDBStatus()) {
       const totalProducts = await Product.countDocuments();
       const totalOrders = await Order.countDocuments();
-      const totalUsers = await User.countDocuments({ role: 'user' });
+      const totalCustomers = await User.countDocuments({ role: 'user' });
+      const totalVendors = await User.countDocuments({ role: 'vendor' });
+      const totalDeliveryPartners = await User.countDocuments({ role: 'delivery' });
 
-      // Revenue calculation: sum of paid or delivered orders (excluding cancelled/refunded)
-      const revenueAgg = await Order.aggregate([
-        { $match: { orderStatus: { $nin: ['Cancelled', 'Refunded'] } } },
-        { $group: { _id: null, totalRevenue: { $sum: '$totalPrice' } } }
-      ]);
-      const totalRevenue = revenueAgg.length > 0 ? revenueAgg[0].totalRevenue : 0;
+      const allOrders = await Order.find();
 
-      // Real Average Order Value (AOV)
-      const validOrdersCount = await Order.countDocuments({ orderStatus: { $nin: ['Cancelled', 'Refunded'] } });
-      const avgOrderValue = validOrdersCount > 0 
-        ? Math.round(totalRevenue / validOrdersCount) 
-        : (totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0);
+      // Today's orders
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+      const todayOrders = allOrders.filter(o => new Date(o.createdAt) >= startOfToday).length;
+
+      // Status breakdown
+      const pendingOrders = allOrders.filter(o => ['Pending', 'Confirmed', 'Processing'].includes(o.orderStatus)).length;
+      const successfulDeliveries = allOrders.filter(o => o.orderStatus === 'Delivered').length;
+      const failedDeliveries = allOrders.filter(o => ['Delivery Attempt Failed', 'RTO - Return to Hub'].includes(o.orderStatus)).length;
+      const cancellations = allOrders.filter(o => o.orderStatus === 'Cancelled').length;
+      const returnsCount = allOrders.filter(o => ['Return requested', 'Return approved', 'Return picked up', 'Refund pending', 'Refunded'].includes(o.orderStatus)).length;
+
+      // Financial figures
+      const grossGMV = allOrders.reduce((sum, o) => sum + (o.totalPrice || 0), 0);
+      const actualRevenue = allOrders
+        .filter(o => o.paymentStatus === 'paid')
+        .reduce((sum, o) => sum + (o.totalPrice || 0), 0);
+      const refundedAmount = allOrders
+        .filter(o => o.orderStatus === 'Refunded')
+        .reduce((sum, o) => sum + (o.totalPrice || 0), 0);
+
+      const platformCommissions = Math.round(actualRevenue * 0.10);
+      const deliveryFeesTotal = successfulDeliveries * 65;
+      const netSettlementDisbursed = Math.max(0, actualRevenue - platformCommissions);
+
+      const validOrdersCount = allOrders.filter(o => !['Cancelled', 'Refunded'].includes(o.orderStatus)).length;
+      const avgOrderValue = validOrdersCount > 0 ? Math.round(actualRevenue / validOrdersCount) : 0;
 
       // Low stock products (< 15 units)
       const lowStockProducts = await Product.find({ stock: { $lte: 15 }, isActive: true })
-        .select('name slug stock price discountPrice images brand categorySlug')
+        .select('name slug stock price discountPrice images brand categorySlug vendorName')
         .limit(10);
 
-      // Recent 15 orders with populated user or shippingAddress fallback
+      // Recent 15 orders
       const rawRecentOrders = await Order.find()
-        .populate('user', 'name email')
+        .populate('user', 'name email phone')
         .sort({ createdAt: -1 })
         .limit(15);
 
@@ -65,25 +74,20 @@ exports.getDashboardStats = async (req, res, next) => {
         return orderObj;
       });
 
-      // Status breakdown
-      const ordersByStatus = await Order.aggregate([
-        { $group: { _id: '$orderStatus', count: { $sum: 1 } } }
-      ]);
+      // Orders by status
+      const ordersByStatus = allOrders.reduce((acc, o) => {
+        acc[o.orderStatus] = (acc[o.orderStatus] || 0) + 1;
+        return acc;
+      }, {});
 
-      // Category breakdown for charts
+      // Category breakdown
       const categoryAgg = await Product.aggregate([
         { $group: { _id: '$categorySlug', count: { $sum: 1 }, totalStock: { $sum: '$stock' } } },
         { $sort: { count: -1 } },
         { $limit: 6 }
       ]);
 
-      // Top rated / best selling products
-      const topProducts = await Product.find({ isActive: true })
-        .sort({ rating: -1, numReviews: -1 })
-        .select('name slug stock price discountPrice images brand categorySlug rating numReviews')
-        .limit(6);
-
-      // Real monthly revenue aggregation
+      // Monthly sales agg
       const monthlySalesAgg = await Order.aggregate([
         { $match: { orderStatus: { $nin: ['Cancelled', 'Refunded'] } } },
         {
@@ -104,93 +108,90 @@ exports.getDashboardStats = async (req, res, next) => {
         data: {
           totalProducts,
           totalOrders,
-          totalUsers,
-          totalRevenue,
+          totalUsers: totalCustomers,
+          totalCustomers,
+          totalVendors,
+          totalDeliveryPartners,
+          totalRevenue: actualRevenue,
+          grossGMV,
+          actualRevenue,
+          refundedAmount,
+          platformCommissions,
+          deliveryFeesTotal,
+          netSettlementDisbursed,
           avgOrderValue,
+          todayOrders,
+          pendingOrders,
+          successfulDeliveries,
+          failedDeliveries,
+          cancellations,
+          returnsCount,
           lowStockProducts,
-          topProducts,
           recentOrders,
           categoryBreakdown: categoryAgg,
           monthlySales: monthlySalesAgg,
-          ordersByStatus: ordersByStatus.reduce((acc, curr) => {
-            acc[curr._id] = curr.count;
-            return acc;
-          }, {})
+          ordersByStatus
         }
       });
     } else {
+      const allOrders = dataStore.orders || [];
       const totalProducts = dataStore.products.length;
-      const totalOrders = dataStore.orders.length;
-      const totalUsers = dataStore.users.filter(u => u.role === 'user').length;
+      const totalOrders = allOrders.length;
+      const totalCustomers = dataStore.users.filter(u => u.role === 'user').length;
+      const totalVendors = dataStore.users.filter(u => u.role === 'vendor').length;
+      const totalDeliveryPartners = dataStore.users.filter(u => u.role === 'delivery').length;
 
-      const totalRevenue = dataStore.orders
-        .filter(o => o.orderStatus !== 'Cancelled' && o.orderStatus !== 'Refunded')
-        .reduce((acc, o) => acc + (o.totalPrice || 0), 0);
+      const grossGMV = allOrders.reduce((sum, o) => sum + (o.totalPrice || 0), 0);
+      const actualRevenue = allOrders
+        .filter(o => o.paymentStatus === 'paid')
+        .reduce((sum, o) => sum + (o.totalPrice || 0), 0);
+      const refundedAmount = allOrders
+        .filter(o => o.orderStatus === 'Refunded')
+        .reduce((sum, o) => sum + (o.totalPrice || 0), 0);
 
-      const avgOrderValue = totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0;
+      const successfulDeliveries = allOrders.filter(o => o.orderStatus === 'Delivered').length;
+      const pendingOrders = allOrders.filter(o => ['Pending', 'Confirmed', 'Processing'].includes(o.orderStatus)).length;
+      const failedDeliveries = allOrders.filter(o => ['Delivery Attempt Failed', 'RTO - Return to Hub'].includes(o.orderStatus)).length;
+      const cancellations = allOrders.filter(o => o.orderStatus === 'Cancelled').length;
+      const returnsCount = allOrders.filter(o => ['Return requested', 'Refund pending', 'Refunded'].includes(o.orderStatus)).length;
 
-      const lowStockProducts = dataStore.products
-        .filter(p => p.stock <= 20)
-        .slice(0, 10);
+      const platformCommissions = Math.round(actualRevenue * 0.10);
+      const deliveryFeesTotal = successfulDeliveries * 65;
+      const netSettlementDisbursed = Math.max(0, actualRevenue - platformCommissions);
 
-      const topProducts = [...dataStore.products]
-        .sort((a, b) => (b.rating || 0) - (a.rating || 0))
-        .slice(0, 6);
-
-      const categoryCounts = {};
-      dataStore.products.forEach(p => {
-        const cat = p.categorySlug || 'general';
-        categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
-      });
-      const categoryBreakdown = Object.keys(categoryCounts).map(cat => ({
-        _id: cat,
-        count: categoryCounts[cat]
-      })).sort((a, b) => b.count - a.count).slice(0, 6);
-
-      const recentOrders = dataStore.orders.slice(0, 6).map(o => {
-        const user = dataStore.users.find(u => u._id === o.user);
-        return {
-          ...o,
-          user: user ? { name: user.name, email: user.email } : { name: 'Customer' }
-        };
-      });
-
+      const lowStockProducts = dataStore.products.filter(p => p.stock <= 20).slice(0, 10);
       const ordersByStatus = {};
-      dataStore.orders.forEach(o => {
+      allOrders.forEach(o => {
         ordersByStatus[o.orderStatus] = (ordersByStatus[o.orderStatus] || 0) + 1;
       });
-
-      const monthlySalesMap = {};
-      dataStore.orders.forEach(o => {
-        if (o.orderStatus !== 'Cancelled' && o.orderStatus !== 'Refunded') {
-          const d = new Date(o.createdAt || Date.now());
-          const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
-          if (!monthlySalesMap[key]) {
-            monthlySalesMap[key] = {
-              _id: { year: d.getFullYear(), month: d.getMonth() + 1 },
-              revenue: 0,
-              orders: 0
-            };
-          }
-          monthlySalesMap[key].revenue += (o.totalPrice || 0);
-          monthlySalesMap[key].orders += 1;
-        }
-      });
-      const monthlySales = Object.values(monthlySalesMap);
 
       return res.status(200).json({
         success: true,
         data: {
           totalProducts,
           totalOrders,
-          totalUsers,
-          totalRevenue,
-          avgOrderValue,
+          totalUsers: totalCustomers,
+          totalCustomers,
+          totalVendors,
+          totalDeliveryPartners,
+          totalRevenue: actualRevenue,
+          grossGMV,
+          actualRevenue,
+          refundedAmount,
+          platformCommissions,
+          deliveryFeesTotal,
+          netSettlementDisbursed,
+          avgOrderValue: totalOrders > 0 ? Math.round(actualRevenue / totalOrders) : 0,
+          todayOrders: Math.min(allOrders.length, 3),
+          pendingOrders,
+          successfulDeliveries,
+          failedDeliveries,
+          cancellations,
+          returnsCount,
           lowStockProducts,
-          topProducts,
-          recentOrders,
-          categoryBreakdown,
-          monthlySales,
+          recentOrders: allOrders.slice(0, 10),
+          categoryBreakdown: [],
+          monthlySales: [],
           ordersByStatus
         }
       });
@@ -200,24 +201,34 @@ exports.getDashboardStats = async (req, res, next) => {
   }
 };
 
-// @desc    Get all orders (Admin) with filter and pagination
+// @desc    Get all orders (Admin with Search & Status Filters)
 // @route   GET /api/admin/orders
 // @access  Private/Admin
 exports.getAllOrders = async (req, res, next) => {
   try {
-    const { status, page = 1, limit = 15 } = req.query;
+    const { status, search, page = 1, limit = 20 } = req.query;
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
 
     if (getDBStatus()) {
-      const query = status ? { orderStatus: status } : {};
-      const pageNum = parseInt(page, 10);
-      const limitNum = parseInt(limit, 10);
-      const skip = (pageNum - 1) * limitNum;
+      const query = {};
+      if (status && status !== 'ALL') {
+        query.orderStatus = status;
+      }
+      if (search) {
+        query.$or = [
+          { orderNumber: { $regex: search, $options: 'i' } },
+          { 'shippingAddress.fullName': { $regex: search, $options: 'i' } },
+          { 'shippingAddress.city': { $regex: search, $options: 'i' } }
+        ];
+      }
 
       const total = await Order.countDocuments(query);
       const orders = await Order.find(query)
         .populate('user', 'name email phone')
+        .populate('assignedDeliveryPartner', 'name phone')
         .sort({ createdAt: -1 })
-        .skip(skip)
+        .skip((pageNum - 1) * limitNum)
         .limit(limitNum);
 
       return res.status(200).json({
@@ -229,24 +240,21 @@ exports.getAllOrders = async (req, res, next) => {
         data: orders
       });
     } else {
-      let orders = [...dataStore.orders];
-      if (status) {
+      let orders = [...(dataStore.orders || [])];
+      if (status && status !== 'ALL') {
         orders = orders.filter(o => o.orderStatus === status);
       }
+      if (search) {
+        const s = search.toLowerCase();
+        orders = orders.filter(o =>
+          (o.orderNumber && o.orderNumber.toLowerCase().includes(s)) ||
+          (o.shippingAddress?.fullName && o.shippingAddress.fullName.toLowerCase().includes(s)) ||
+          (o.shippingAddress?.city && o.shippingAddress.city.toLowerCase().includes(s))
+        );
+      }
 
-      const populatedOrders = orders.map(o => {
-        const user = dataStore.users.find(u => u._id === o.user);
-        return {
-          ...o,
-          user: user ? { _id: user._id, name: user.name, email: user.email, phone: user.phone } : { name: 'Customer' }
-        };
-      });
-
-      const pageNum = parseInt(page, 10);
-      const limitNum = parseInt(limit, 10);
-      const total = populatedOrders.length;
-      const skip = (pageNum - 1) * limitNum;
-      const paginated = populatedOrders.slice(skip, skip + limitNum);
+      const total = orders.length;
+      const paginated = orders.slice((pageNum - 1) * limitNum, pageNum * limitNum);
 
       return res.status(200).json({
         success: true,
@@ -262,104 +270,227 @@ exports.getAllOrders = async (req, res, next) => {
   }
 };
 
-// @desc    Update order status (Admin)
-// @route   PUT /api/admin/orders/:id/status
+// @desc    Assign or Reassign Delivery Partner to Order
+// @route   PUT /api/admin/orders/:id/assign-delivery
 // @access  Private/Admin
-exports.updateOrderStatus = async (req, res, next) => {
+exports.assignDeliveryPartner = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { status, note = '' } = req.body;
+    const { partnerId, reason = 'Assigned by Operations Admin' } = req.body;
 
-    const allowedStatuses = [
-      'Pending',
-      'Confirmed',
-      'Processing',
-      'Packed',
-      'Shipped',
-      'Out for delivery',
-      'Delivered',
-      'Cancelled',
-      'Return requested',
-      'Refunded'
-    ];
-
-    if (!allowedStatuses.includes(status)) {
-      return res.status(400).json({
-        success: false,
-        message: `Invalid order status '${status}'. Must be one of: ${allowedStatuses.join(', ')}`
-      });
+    if (!partnerId) {
+      return res.status(400).json({ success: false, message: 'Delivery partner ID is required.' });
     }
 
     if (getDBStatus()) {
-      const order = await Order.findById(id);
-      if (!order) {
-        return res.status(404).json({ success: false, message: 'Order not found' });
+      const [order, partner] = await Promise.all([
+        Order.findById(id),
+        User.findById(partnerId)
+      ]);
+
+      if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+      if (!partner || partner.role !== 'delivery') {
+        return res.status(400).json({ success: false, message: 'Selected user is not an approved Delivery Partner' });
       }
 
-      // Check transition
-      const current = order.orderStatus;
-      if (current === status) {
-        return res.status(200).json({ success: true, data: order });
-      }
-
-      const allowedNext = validTransitions[current] || [];
-      if (!allowedNext.includes(status) && req.user.role !== 'admin') {
-        return res.status(400).json({
-          success: false,
-          message: `Cannot transition order directly from '${current}' to '${status}'. Permitted: ${allowedNext.join(', ')}`
-        });
-      }
-
-      order.orderStatus = status;
-      if (status === 'Delivered') {
-        order.deliveredAt = new Date();
-      }
-      if (status === 'Cancelled' || status === 'Refunded') {
-        // Restore inventory if previously active
-        if (current !== 'Cancelled' && current !== 'Refunded') {
-          for (const item of order.items) {
-            await Product.findByIdAndUpdate(item.product, {
-              $inc: { stock: item.quantity }
-            });
-          }
-        }
-      }
+      order.assignedDeliveryPartner = partner._id;
+      order.deliveryPartnerName = partner.name;
+      order.deliveryPartnerPhone = partner.phone || '+91 98765 43210';
 
       order.statusHistory.push({
-        status,
-        note: note || `Status updated to ${status} by admin`,
-        updatedBy: req.user.name || 'Admin'
+        status: order.orderStatus,
+        timestamp: new Date(),
+        note: `Dispatched & Assigned to Delivery Partner ${partner.name} (${partner.phone || 'Phone verified'}). Reason: ${reason}`,
+        updatedBy: `${req.user.name} (Admin)`,
+        reason
       });
 
       await order.save();
       return res.status(200).json({ success: true, data: order });
     } else {
-      const order = dataStore.orders.find(o => o._id === id || o.orderNumber === id);
-      if (!order) {
-        return res.status(404).json({ success: false, message: 'Order not found' });
-      }
+      const order = (dataStore.orders || []).find(o => o._id === id || o.orderNumber === id);
+      const partner = dataStore.users.find(u => u._id === partnerId);
 
-      const current = order.orderStatus;
-      order.orderStatus = status;
-      if (status === 'Delivered') {
-        order.deliveredAt = new Date().toISOString();
-      }
+      if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+      if (!partner) return res.status(400).json({ success: false, message: 'Partner not found' });
 
-      if (status === 'Cancelled' || status === 'Refunded') {
-        if (current !== 'Cancelled' && current !== 'Refunded') {
-          for (const item of order.items) {
-            const prod = dataStore.products.find(p => p._id === item.product);
-            if (prod) prod.stock += item.quantity;
-          }
-        }
-      }
+      order.assignedDeliveryPartner = partner._id;
+      order.deliveryPartnerName = partner.name;
+      order.deliveryPartnerPhone = partner.phone || '+91 98765 43210';
 
+      order.statusHistory = order.statusHistory || [];
       order.statusHistory.push({
-        status,
+        status: order.orderStatus,
         timestamp: new Date().toISOString(),
-        note: note || `Status updated to ${status} by admin`,
-        updatedBy: req.user.name || 'Admin'
+        note: `Dispatched & Assigned to Delivery Partner ${partner.name}. Reason: ${reason}`,
+        updatedBy: `${req.user.name} (Admin)`,
+        reason
       });
+
+      return res.status(200).json({ success: true, data: order });
+    }
+  } catch (err) {
+    next(err);
+  }
+};
+
+// @desc    Admin Manual Order Status Override
+// @route   PUT /api/admin/orders/:id/override
+// @access  Private/Admin
+exports.adminOverrideOrderStatus = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { status, reason, note } = req.body;
+
+    if (!status || !reason) {
+      return res.status(400).json({
+        success: false,
+        message: 'Both new status and an explicit administrative override reason are required.'
+      });
+    }
+
+    if (getDBStatus()) {
+      const order = await Order.findById(id);
+      if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+
+      applyStatusTransition(
+        order,
+        status,
+        req.user.name,
+        'admin',
+        note || `Admin manual override to ${status}`,
+        reason
+      );
+
+      await order.save();
+      return res.status(200).json({ success: true, data: order });
+    } else {
+      const order = (dataStore.orders || []).find(o => o._id === id || o.orderNumber === id);
+      if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+
+      applyStatusTransition(
+        order,
+        status,
+        req.user.name,
+        'admin',
+        note || `Admin manual override to ${status}`,
+        reason
+      );
+
+      return res.status(200).json({ success: true, data: order });
+    }
+  } catch (err) {
+    next(err);
+  }
+};
+
+// @desc    Update order status standard
+// @route   PUT /api/admin/orders/:id/status
+// @access  Private/Admin
+exports.updateOrderStatus = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { status, note = '', reason = '' } = req.body;
+
+    if (!status) {
+      return res.status(400).json({ success: false, message: 'Status is required' });
+    }
+
+    if (getDBStatus()) {
+      const order = await Order.findById(id);
+      if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+
+      applyStatusTransition(order, status, req.user.name, 'admin', note, reason);
+
+      await order.save();
+      return res.status(200).json({ success: true, data: order });
+    } else {
+      const order = (dataStore.orders || []).find(o => o._id === id || o.orderNumber === id);
+      if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+
+      applyStatusTransition(order, status, req.user.name, 'admin', note, reason);
+
+      return res.status(200).json({ success: true, data: order });
+    }
+  } catch (err) {
+    next(err);
+  }
+};
+
+// @desc    Get Returns and Refunds List
+// @route   GET /api/admin/returns
+// @access  Private/Admin
+exports.getReturnsAndRefunds = async (req, res, next) => {
+  try {
+    const returnStatuses = [
+      'Return requested',
+      'Return approved',
+      'Return picked up',
+      'Return received',
+      'Refund pending',
+      'Refunded'
+    ];
+
+    if (getDBStatus()) {
+      const orders = await Order.find({ orderStatus: { $in: returnStatuses } })
+        .populate('user', 'name email phone')
+        .sort({ updatedAt: -1 });
+
+      return res.status(200).json({ success: true, count: orders.length, data: orders });
+    } else {
+      const orders = (dataStore.orders || []).filter(o => returnStatuses.includes(o.orderStatus));
+      return res.status(200).json({ success: true, count: orders.length, data: orders });
+    }
+  } catch (err) {
+    next(err);
+  }
+};
+
+// @desc    Handle Return / Refund Action (Approve, Receive, Refund, Reject)
+// @route   PUT /api/admin/orders/:id/return-action
+// @access  Private/Admin
+exports.handleReturnAction = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { action, reason = '' } = req.body;
+
+    if (!['approve', 'receive', 'refund', 'reject'].includes(action)) {
+      return res.status(400).json({ success: false, message: 'Valid actions: approve, receive, refund, reject' });
+    }
+
+    if (getDBStatus()) {
+      const order = await Order.findById(id);
+      if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+
+      if (action === 'approve') {
+        applyStatusTransition(order, 'Return approved', req.user.name, 'admin', 'Return authorized. Doorstep courier pickup dispatch scheduled.', reason);
+      } else if (action === 'receive') {
+        applyStatusTransition(order, 'Return received', req.user.name, 'admin', 'Returned item received and inspected at Central Fulfillment Hub.', reason);
+      } else if (action === 'refund') {
+        applyStatusTransition(order, 'Refunded', req.user.name, 'admin', `Refund of ₹${order.totalPrice} processed back to original source payment method.`, reason);
+        order.refundStatus = 'refunded';
+      } else if (action === 'reject') {
+        applyStatusTransition(order, 'Delivered', req.user.name, 'admin', `Return request rejected: ${reason || 'Does not satisfy return criteria'}.`, reason);
+        order.refundStatus = 'none';
+      }
+
+      await order.save();
+      return res.status(200).json({ success: true, data: order });
+    } else {
+      const order = (dataStore.orders || []).find(o => o._id === id || o.orderNumber === id);
+      if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+
+      if (action === 'approve') {
+        applyStatusTransition(order, 'Return approved', req.user.name, 'admin', 'Return authorized. Doorstep courier pickup dispatch scheduled.', reason);
+      } else if (action === 'receive') {
+        applyStatusTransition(order, 'Return received', req.user.name, 'admin', 'Returned item received and inspected at Central Fulfillment Hub.', reason);
+      } else if (action === 'refund') {
+        applyStatusTransition(order, 'Refunded', req.user.name, 'admin', `Refund of ₹${order.totalPrice} processed back to original source payment method.`, reason);
+        order.refundStatus = 'refunded';
+      } else if (action === 'reject') {
+        applyStatusTransition(order, 'Delivered', req.user.name, 'admin', `Return request rejected: ${reason || 'Does not satisfy return criteria'}.`, reason);
+        order.refundStatus = 'none';
+      }
 
       return res.status(200).json({ success: true, data: order });
     }
@@ -406,8 +537,8 @@ exports.createProduct = async (req, res, next) => {
         name,
         slug,
         brand,
-        category: category._id,
-        categorySlug: category.slug,
+        category: category?._id,
+        categorySlug: category?.slug || categorySlug,
         subcategory,
         description,
         shortDescription: shortDescription || '',
@@ -420,7 +551,8 @@ exports.createProduct = async (req, res, next) => {
         isFeatured: Boolean(isFeatured),
         isBestSeller: Boolean(isBestSeller),
         isTrending: Boolean(isTrending),
-        isActive: true
+        isActive: true,
+        approvalStatus: 'approved'
       });
 
       return res.status(201).json({ success: true, data: product });
@@ -446,6 +578,7 @@ exports.createProduct = async (req, res, next) => {
         isBestSeller: Boolean(isBestSeller),
         isTrending: Boolean(isTrending),
         isActive: true,
+        approvalStatus: 'approved',
         createdAt: new Date().toISOString()
       };
 
@@ -490,6 +623,39 @@ exports.updateProduct = async (req, res, next) => {
   }
 };
 
+// @desc    Product Approval / Visibility Control
+// @route   PUT /api/admin/products/:id/approval
+// @access  Private/Admin
+exports.manageProductApproval = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { approvalStatus, rejectionReason, isActive } = req.body;
+
+    if (getDBStatus()) {
+      const product = await Product.findById(id);
+      if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
+
+      if (approvalStatus) product.approvalStatus = approvalStatus;
+      if (rejectionReason !== undefined) product.rejectionReason = rejectionReason;
+      if (isActive !== undefined) product.isActive = Boolean(isActive);
+
+      await product.save();
+      return res.status(200).json({ success: true, data: product });
+    } else {
+      const product = dataStore.products.find(p => p._id === id || p.slug === id);
+      if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
+
+      if (approvalStatus) product.approvalStatus = approvalStatus;
+      if (rejectionReason !== undefined) product.rejectionReason = rejectionReason;
+      if (isActive !== undefined) product.isActive = Boolean(isActive);
+
+      return res.status(200).json({ success: true, data: product });
+    }
+  } catch (err) {
+    next(err);
+  }
+};
+
 // @desc    Delete product (Admin)
 // @route   DELETE /api/admin/products/:id
 // @access  Private/Admin
@@ -516,20 +682,124 @@ exports.deleteProduct = async (req, res, next) => {
   }
 };
 
-// @desc    Get all registered users (Admin)
+// @desc    Get all registered users with role and search filter
 // @route   GET /api/admin/users
 // @access  Private/Admin
 exports.getAllUsers = async (req, res, next) => {
   try {
+    const { role, search } = req.query;
+
     if (getDBStatus()) {
-      const users = await User.find().select('-password').sort({ createdAt: -1 });
+      const query = {};
+      if (role && role !== 'ALL') {
+        query.role = role;
+      }
+      if (search) {
+        query.$or = [
+          { name: { $regex: search, $options: 'i' } },
+          { email: { $regex: search, $options: 'i' } },
+          { phone: { $regex: search, $options: 'i' } }
+        ];
+      }
+
+      const users = await User.find(query).select('-password').sort({ createdAt: -1 });
       return res.status(200).json({ success: true, count: users.length, data: users });
     } else {
-      const users = dataStore.users.map(u => {
+      let users = dataStore.users.map(u => {
         const { password, ...safe } = u;
         return safe;
       });
+
+      if (role && role !== 'ALL') {
+        users = users.filter(u => u.role === role);
+      }
+      if (search) {
+        const s = search.toLowerCase();
+        users = users.filter(u =>
+          (u.name && u.name.toLowerCase().includes(s)) ||
+          (u.email && u.email.toLowerCase().includes(s))
+        );
+      }
+
       return res.status(200).json({ success: true, count: users.length, data: users });
+    }
+  } catch (err) {
+    next(err);
+  }
+};
+
+// @desc    Suspend or Reactivate user account with recorded reason
+// @route   PUT /api/admin/users/:id/status
+// @access  Private/Admin
+exports.manageUserStatus = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { isActive, suspensionReason = '' } = req.body;
+
+    if (getDBStatus()) {
+      const user = await User.findById(id).select('-password');
+      if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+      user.isActive = Boolean(isActive);
+      if (suspensionReason) user.suspensionReason = suspensionReason;
+
+      await user.save();
+      return res.status(200).json({ success: true, data: user });
+    } else {
+      const user = dataStore.users.find(u => u._id === id);
+      if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+      user.isActive = Boolean(isActive);
+      if (suspensionReason) user.suspensionReason = suspensionReason;
+
+      const { password, ...safe } = user;
+      return res.status(200).json({ success: true, data: safe });
+    }
+  } catch (err) {
+    next(err);
+  }
+};
+
+// @desc    Approve / Reject / Suspend Vendor Account
+// @route   PUT /api/admin/vendors/:id/status
+// @access  Private/Admin
+exports.manageVendorStatus = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { vendorApprovalStatus, note = '' } = req.body;
+
+    if (!['pending', 'approved', 'rejected', 'suspended'].includes(vendorApprovalStatus)) {
+      return res.status(400).json({ success: false, message: 'Invalid vendor status' });
+    }
+
+    if (getDBStatus()) {
+      const user = await User.findById(id).select('-password');
+      if (!user) return res.status(404).json({ success: false, message: 'Vendor account not found' });
+
+      user.vendorApprovalStatus = vendorApprovalStatus;
+      if (vendorApprovalStatus === 'suspended') {
+        user.isActive = false;
+        user.suspensionReason = note || 'Vendor account suspended by marketplace admin';
+      } else if (vendorApprovalStatus === 'approved') {
+        user.isActive = true;
+      }
+
+      await user.save();
+      return res.status(200).json({ success: true, data: user });
+    } else {
+      const user = dataStore.users.find(u => u._id === id);
+      if (!user) return res.status(404).json({ success: false, message: 'Vendor account not found' });
+
+      user.vendorApprovalStatus = vendorApprovalStatus;
+      if (vendorApprovalStatus === 'suspended') {
+        user.isActive = false;
+        user.suspensionReason = note;
+      } else if (vendorApprovalStatus === 'approved') {
+        user.isActive = true;
+      }
+
+      const { password, ...safe } = user;
+      return res.status(200).json({ success: true, data: safe });
     }
   } catch (err) {
     next(err);
@@ -544,8 +814,8 @@ exports.updateUserRole = async (req, res, next) => {
     const { id } = req.params;
     const { role } = req.body;
 
-    if (!['user', 'admin'].includes(role)) {
-      return res.status(400).json({ success: false, message: 'Role must be user or admin' });
+    if (!['user', 'admin', 'vendor', 'delivery'].includes(role)) {
+      return res.status(400).json({ success: false, message: 'Invalid user role' });
     }
 
     if (req.user._id && req.user._id.toString() === id && role !== 'admin') {
@@ -651,7 +921,9 @@ exports.getSettings = async (req, res, next) => {
           maintenanceMode: false,
           festivalSaleActive: true,
           festivalSaleBannerText: '🎉 FESTIVAL SALE IS LIVE: Up to 70% Off + Flat ₹200 OFF with code CASA200',
-          gstRate: 18
+          gstRate: 18,
+          vendorCommissionRate: 10,
+          riderDropFee: 65
         };
       }
       return res.status(200).json({ success: true, data: dataStore.settings });
@@ -684,7 +956,7 @@ exports.updateSettings = async (req, res, next) => {
   }
 };
 
-// @desc    Get public store settings (Store Name, Brand Color, Tagline, Language, Announcement)
+// @desc    Get public store settings
 // @route   GET /api/settings/public
 // @access  Public
 exports.getPublicSettings = async (req, res, next) => {
@@ -733,4 +1005,3 @@ exports.getPublicSettings = async (req, res, next) => {
     next(err);
   }
 };
-

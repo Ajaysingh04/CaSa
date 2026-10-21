@@ -95,6 +95,10 @@ const productSchema = new mongoose.Schema(
       enum: ['pending', 'approved', 'rejected'],
       default: 'approved'
     },
+    rejectionReason: {
+      type: String,
+      default: ''
+    },
     variants: [variantSchema],
     specifications: [specificationSchema],
     rating: {
