@@ -378,3 +378,86 @@ exports.cancelOrder = async (req, res, next) => {
     next(err);
   }
 };
+
+// @desc    Request return or replacement (only for delivered orders within 7-day window)
+// @route   PUT /api/orders/:id/return
+// @access  Private
+exports.requestReturn = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { reason = 'Defective or unsatisfactory product', returnType = 'refund' } = req.body;
+
+    if (getDBStatus()) {
+      const order = await Order.findById(id);
+      if (!order) {
+        return res.status(404).json({ success: false, message: 'Order not found' });
+      }
+
+      if (order.user.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+        return res.status(403).json({ success: false, message: 'Not authorized to request return for this order' });
+      }
+
+      if (order.orderStatus !== 'Delivered') {
+        return res.status(400).json({
+          success: false,
+          message: `Returns can only be requested for Delivered orders. Current status: ${order.orderStatus}`
+        });
+      }
+
+      // Check 7-day return policy
+      const deliveryDate = order.deliveredAt || order.updatedAt;
+      const daysSinceDelivery = (Date.now() - new Date(deliveryDate).getTime()) / (1000 * 60 * 60 * 24);
+      if (daysSinceDelivery > 7) {
+        return res.status(400).json({
+          success: false,
+          message: 'Return window expired. CASA allows 7-day hassle-free doorstep returns.'
+        });
+      }
+
+      order.orderStatus = 'Return requested';
+      order.returnReason = reason;
+      order.returnType = returnType;
+      order.refundStatus = 'initiated';
+      order.statusHistory.push({
+        status: 'Return requested',
+        note: `Customer requested ${returnType}: ${reason}`,
+        updatedBy: req.user.name || 'Customer'
+      });
+
+      await order.save();
+      return res.status(200).json({ success: true, data: order });
+    } else {
+      const order = dataStore.orders.find(o => o._id === id || o.orderNumber === id);
+      if (!order) {
+        return res.status(404).json({ success: false, message: 'Order not found' });
+      }
+
+      if (order.user !== req.user._id && req.user.role !== 'admin') {
+        return res.status(403).json({ success: false, message: 'Not authorized to request return for this order' });
+      }
+
+      if (order.orderStatus !== 'Delivered') {
+        return res.status(400).json({
+          success: false,
+          message: `Returns can only be requested for Delivered orders. Current status: ${order.orderStatus}`
+        });
+      }
+
+      order.orderStatus = 'Return requested';
+      order.returnReason = reason;
+      order.returnType = returnType;
+      order.refundStatus = 'initiated';
+      order.statusHistory = order.statusHistory || [];
+      order.statusHistory.push({
+        status: 'Return requested',
+        timestamp: new Date().toISOString(),
+        note: `Customer requested ${returnType}: ${reason}`,
+        updatedBy: req.user.name || 'Customer'
+      });
+
+      return res.status(200).json({ success: true, data: order });
+    }
+  } catch (err) {
+    next(err);
+  }
+};

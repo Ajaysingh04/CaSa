@@ -21,6 +21,11 @@ export const orderService = {
     return response.data.data;
   },
 
+  requestReturn: async (id, reason, returnType = 'refund') => {
+    const response = await api.put(`/orders/${id}/return`, { reason, returnType });
+    return response.data.data;
+  },
+
   // Payment
   createPaymentOrder: async (orderId) => {
     const response = await api.post('/payments/create-order', { orderId });

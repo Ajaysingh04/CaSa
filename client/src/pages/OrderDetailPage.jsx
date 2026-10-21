@@ -30,6 +30,11 @@ const OrderDetailPage = () => {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState('Order placed by mistake');
 
+  const [showReturnModal, setShowReturnModal] = useState(false);
+  const [returnReason, setReturnReason] = useState('Product defective or not working');
+  const [returnType, setReturnType] = useState('refund');
+  const [submittingReturn, setSubmittingReturn] = useState(false);
+
   useEffect(() => {
     const fetchOrder = async () => {
       try {
@@ -56,6 +61,20 @@ const OrderDetailPage = () => {
       error(err.response?.data?.message || 'Could not cancel order.');
     } finally {
       setCancelling(false);
+    }
+  };
+
+  const handleRequestReturn = async () => {
+    setSubmittingReturn(true);
+    try {
+      const updated = await orderService.requestReturn(order._id, returnReason, returnType);
+      setOrder(updated);
+      setShowReturnModal(false);
+      success(`Return request for ${returnType} registered! Doorstep courier pickup scheduled.`);
+    } catch (err) {
+      error(err.response?.data?.message || 'Could not register return request.');
+    } finally {
+      setSubmittingReturn(false);
     }
   };
 
@@ -110,10 +129,19 @@ const OrderDetailPage = () => {
                 Cancel Order
               </button>
             )}
+            {order.orderStatus === 'Delivered' && (
+              <button
+                onClick={() => setShowReturnModal(true)}
+                className="btn btn-outline btn-sm"
+                style={{ color: '#ea580c', borderColor: '#fed7aa', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+              >
+                <RotateCcw size={13} /> Return / Replace
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Visual Step Tracker (if not cancelled/refunded) */}
+        {/* Visual Step Tracker (if not cancelled/refunded/return requested) */}
         {!['Cancelled', 'Refunded', 'Return requested'].includes(order.orderStatus) && (
           <div style={trackerContainer}>
             <div style={trackerLineBackground} />
@@ -165,6 +193,35 @@ const OrderDetailPage = () => {
               <strong>Order Cancelled</strong>
               <div style={{ fontSize: '0.85rem', color: '#7f1d1d' }}>
                 Reason: {order.cancellationReason || 'Cancelled by customer'}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Return & Refund in Progress Alert */}
+        {order.orderStatus === 'Return requested' && (
+          <div style={{ ...cancelledAlertBox, background: '#fffbeb', border: '1px solid #fef3c7' }}>
+            <RotateCcw size={20} color="#d97706" />
+            <div>
+              <strong style={{ color: '#92400e' }}>Return & Refund In Progress</strong>
+              <div style={{ fontSize: '0.85rem', color: '#b45309', marginTop: '2px' }}>
+                Reason: {order.returnReason || 'Customer requested return'} • Resolution: {order.returnType === 'replacement' ? 'Direct Replacement' : 'Full Refund'}
+              </div>
+              <div style={{ fontSize: '0.78rem', color: '#d97706', marginTop: '4px' }}>
+                CASA Express Courier doorstep pickup is scheduled. Please keep items in original packaging.
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Refunded Alert */}
+        {order.orderStatus === 'Refunded' && (
+          <div style={{ ...cancelledAlertBox, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+            <CheckCircle2 size={20} color="#15803d" />
+            <div>
+              <strong style={{ color: '#15803d' }}>Refund Completed Successfully</strong>
+              <div style={{ fontSize: '0.85rem', color: '#166534', marginTop: '2px' }}>
+                Amount of {formatINR(order.totalPrice)} has been refunded to your original payment method.
               </div>
             </div>
           </div>
@@ -415,6 +472,101 @@ const OrderDetailPage = () => {
                 style={{ flex: 1, background: '#dc2626' }}
               >
                 {cancelling ? 'Cancelling...' : 'Confirm Cancellation'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Return Order Modal */}
+      {showReturnModal && (
+        <div style={modalOverlay}>
+          <div style={modalBackdrop} onClick={() => setShowReturnModal(false)} />
+          <div style={modalCard} className="animate-slide-up">
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 800, marginBottom: '6px', color: '#0f172a' }}>
+              Request Return or Replacement
+            </h3>
+            <p style={{ fontSize: '0.825rem', color: '#64748b', marginBottom: '16px' }}>
+              CASA offers 7-day hassle-free doorstep returns with free pickup and instant refund processing.
+            </p>
+
+            <div className="form-group" style={{ marginBottom: '14px' }}>
+              <label className="form-label" style={{ fontWeight: 700, fontSize: '0.8rem', marginBottom: '6px', display: 'block' }}>
+                Resolution Preference
+              </label>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setReturnType('refund')}
+                  style={{
+                    flex: 1,
+                    padding: '9px 12px',
+                    borderRadius: '8px',
+                    border: returnType === 'refund' ? '2px solid #2563eb' : '1px solid #cbd5e1',
+                    background: returnType === 'refund' ? '#eff6ff' : '#ffffff',
+                    color: returnType === 'refund' ? '#1d4ed8' : '#334155',
+                    fontWeight: 700,
+                    fontSize: '0.825rem',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Full Refund to Bank / Source
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setReturnType('replacement')}
+                  style={{
+                    flex: 1,
+                    padding: '9px 12px',
+                    borderRadius: '8px',
+                    border: returnType === 'replacement' ? '2px solid #2563eb' : '1px solid #cbd5e1',
+                    background: returnType === 'replacement' ? '#eff6ff' : '#ffffff',
+                    color: returnType === 'replacement' ? '#1d4ed8' : '#334155',
+                    fontWeight: 700,
+                    fontSize: '0.825rem',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Direct Replacement Item
+                </button>
+              </div>
+            </div>
+
+            <div className="form-group" style={{ marginBottom: '16px' }}>
+              <label className="form-label" style={{ fontWeight: 700, fontSize: '0.8rem', marginBottom: '6px', display: 'block' }}>
+                Reason for Return:
+              </label>
+              <select
+                value={returnReason}
+                onChange={(e) => setReturnReason(e.target.value)}
+                className="form-select"
+                style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+              >
+                <option value="Product defective or not working">Product defective or not working</option>
+                <option value="Damaged / torn packaging received">Damaged / torn packaging received</option>
+                <option value="Incorrect size / fit issue">Incorrect size / fit issue</option>
+                <option value="Wrong product or color delivered">Wrong product or color delivered</option>
+                <option value="Quality not as expected">Quality not as expected</option>
+              </select>
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+              <button
+                type="button"
+                onClick={() => setShowReturnModal(false)}
+                className="btn btn-outline"
+                style={{ flex: 1, borderRadius: '8px' }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleRequestReturn}
+                disabled={submittingReturn}
+                className="btn btn-primary"
+                style={{ flex: 1, background: '#ea580c', borderRadius: '8px' }}
+              >
+                {submittingReturn ? 'Submitting...' : 'Confirm Return Request'}
               </button>
             </div>
           </div>

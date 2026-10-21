@@ -136,6 +136,20 @@ const orderSchema = new mongoose.Schema(
     deliveryProofOtp: {
       type: String,
       default: ''
+    },
+    returnReason: {
+      type: String,
+      default: ''
+    },
+    returnType: {
+      type: String,
+      enum: ['refund', 'replacement', 'none'],
+      default: 'none'
+    },
+    refundStatus: {
+      type: String,
+      enum: ['none', 'initiated', 'processed', 'refunded'],
+      default: 'none'
     }
   },
   {
