@@ -12,6 +12,8 @@ import {
   Package,
   LogOut,
   Loader2,
+  ChevronRight,
+  Sparkles,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
@@ -312,6 +314,100 @@ const Header = ({ onToggleMobileMenu }) => {
             padding: 9px 16px !important;
           }
         }
+
+        /* User Dropdown Premium Animations & Styling */
+        @keyframes userDropdownSlideIn {
+          0% {
+            opacity: 0;
+            transform: translateY(-8px) scale(0.96);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+
+        .user-dropdown-card {
+          animation: userDropdownSlideIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          transform-origin: top right;
+        }
+
+        .dropdown-menu-item {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 9px 12px;
+          border-radius: 12px;
+          text-decoration: none;
+          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+          cursor: pointer;
+        }
+
+        .dropdown-menu-item:hover {
+          background: #f1f5f9 !important;
+          transform: translateX(4px) !important;
+        }
+
+        .dropdown-menu-item:hover .dropdown-menu-arrow {
+          transform: translateX(3px) !important;
+          color: #1d4ed8 !important;
+        }
+
+        .dropdown-menu-arrow {
+          color: #94a3b8;
+          transition: transform 0.2s ease, color 0.2s ease;
+          flex-shrink: 0;
+        }
+
+        .dropdown-logout-animated-btn {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          width: 100%;
+          padding: 10px 12px;
+          border-radius: 12px;
+          background: #fef2f2;
+          border: 1px solid #fee2e2;
+          cursor: pointer;
+          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        }
+
+        .dropdown-logout-animated-btn:hover {
+          background: #fee2e2 !important;
+          border-color: #fca5a5 !important;
+          transform: translateY(-2px) !important;
+          box-shadow: 0 6px 16px -2px rgba(220, 38, 38, 0.2) !important;
+        }
+
+        .dropdown-logout-animated-btn:hover .logout-icon-rotate {
+          transform: translateX(-3px) scale(1.05) !important;
+        }
+
+        .logout-icon-rotate {
+          transition: transform 0.2s ease;
+        }
+
+        @keyframes pulseDotOnline {
+          0%, 100% {
+            transform: scale(1);
+            opacity: 1;
+          }
+          50% {
+            transform: scale(1.4);
+            opacity: 0.6;
+          }
+        }
+
+        .user-online-dot {
+          display: inline-block;
+          width: 7px;
+          height: 7px;
+          border-radius: 50%;
+          background: #10b981;
+          box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
+          flex-shrink: 0;
+          animation: pulseDotOnline 2.2s infinite ease-in-out;
+        }
       `}</style>
       <div className="container header-container-responsive" style={headerContainerStyle}>
         {/* Mobile Menu Button */}
@@ -494,77 +590,189 @@ const Header = ({ onToggleMobileMenu }) => {
 
             {/* User Dropdown Menu */}
             {showUserMenu && (
-              <div style={userDropdownStyle} className="animate-slide-up">
+              <div style={userDropdownStyle} className="user-dropdown-card">
                 {user ? (
                   <>
+                    {/* Premium Profile Header Card */}
                     <div style={dropdownUserHeader}>
-                      <strong>{user.name}</strong>
-                      <span style={{ fontSize: '0.75rem', color: '#64748b' }}>{user.email}</span>
-                      {isAdmin && <span style={adminBadgeStyle}>ADMINISTRATOR</span>}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        {user.avatar ? (
+                          <img src={user.avatar} alt={user.name} style={dropdownAvatarStyle} />
+                        ) : (
+                          <div style={dropdownAvatarFallback}>
+                            {(user.name || 'User')
+                              .split(' ')
+                              .map((n) => n[0])
+                              .join('')
+                              .slice(0, 2)
+                              .toUpperCase()}
+                          </div>
+                        )}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <strong style={dropdownUserNameStyle}>{user.name}</strong>
+                            <span className="user-online-dot" title="Active Session" />
+                          </div>
+                          <div style={dropdownUserEmailStyle} title={user.email}>
+                            {user.email}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Badge strip */}
+                      <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        {isAdmin ? (
+                          <span style={adminBadgeStyle}>
+                            <Shield size={11} /> ADMINISTRATOR
+                          </span>
+                        ) : (
+                          <span style={shopperBadgeStyle}>
+                            <Sparkles size={11} /> CASA MEMBER
+                          </span>
+                        )}
+                      </div>
                     </div>
 
-                    {isAdmin && (
+                    {/* Navigation Menu Links */}
+                    <div style={{ padding: '8px' }}>
+                      {isAdmin && (
+                        <Link
+                          to="/admin"
+                          onClick={() => setShowUserMenu(false)}
+                          className="dropdown-menu-item"
+                          style={dropdownMenuItemStyle}
+                        >
+                          <div style={{ ...menuIconBox, background: '#eff6ff', color: '#1d4ed8' }}>
+                            <Shield size={16} />
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={menuItemTitleStyle}>Admin Dashboard</div>
+                            <div style={menuItemSubStyle}>Manage store & inventory</div>
+                          </div>
+                          <ChevronRight size={14} className="dropdown-menu-arrow" />
+                        </Link>
+                      )}
+
                       <Link
-                        to="/admin"
+                        to="/profile"
                         onClick={() => setShowUserMenu(false)}
-                        style={dropdownAdminLink}
+                        className="dropdown-menu-item"
+                        style={dropdownMenuItemStyle}
                       >
-                        <Shield size={16} /> Admin Dashboard
+                        <div style={{ ...menuIconBox, background: '#f5f3ff', color: '#7c3aed' }}>
+                          <UserIcon size={16} />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={menuItemTitleStyle}>My Profile & Addresses</div>
+                          <div style={menuItemSubStyle}>Personal details & delivery addresses</div>
+                        </div>
+                        <ChevronRight size={14} className="dropdown-menu-arrow" />
                       </Link>
-                    )}
 
-                    <Link to="/profile" onClick={() => setShowUserMenu(false)} style={dropdownLinkStyle}>
-                      <UserIcon size={16} /> My Profile & Addresses
-                    </Link>
-                    <Link to="/orders" onClick={() => setShowUserMenu(false)} style={dropdownLinkStyle}>
-                      <Package size={16} /> Order History
-                    </Link>
-                    <Link to="/wishlist" onClick={() => setShowUserMenu(false)} style={dropdownLinkStyle}>
-                      <Heart size={16} /> My Wishlist
-                    </Link>
+                      <Link
+                        to="/orders"
+                        onClick={() => setShowUserMenu(false)}
+                        className="dropdown-menu-item"
+                        style={dropdownMenuItemStyle}
+                      >
+                        <div style={{ ...menuIconBox, background: '#fff7ed', color: '#ea580c' }}>
+                          <Package size={16} />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={menuItemTitleStyle}>Order History</div>
+                          <div style={menuItemSubStyle}>Track shipments & view invoices</div>
+                        </div>
+                        <ChevronRight size={14} className="dropdown-menu-arrow" />
+                      </Link>
 
-                    <div style={{ borderTop: '1px solid #f1f5f9', margin: '4px 0' }} />
+                      <Link
+                        to="/wishlist"
+                        onClick={() => setShowUserMenu(false)}
+                        className="dropdown-menu-item"
+                        style={dropdownMenuItemStyle}
+                      >
+                        <div style={{ ...menuIconBox, background: '#fff1f2', color: '#e11d48' }}>
+                          <Heart size={16} />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={menuItemTitleStyle}>My Wishlist</div>
+                          <div style={menuItemSubStyle}>Saved favorite products</div>
+                        </div>
+                        {wishlistCount > 0 ? (
+                          <span style={menuCountBadgeStyle}>{wishlistCount}</span>
+                        ) : (
+                          <ChevronRight size={14} className="dropdown-menu-arrow" />
+                        )}
+                      </Link>
+                    </div>
 
-                    <button
-                      onClick={() => {
-                        setShowUserMenu(false);
-                        logout();
-                        success('Logged out successfully.');
-                        navigate('/');
-                      }}
-                      style={{
-                        ...dropdownLogoutBtn,
-                        background: '#fee2e2',
-                        color: '#dc2626',
-                        fontWeight: 700,
-                        padding: '8px 14px',
-                        borderRadius: '8px',
-                        margin: '6px 12px 10px',
-                        width: 'calc(100% - 24px)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '8px',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      <LogOut size={16} /> Sign Out / Logout
-                    </button>
+                    <div style={{ padding: '0 8px 8px' }}>
+                      <button
+                        onClick={() => {
+                          setShowUserMenu(false);
+                          logout();
+                          success('Logged out successfully.');
+                          navigate('/');
+                        }}
+                        className="dropdown-logout-animated-btn"
+                        style={dropdownLogoutBtnStyle}
+                      >
+                        <div style={{ ...menuIconBox, background: 'rgba(239, 68, 68, 0.1)', color: '#dc2626' }}>
+                          <LogOut size={16} className="logout-icon-rotate" />
+                        </div>
+                        <div style={{ flex: 1, textAlign: 'left' }}>
+                          <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#dc2626' }}>
+                            Sign Out / Logout
+                          </div>
+                          <div style={{ fontSize: '0.72rem', color: '#ef4444' }}>
+                            End current CASA session
+                          </div>
+                        </div>
+                        <ChevronRight size={14} color="#dc2626" className="dropdown-menu-arrow" />
+                      </button>
+                    </div>
                   </>
                 ) : (
-                  <div style={{ padding: '16px' }}>
-                    <p style={{ fontSize: '0.85rem', color: '#475569', marginBottom: '12px' }}>
-                      Sign in for personalized recommendations and faster checkout.
-                    </p>
+                  <div style={{ padding: '20px 18px 16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+                      <div
+                        style={{
+                          width: '42px',
+                          height: '42px',
+                          borderRadius: '12px',
+                          background: 'linear-gradient(135deg, #1d4ed8, #3b82f6)',
+                          color: '#ffffff',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <Sparkles size={20} />
+                      </div>
+                      <div>
+                        <strong style={{ fontSize: '0.95rem', color: '#0f172a', display: 'block' }}>
+                          Welcome to CASA
+                        </strong>
+                        <span style={{ fontSize: '0.78rem', color: '#64748b' }}>
+                          Sign in for personalized shopping
+                        </span>
+                      </div>
+                    </div>
                     <Link
                       to="/login"
                       onClick={() => setShowUserMenu(false)}
                       className="btn btn-primary"
-                      style={{ width: '100%', fontSize: '0.875rem' }}
+                      style={{
+                        width: '100%',
+                        fontSize: '0.875rem',
+                        padding: '10px',
+                        borderRadius: '10px',
+                        boxShadow: '0 4px 14px rgba(29, 78, 216, 0.28)',
+                      }}
                     >
                       Sign In to CASA
                     </Link>
-                    <div style={{ textAlign: 'center', marginTop: '12px', fontSize: '0.78rem', color: '#64748b' }}>
+                    <div style={{ textAlign: 'center', marginTop: '12px', fontSize: '0.8rem', color: '#64748b' }}>
                       New customer?{' '}
                       <Link
                         to="/register"
@@ -893,62 +1101,149 @@ const userDropdownStyle = {
   position: 'absolute',
   top: 'calc(100% + 10px)',
   right: 0,
-  width: '260px',
+  width: '300px',
+  maxWidth: 'calc(100vw - 24px)',
   background: '#ffffff',
-  borderRadius: '12px',
+  borderRadius: '20px',
   border: '1px solid #e2e8f0',
-  boxShadow: '0 10px 25px -5px rgba(15, 23, 42, 0.15)',
+  boxShadow: '0 20px 45px -10px rgba(15, 23, 42, 0.16), 0 0 0 1px rgba(0, 0, 0, 0.03)',
   overflow: 'hidden',
-  zIndex: 100,
+  zIndex: 1000,
 };
 
 const dropdownUserHeader = {
-  padding: '14px',
-  background: '#f8fafc',
-  borderBottom: '1px solid #f1f5f9',
+  padding: '16px 18px',
+  background: 'linear-gradient(135deg, #0a192f 0%, #1e3a8a 100%)',
+  color: '#ffffff',
+  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
 };
 
-const adminBadgeStyle = {
-  display: 'inline-block',
-  marginTop: '4px',
-  padding: '2px 6px',
-  background: '#dbeafe',
-  color: '#1d4ed8',
-  borderRadius: '4px',
-  fontSize: '0.65rem',
-  fontWeight: 800,
+const dropdownAvatarStyle = {
+  width: '42px',
+  height: '42px',
+  borderRadius: '50%',
+  objectFit: 'cover',
+  border: '2px solid rgba(255, 255, 255, 0.85)',
+  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.25)',
+};
+
+const dropdownAvatarFallback = {
+  width: '42px',
+  height: '42px',
+  borderRadius: '50%',
+  background: 'linear-gradient(135deg, #2563eb, #38bdf8)',
+  color: '#ffffff',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  fontWeight: '800',
+  fontSize: '0.95rem',
+  border: '2px solid rgba(255, 255, 255, 0.85)',
+  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.25)',
   letterSpacing: '0.04em',
 };
 
-const dropdownAdminLink = {
-  display: 'flex',
+const dropdownUserNameStyle = {
+  fontSize: '0.975rem',
+  fontWeight: '800',
+  color: '#ffffff',
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  display: 'block',
+};
+
+const dropdownUserEmailStyle = {
+  fontSize: '0.75rem',
+  color: '#93c5fd',
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  display: 'block',
+  marginTop: '2px',
+};
+
+const adminBadgeStyle = {
+  display: 'inline-flex',
   alignItems: 'center',
-  gap: '8px',
-  padding: '10px 14px',
-  fontSize: '0.85rem',
+  gap: '4px',
+  padding: '2px 8px',
+  background: 'rgba(219, 234, 254, 0.2)',
+  color: '#93c5fd',
+  border: '1px solid rgba(147, 197, 253, 0.35)',
+  borderRadius: '9999px',
+  fontSize: '0.65rem',
+  fontWeight: 800,
+  letterSpacing: '0.05em',
+};
+
+const shopperBadgeStyle = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '4px',
+  padding: '2px 8px',
+  background: 'rgba(255, 255, 255, 0.15)',
+  color: '#f8fafc',
+  border: '1px solid rgba(255, 255, 255, 0.25)',
+  borderRadius: '9999px',
+  fontSize: '0.65rem',
   fontWeight: 700,
-  color: '#1d4ed8',
-  background: '#eff6ff',
-  textDecoration: 'none',
+  letterSpacing: '0.04em',
 };
 
-const dropdownLinkStyle = {
+const dropdownMenuItemStyle = {
   display: 'flex',
   alignItems: 'center',
-  gap: '8px',
-  padding: '10px 14px',
-  fontSize: '0.85rem',
-  color: '#334155',
+  gap: '12px',
+  padding: '9px 12px',
+  borderRadius: '12px',
   textDecoration: 'none',
-  transition: 'background 0.15s',
+  color: '#1e293b',
+  cursor: 'pointer',
 };
 
-const dropdownLogoutBtn = {
-  ...dropdownLinkStyle,
+const menuIconBox = {
+  width: '34px',
+  height: '34px',
+  borderRadius: '10px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  flexShrink: 0,
+};
+
+const menuItemTitleStyle = {
+  fontSize: '0.85rem',
+  fontWeight: '700',
+  color: '#0f172a',
+  lineHeight: 1.2,
+};
+
+const menuItemSubStyle = {
+  fontSize: '0.7rem',
+  color: '#64748b',
+  marginTop: '2px',
+};
+
+const menuCountBadgeStyle = {
+  padding: '2px 7px',
+  borderRadius: '9999px',
+  background: '#eff6ff',
+  color: '#1d4ed8',
+  fontSize: '0.72rem',
+  fontWeight: '800',
+  border: '1px solid #bfdbfe',
+};
+
+const dropdownLogoutBtnStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '12px',
   width: '100%',
-  color: '#dc2626',
-  background: 'none',
-  border: 'none',
+  padding: '9px 12px',
+  borderRadius: '12px',
+  background: '#fef2f2',
+  border: '1px solid #fee2e2',
   cursor: 'pointer',
 };
 
