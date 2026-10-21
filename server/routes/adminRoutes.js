@@ -22,10 +22,10 @@ const {
   updateSettings,
   getAuditLogs
 } = require('../controllers/adminController');
-const { protect, authorize } = require('../middleware/auth');
+const { protect, authorize, requireSuperAdmin } = require('../middleware/auth');
 
 router.use(protect);
-router.use(authorize('admin'));
+router.use(authorize('admin', 'super_admin'));
 
 // Admin Dashboard stats & Audit trail
 router.get('/stats', getDashboardStats);
@@ -52,8 +52,8 @@ router.delete('/products/:id', deleteProduct);
 router.get('/users', getAllUsers);
 router.put('/users/:id/status', manageUserStatus);
 router.put('/vendors/:id/status', manageVendorStatus);
-router.put('/users/:id/role', updateUserRole);
-router.delete('/users/:id', deleteUser);
+router.put('/users/:id/role', requireSuperAdmin, updateUserRole);
+router.delete('/users/:id', requireSuperAdmin, deleteUser);
 
 // Store Settings
 router.get('/settings', getSettings);

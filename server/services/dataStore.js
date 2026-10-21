@@ -79,7 +79,7 @@ class DataStore {
         email: 'admin@casa.in',
         password: adminPasswordHash,
         phone: '+91 98765 43210',
-        role: 'admin',
+        role: 'super_admin',
         avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
         createdAt: new Date().toISOString()
       },

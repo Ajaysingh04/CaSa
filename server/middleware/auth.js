@@ -66,14 +66,37 @@ const protect = async (req, res, next) => {
 
 const authorize = (...roles) => {
   return (req, res, next) => {
-    if (!req.user || !roles.includes(req.user.role)) {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required'
+      });
+    }
+
+    // Super Admin inherits full operational access across administrative endpoints
+    if (req.user.role === 'super_admin') {
+      return next();
+    }
+
+    if (!roles.includes(req.user.role)) {
       return res.status(403).json({
         success: false,
-        message: `User role '${req.user ? req.user.role : 'unauthorized'}' is not authorized to access this route.`
+        message: `User role '${req.user.role}' is not authorized to access this route.`
       });
     }
     next();
   };
 };
 
-module.exports = { protect, authorize };
+// Dedicated super-admin permission level for root administrative operations
+const requireSuperAdmin = (req, res, next) => {
+  if (!req.user || req.user.role !== 'super_admin') {
+    return res.status(403).json({
+      success: false,
+      message: 'Access Denied: This operation requires dedicated Super Admin privileges.'
+    });
+  }
+  next();
+};
+
+module.exports = { protect, authorize, requireSuperAdmin };

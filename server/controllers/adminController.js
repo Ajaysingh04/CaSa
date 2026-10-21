@@ -829,12 +829,27 @@ exports.manageProductApproval = async (req, res, next) => {
 exports.deleteProduct = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const { reason = 'Product deleted by administrator' } = req.body || {};
 
     if (getDBStatus()) {
-      const product = await Product.findByIdAndDelete(id);
+      const product = await Product.findById(id);
       if (!product) {
         return res.status(404).json({ success: false, message: 'Product not found' });
       }
+
+      await Product.findByIdAndDelete(id);
+
+      await AuditService.logEvent({
+        action: 'PRODUCT_DELETED',
+        entityType: 'Product',
+        entityId: id,
+        performedBy: req.user._id,
+        performedByName: req.user.name,
+        performedByRole: req.user.role,
+        previousState: { name: product.name, sku: product.sku, price: product.price },
+        reason
+      });
+
       return res.status(200).json({ success: true, message: 'Product removed' });
     } else {
       const index = dataStore.products.findIndex(p => p._id === id || p.slug === id);
@@ -1091,28 +1106,57 @@ exports.manageVendorStatus = async (req, res, next) => {
   }
 };
 
-// @desc    Update user role (Admin)
+// @desc    Update user role (Admin / Super Admin)
 // @route   PUT /api/admin/users/:id/role
-// @access  Private/Admin
+// @access  Private/Admin (Promotions to admin/super_admin require Super Admin)
 exports.updateUserRole = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { role } = req.body;
+    const { role, reason = 'Administrative role modification' } = req.body;
 
-    if (!['user', 'admin', 'vendor', 'delivery'].includes(role)) {
-      return res.status(400).json({ success: false, message: 'Invalid user role' });
+    const allowedRoles = ['user', 'admin', 'super_admin', 'vendor', 'delivery'];
+    if (!allowedRoles.includes(role)) {
+      return res.status(400).json({ success: false, message: 'Invalid user role specified' });
     }
 
-    if (req.user._id && req.user._id.toString() === id && role !== 'admin') {
-      return res.status(400).json({ success: false, message: 'You cannot remove your own admin access' });
+    // Least Privilege Rule: Only Super Admin can promote accounts to admin or super_admin
+    if (['admin', 'super_admin'].includes(role) && req.user.role !== 'super_admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Security Policy: Granting administrative privileges requires Super Admin authorization.'
+      });
+    }
+
+    // Prevent removing own administrative access
+    if (req.user._id && req.user._id.toString() === id && role !== req.user.role) {
+      return res.status(400).json({ success: false, message: 'You cannot remove your own administrative access' });
     }
 
     if (getDBStatus()) {
-      const user = await User.findByIdAndUpdate(id, { role }, { new: true }).select('-password');
+      const user = await User.findById(id);
       if (!user) {
         return res.status(404).json({ success: false, message: 'User not found' });
       }
-      return res.status(200).json({ success: true, data: user });
+
+      const prevRole = user.role;
+      user.role = role;
+      await user.save();
+
+      // Record in append-only AuditLog
+      await AuditService.logEvent({
+        action: 'USER_ROLE_CHANGED',
+        entityType: 'User',
+        entityId: user._id,
+        performedBy: req.user._id,
+        performedByName: req.user.name,
+        performedByRole: req.user.role,
+        previousState: { role: prevRole },
+        newState: { role },
+        reason
+      });
+
+      const { password, ...safeUser } = user.toObject();
+      return res.status(200).json({ success: true, data: safeUser });
     } else {
       const userIndex = dataStore.users.findIndex(u => u._id === id);
       if (userIndex === -1) {
@@ -1127,22 +1171,51 @@ exports.updateUserRole = async (req, res, next) => {
   }
 };
 
-// @desc    Delete user account (Admin)
+// @desc    Permanently delete user account (Destructive Action - Super Admin)
 // @route   DELETE /api/admin/users/:id
-// @access  Private/Admin
+// @access  Private/SuperAdmin
 exports.deleteUser = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const { reason = 'Account permanently deleted by administrator', confirmation } = req.body || {};
+
+    // Destructive safeguard: Confirmation required
+    if (confirmation !== true && req.body?.confirm !== true) {
+      return res.status(400).json({
+        success: false,
+        message: 'Explicit confirmation required for account deletion. Pass { confirmation: true }.'
+      });
+    }
 
     if (req.user._id && req.user._id.toString() === id) {
-      return res.status(400).json({ success: false, message: 'You cannot delete your own admin account' });
+      return res.status(400).json({ success: false, message: 'You cannot delete your own administrative account' });
     }
 
     if (getDBStatus()) {
-      const user = await User.findByIdAndDelete(id);
+      const user = await User.findById(id);
       if (!user) {
         return res.status(404).json({ success: false, message: 'User not found' });
       }
+
+      // Safeguard: Forbid non-super_admin from deleting super_admin accounts
+      if (user.role === 'super_admin' && req.user.role !== 'super_admin') {
+        return res.status(403).json({ success: false, message: 'Forbidden: Super Admin accounts cannot be deleted' });
+      }
+
+      await User.findByIdAndDelete(id);
+
+      // Append-only audit logging
+      await AuditService.logEvent({
+        action: 'USER_PERMANENTLY_DELETED',
+        entityType: 'User',
+        entityId: id,
+        performedBy: req.user._id,
+        performedByName: req.user.name,
+        performedByRole: req.user.role,
+        previousState: { name: user.name, email: user.email, role: user.role },
+        reason
+      });
+
       return res.status(200).json({ success: true, message: 'User deleted successfully' });
     } else {
       const userIndex = dataStore.users.findIndex(u => u._id === id);
@@ -1157,18 +1230,34 @@ exports.deleteUser = async (req, res, next) => {
   }
 };
 
-// @desc    Delete order (Admin)
+// @desc    Delete order (Destructive Action - Admin)
 // @route   DELETE /api/admin/orders/:id
 // @access  Private/Admin
 exports.deleteOrder = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const { reason = 'Order deleted by administrator' } = req.body || {};
 
     if (getDBStatus()) {
-      const order = await Order.findByIdAndDelete(id);
+      const order = await Order.findById(id);
       if (!order) {
         return res.status(404).json({ success: false, message: 'Order not found' });
       }
+
+      await Order.findByIdAndDelete(id);
+
+      // Append-only audit logging
+      await AuditService.logEvent({
+        action: 'ORDER_DELETED',
+        entityType: 'Order',
+        entityId: id,
+        performedBy: req.user._id,
+        performedByName: req.user.name,
+        performedByRole: req.user.role,
+        previousState: { orderNumber: order.orderNumber, totalPrice: order.totalPrice, status: order.orderStatus },
+        reason
+      });
+
       return res.status(200).json({ success: true, message: 'Order deleted successfully' });
     } else {
       const index = dataStore.orders.findIndex(o => o._id === id);

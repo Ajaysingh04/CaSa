@@ -117,15 +117,17 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const isAdmin = user?.role === 'admin';
-  const isVendor = user?.role === 'vendor' || user?.role === 'admin';
-  const isDelivery = user?.role === 'delivery' || user?.role === 'admin';
+  const isSuperAdmin = user?.role === 'super_admin';
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
+  const isVendor = user?.role === 'vendor' || user?.role === 'admin' || user?.role === 'super_admin';
+  const isDelivery = user?.role === 'delivery' || user?.role === 'admin' || user?.role === 'super_admin';
 
   return (
     <AuthContext.Provider
       value={{
         user,
         loading,
+        isSuperAdmin,
         isAdmin,
         isVendor,
         isDelivery,
