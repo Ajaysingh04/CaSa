@@ -11,7 +11,7 @@ const server = http.createServer(app);
 initSocket(server);
 
 // Start HTTP server immediately so port 5000 is never unavailable during DB connection or reload
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`====================================================`);
   console.log(`🚀 CASA E-Commerce Server running on port ${PORT}`);
   console.log(`📡 API Health: http://localhost:${PORT}/api/health`);

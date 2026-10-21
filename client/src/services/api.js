@@ -2,14 +2,11 @@ import axios from 'axios';
 
 const getBaseURL = () => {
   const envUrl = import.meta.env.VITE_API_URL;
-  if (envUrl) {
-    // Safety guard: in production on Vercel, ignore any localhost configuration
-    if (import.meta.env.PROD && (envUrl.includes('localhost') || envUrl.includes('127.0.0.1'))) {
-      return '/api';
-    }
+  if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
     return envUrl;
   }
-  return import.meta.env.PROD ? '/api' : 'http://localhost:5000/api';
+  // Use same-origin /api proxy in dev and prod to guarantee reliable routing without CORS or IPv6 glitches
+  return '/api';
 };
 
 const API_BASE_URL = getBaseURL();

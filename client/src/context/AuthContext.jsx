@@ -54,11 +54,18 @@ export const AuthProvider = ({ children }) => {
       return { success: true, user: data.user };
     } catch (err) {
       console.error('Login error details:', err);
-      const msg =
-        err.response?.data?.message ||
-        (typeof err.response?.data === 'string' && err.response.data.includes('<!DOCTYPE')
-          ? 'API returned HTML instead of JSON. Check Vercel backend routing.'
-          : err.message || 'Login failed. Please check credentials.');
+      let msg = err.response?.data?.message;
+      if (!msg) {
+        if (err.response?.status === 401) {
+          msg = 'Invalid email or password. Please check your credentials.';
+        } else if (err.response?.status === 500) {
+          msg = 'Server connection error. Please try again.';
+        } else if (err.code === 'ERR_NETWORK') {
+          msg = 'Cannot connect to backend server. Please verify backend is running.';
+        } else {
+          msg = err.message || 'Login failed. Please try again.';
+        }
+      }
       error(msg);
       return { success: false, message: msg };
     }
