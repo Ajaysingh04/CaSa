@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, useNavigate, useLocation, useParams } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -571,6 +571,91 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
 
   const allCatalogProducts = products.length > 0 ? products : defaultCatalog;
 
+  // Curated High-Velocity Leaders (Ensures unique items, accurate images, and no duplicate titles)
+  const velocityLeaders = useMemo(() => {
+    const pool = products && products.length > 0 ? products : defaultCatalog;
+    const uniqueItems = [];
+    const seenNames = new Set();
+
+    const artisanFallbacks = [
+      {
+        title: 'Chanderi Pure Silk Handloom Saree',
+        sales: '₹48,200',
+        units: 32,
+        stock: 45,
+        sku: 'CS-CHN-001',
+        img: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=120&auto=format&fit=crop&q=80',
+      },
+      {
+        title: 'Maheshwari Zari Border Dupatta',
+        sales: '₹24,600',
+        units: 28,
+        stock: 62,
+        sku: 'CS-MSH-002',
+        img: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=120&auto=format&fit=crop&q=80',
+      },
+      {
+        title: 'Handcrafted Organic Cotton Kurta',
+        sales: '₹19,800',
+        units: 24,
+        stock: 18,
+        sku: 'CS-KRT-003',
+        img: 'https://images.unsplash.com/photo-1598033129183-c4f50c736f10?w=120&auto=format&fit=crop&q=80',
+      },
+      {
+        title: 'Blue Pottery Ceramic Glazed Vase',
+        sales: '₹14,500',
+        units: 21,
+        stock: 35,
+        sku: 'CS-POT-004',
+        img: 'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?w=120&auto=format&fit=crop&q=80',
+      },
+    ];
+
+    for (const item of pool) {
+      const rawName = item.name || '';
+      if (!rawName) continue;
+      const cleanKey = rawName.toLowerCase().trim();
+      if (!seenNames.has(cleanKey)) {
+        seenNames.add(cleanKey);
+        // Safely extract real image (MongoDB images array vs single image)
+        const itemImg = (Array.isArray(item.images) && item.images.length > 0 && typeof item.images[0] === 'string' && item.images[0].startsWith('http'))
+          ? item.images[0]
+          : (typeof item.image === 'string' && item.image.startsWith('http'))
+          ? item.image
+          : artisanFallbacks[uniqueItems.length % artisanFallbacks.length].img;
+
+        const price = Number(item.discountPrice || item.price || 1499);
+        const units = Number(item.soldCount || (36 - uniqueItems.length * 5));
+        const stock = Number(item.stock ?? 25);
+        const revenue = units * price;
+
+        uniqueItems.push({
+          title: rawName,
+          sales: formatINR(revenue),
+          units,
+          stock,
+          img: itemImg,
+          sku: item.sku || `CS-SKU-${100 + uniqueItems.length}`,
+        });
+      }
+      if (uniqueItems.length >= 4) break;
+    }
+
+    // Fill remaining slots if pool has fewer than 4 distinct items
+    if (uniqueItems.length < 4) {
+      for (const fallback of artisanFallbacks) {
+        if (!seenNames.has(fallback.title.toLowerCase().trim())) {
+          seenNames.add(fallback.title.toLowerCase().trim());
+          uniqueItems.push(fallback);
+        }
+        if (uniqueItems.length >= 4) break;
+      }
+    }
+
+    return uniqueItems;
+  }, [products]);
+
   // Extract unique categories
   const availableProductCategories = ['ALL', ...Array.from(new Set(allCatalogProducts.map((p) => p.category).filter(Boolean)))];
 
@@ -827,8 +912,51 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
           transform-origin: bottom;
         }
 
+        /* Enterprise Grid & Layout Classes */
+        .pro-dashboard-grid-12 {
+          display: grid;
+          grid-template-columns: 8fr 4fr;
+          gap: 20px;
+          align-items: stretch;
+        }
+        .pro-dashboard-chart-metrics {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 16px;
+          margin-top: 18px;
+          padding-top: 16px;
+          border-top: 1px solid #f1f5f9;
+        }
+        .pro-dashboard-grid-3 {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 20px;
+          align-items: stretch;
+        }
+        .pro-kpi-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+          gap: 18px;
+        }
+        .pro-form-row-2 {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+        }
+
         /* Responsive Breakpoints */
+        @media (max-width: 1200px) {
+          .pro-dashboard-grid-3 {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 18px !important;
+          }
+        }
+
         @media (max-width: 1024px) {
+          .pro-dashboard-grid-12 {
+            grid-template-columns: 1fr !important;
+            gap: 18px !important;
+          }
           .myshop-container {
             display: block;
           }
@@ -857,6 +985,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
             margin-left: 0 !important;
             width: 100% !important;
             padding: 18px 16px 60px !important;
+            box-sizing: border-box !important;
           }
           .myshop-mobile-topbar {
             display: flex !important;
@@ -874,10 +1003,40 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
           }
         }
 
+        @media (max-width: 768px) {
+          .pro-dashboard-grid-3 {
+            grid-template-columns: 1fr !important;
+            gap: 16px !important;
+          }
+          .pro-dashboard-chart-metrics {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 12px !important;
+          }
+          .pro-kpi-grid {
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+            gap: 12px !important;
+          }
+        }
+
         @media (max-width: 640px) {
           .myshop-main {
-            padding: 14px 12px 60px !important;
-            gap: 18px !important;
+            padding: 12px 10px 60px !important;
+            gap: 16px !important;
+          }
+          .pro-dashboard-chart-metrics {
+            grid-template-columns: 1fr !important;
+            gap: 10px !important;
+          }
+          .pro-kpi-grid {
+            grid-template-columns: 1fr !important;
+            gap: 10px !important;
+          }
+          .pro-form-row-2 {
+            grid-template-columns: 1fr !important;
+          }
+          .pro-card {
+            padding: 16px 14px !important;
+            border-radius: 12px !important;
           }
         }
       `}</style>
@@ -1398,7 +1557,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
           {activeTab === 'dashboard' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
               {/* SECTION 1: EXECUTIVE FINTECH & PERFORMANCE KPI METRIC CARDS */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '18px' }}>
+              <div className="pro-kpi-grid">
                 {/* KPI 1: Gross Sales MTD */}
                 <div className="pro-kpi-card">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -1569,9 +1728,9 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
               </div>
 
               {/* SECTION 2: 2-COLUMN ENTERPRISE ANALYTICS & LIVE CUSTOMER BOOKINGS */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '20px' }}>
+              <div className="pro-dashboard-grid-12">
                 {/* Left 8 Cols: Sales Velocity & Operations Chart */}
-                <div style={{ gridColumn: 'span 8', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', minWidth: 0 }}>
                   <div className="pro-card">
                     {/* Header with Title and Period Filter */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '22px' }}>
@@ -1664,7 +1823,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                     </div>
 
                     {/* Operational Strip Below Chart */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginTop: '18px', paddingTop: '16px' }}>
+                    <div className="pro-dashboard-chart-metrics">
                       <div style={{ borderRight: '1px solid #f1f5f9', paddingRight: '12px' }}>
                         <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>Today's Dispatch</div>
                         <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '3px' }}>₹65,575</div>
@@ -1693,7 +1852,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                 </div>
 
                 {/* Right 4 Cols: Live Customer Bookings Queue (Real-Time Feed) */}
-                <div style={{ gridColumn: 'span 4' }}>
+                <div style={{ minWidth: 0 }}>
                   <div className="pro-card" style={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box' }}>
                     <div>
                       {/* Header */}
@@ -1811,91 +1970,113 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
               </div>
 
               {/* SECTION 3: BOTTOM 3 ENTERPRISE SAAS MODULES */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+              <div className="pro-dashboard-grid-3">
                 {/* Module 1: High-Velocity Catalog Products */}
-                <div className="pro-card">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                    <div>
-                      <h4 style={{ margin: 0, fontSize: '0.98rem', fontWeight: 800, color: '#0f172a' }}>
-                        Catalog Velocity Leaders
-                      </h4>
-                      <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '2px' }}>
-                        Top selling SKUs by units & revenue
+                <div className="pro-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box' }}>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', gap: '8px' }}>
+                      <div style={{ minWidth: 0 }}>
+                        <h4 style={{ margin: 0, fontSize: '0.98rem', fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          Catalog Velocity Leaders
+                        </h4>
+                        <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '2px' }}>
+                          Top selling SKUs by units & revenue
+                        </div>
                       </div>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('products')}
+                        style={{
+                          background: '#eff6ff',
+                          border: 'none',
+                          color: '#2563eb',
+                          fontSize: '0.74rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          padding: '4px 9px',
+                          borderRadius: '6px',
+                          flexShrink: 0,
+                          whiteSpace: 'nowrap',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        All ({allCatalogProducts.length})
+                      </button>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {velocityLeaders.map((prod, idx) => (
+                        <div
+                          key={idx}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '8px 10px',
+                            borderRadius: '10px',
+                            background: '#f8fafc',
+                            border: '1px solid #f1f5f9',
+                            gap: '10px',
+                            transition: 'all 0.15s ease',
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
+                            <img
+                              src={prod.img}
+                              alt={prod.title}
+                              style={{ width: '38px', height: '38px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0, border: '1px solid #e2e8f0' }}
+                            />
+                            <div style={{ minWidth: 0, flex: 1 }}>
+                              <div
+                                style={{
+                                  fontSize: '0.8rem',
+                                  fontWeight: 700,
+                                  color: '#0f172a',
+                                  whiteSpace: 'nowrap',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                }}
+                                title={prod.title}
+                              >
+                                {prod.title}
+                              </div>
+                              <div style={{ fontSize: '0.68rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px', marginTop: '1px' }}>
+                                <span>{prod.units} sold</span>
+                                <span>•</span>
+                                <span>Stock: <strong style={{ color: prod.stock < 10 ? '#ef4444' : prod.stock < 20 ? '#f59e0b' : '#059669' }}>{prod.stock}</strong></span>
+                              </div>
+                            </div>
+                          </div>
+                          <span style={{ fontSize: '0.86rem', fontWeight: 800, color: '#0f172a', flexShrink: 0 }}>
+                            {prod.sales}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.72rem', color: '#64748b' }}>
+                      <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#10b981' }} />
+                      <span>Stock Health: <strong style={{ color: '#059669' }}>98% Optimal</strong></span>
                     </div>
                     <button
                       type="button"
-                      onClick={() => setActiveTab('products')}
-                      style={{ background: 'none', border: 'none', color: '#2563eb', fontSize: '0.74rem', fontWeight: 700, cursor: 'pointer' }}
-                    >
-                      All ({products.length || 14})
-                    </button>
-                  </div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {[
-                      {
-                        title: products[0]?.name || 'Chanderi Pure Silk Handloom Saree',
-                        sales: '₹48,200',
-                        units: 32,
-                        stock: 45,
-                        img: products[0]?.image || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=120&auto=format&fit=crop&q=80',
-                      },
-                      {
-                        title: products[1]?.name || 'Maheshwari Zari Border Dupatta',
-                        sales: '₹24,600',
-                        units: 28,
-                        stock: 62,
-                        img: products[1]?.image || 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=120&auto=format&fit=crop&q=80',
-                      },
-                      {
-                        title: products[2]?.name || 'Handcrafted Organic Cotton Kurta',
-                        sales: '₹19,800',
-                        units: 24,
-                        stock: 18,
-                        img: products[2]?.image || 'https://images.unsplash.com/photo-1598033129183-c4f50c736f10?w=120&auto=format&fit=crop&q=80',
-                      },
-                    ].map((prod, idx) => (
-                      <div
-                        key={idx}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          padding: '8px 10px',
-                          borderRadius: '10px',
-                          background: '#f8fafc',
-                          border: '1px solid #f1f5f9',
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
-                          <img
-                            src={prod.img}
-                            alt={prod.title}
-                            style={{ width: '38px', height: '38px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0, border: '1px solid #e2e8f0' }}
-                          />
-                          <div style={{ minWidth: 0 }}>
-                            <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                              {prod.title}
-                            </div>
-                            <div style={{ fontSize: '0.68rem', color: '#64748b' }}>
-                              {prod.units} sold • Stock: <span style={{ color: prod.stock < 20 ? '#f59e0b' : '#059669', fontWeight: 700 }}>{prod.stock}</span>
-                            </div>
-                          </div>
-                        </div>
-                        <span style={{ fontSize: '0.86rem', fontWeight: 800, color: '#0f172a', flexShrink: 0, marginLeft: '8px' }}>
-                          {prod.sales}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '0.72rem', color: '#64748b' }}>Stock Health: 98% Optimal</span>
-                    <button
-                      type="button"
                       onClick={() => setIsAddProductModalOpen(true)}
-                      style={{ background: 'none', border: 'none', color: '#2563eb', fontSize: '0.74rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                      style={{
+                        background: '#eff6ff',
+                        border: '1px solid #bfdbfe',
+                        color: '#2563eb',
+                        fontSize: '0.74rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '4px 10px',
+                        borderRadius: '6px',
+                        transition: 'all 0.15s ease',
+                      }}
                     >
                       <Plus size={13} /> Add Product
                     </button>
@@ -1903,42 +2084,44 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                 </div>
 
                 {/* Module 2: Pan-India Express Logistics Pipeline */}
-                <div className="pro-card">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                    <div>
-                      <h4 style={{ margin: 0, fontSize: '0.98rem', fontWeight: 800, color: '#0f172a' }}>
-                        Logistics & Courier Routing
-                      </h4>
-                      <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '2px' }}>
-                        Integrated 3PL Carrier Performance
+                <div className="pro-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box' }}>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                      <div>
+                        <h4 style={{ margin: 0, fontSize: '0.98rem', fontWeight: 800, color: '#0f172a' }}>
+                          Logistics & Courier Routing
+                        </h4>
+                        <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '2px' }}>
+                          Integrated 3PL Carrier Performance
+                        </div>
                       </div>
+                      <span style={{ fontSize: '0.7rem', background: '#ecfdf5', color: '#059669', padding: '2px 7px', borderRadius: '5px', fontWeight: 700 }}>
+                        100% Insured
+                      </span>
                     </div>
-                    <span style={{ fontSize: '0.7rem', background: '#ecfdf5', color: '#059669', padding: '2px 7px', borderRadius: '5px', fontWeight: 700 }}>
-                      100% Insured
-                    </span>
-                  </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    {[
-                      { hub: 'North Hub (Delhi NCR & UP)', share: '36%', status: 'Next Pickup 4:30 PM', color: '#2563eb' },
-                      { hub: 'West Hub (Mumbai & MP)', share: '28%', status: 'Daily Linehaul Active', color: '#059669' },
-                      { hub: 'South Hub (Bengaluru & Hyd)', share: '22%', status: 'Direct Air Express', color: '#7c3aed' },
-                      { hub: 'East Hub (Kolkata & Bihar)', share: '14%', status: 'Surface Fastrack', color: '#f59e0b' },
-                    ].map((route, idx) => (
-                      <div key={idx} style={{ padding: '8px 10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #f1f5f9' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem' }}>
-                          <span style={{ fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: route.color }} />
-                            {route.hub}
-                          </span>
-                          <span style={{ fontWeight: 800, color: '#0f172a' }}>{route.share}</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {[
+                        { hub: 'North Hub (Delhi NCR & UP)', share: '36%', status: 'Next Pickup 4:30 PM', color: '#2563eb' },
+                        { hub: 'West Hub (Mumbai & MP)', share: '28%', status: 'Daily Linehaul Active', color: '#059669' },
+                        { hub: 'South Hub (Bengaluru & Hyd)', share: '22%', status: 'Direct Air Express', color: '#7c3aed' },
+                        { hub: 'East Hub (Kolkata & Bihar)', share: '14%', status: 'Surface Fastrack', color: '#f59e0b' },
+                      ].map((route, idx) => (
+                        <div key={idx} style={{ padding: '8px 10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #f1f5f9' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem' }}>
+                            <span style={{ fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: route.color }} />
+                              {route.hub}
+                            </span>
+                            <span style={{ fontWeight: 800, color: '#0f172a' }}>{route.share}</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px', fontSize: '0.68rem', color: '#64748b' }}>
+                            <span>{route.status}</span>
+                            <span style={{ color: '#059669', fontWeight: 700 }}>SLA: 99.6%</span>
+                          </div>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px', fontSize: '0.68rem', color: '#64748b' }}>
-                          <span>{route.status}</span>
-                          <span style={{ color: '#059669', fontWeight: 700 }}>SLA: 99.6%</span>
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
 
                   <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.7rem', color: '#475569', fontWeight: 600 }}>
@@ -1948,45 +2131,50 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                 </div>
 
                 {/* Module 3: Merchant Treasury & Rolling Settlements */}
-                <div className="pro-card">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                    <div>
-                      <h4 style={{ margin: 0, fontSize: '0.98rem', fontWeight: 800, color: '#0f172a' }}>
-                        Payouts & Treasury Ledger
-                      </h4>
-                      <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '2px' }}>
-                        Automated T+1 Bank Transfers
+                <div className="pro-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box' }}>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                      <div>
+                        <h4 style={{ margin: 0, fontSize: '0.98rem', fontWeight: 800, color: '#0f172a' }}>
+                          Payouts & Treasury Ledger
+                        </h4>
+                        <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '2px' }}>
+                          Automated T+1 Bank Transfers
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('transactions')}
+                        style={{ background: 'none', border: 'none', color: '#2563eb', fontSize: '0.74rem', fontWeight: 700, cursor: 'pointer' }}
+                      >
+                        History
+                      </button>
+                    </div>
+
+                    <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '14px', border: '1px solid #e2e8f0' }}>
+                      <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>Upcoming Scheduled Transfer</div>
+                      <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#0f172a', marginTop: '4px', letterSpacing: '-0.02em' }}>
+                        ₹48,290.00
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px', fontSize: '0.72rem', color: '#059669', fontWeight: 700 }}>
+                        <CheckCircle2 size={13} /> Scheduled Tomorrow, 11:00 AM IST
+                      </div>
+
+                      <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.72rem', color: '#64748b' }}>
+                        <span>Destination Account:</span>
+                        <strong style={{ color: '#0f172a' }}>HDFC Bank (•••• 4921)</strong>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab('transactions')}
-                      style={{ background: 'none', border: 'none', color: '#2563eb', fontSize: '0.74rem', fontWeight: 700, cursor: 'pointer' }}
-                    >
-                      History
-                    </button>
-                  </div>
 
-                  <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '14px', border: '1px solid #e2e8f0' }}>
-                    <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>Upcoming Scheduled Transfer</div>
-                    <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#0f172a', marginTop: '4px', letterSpacing: '-0.02em' }}>
-                      ₹48,290.00
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px', fontSize: '0.72rem', color: '#059669', fontWeight: 700 }}>
-                      <CheckCircle2 size={13} /> Scheduled Tomorrow, 11:00 AM IST
-                    </div>
-
-                    <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.72rem', color: '#64748b' }}>
-                      <span>Destination Account:</span>
-                      <strong style={{ color: '#0f172a' }}>HDFC Bank (•••• 4921)</strong>
+                    <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: '#64748b' }}>
+                        <span>Monthly Reserve Status:</span>
+                        <span style={{ color: '#059669', fontWeight: 700 }}>₹0 Reserve (Tier 1 Pro)</span>
+                      </div>
                     </div>
                   </div>
 
-                  <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: '#64748b' }}>
-                      <span>Monthly Reserve Status:</span>
-                      <span style={{ color: '#059669', fontWeight: 700 }}>₹0 Reserve (Tier 1 Pro)</span>
-                    </div>
+                  <div style={{ marginTop: '14px', paddingTop: '10px', borderTop: '1px solid #f1f5f9' }}>
                     <button
                       type="button"
                       onClick={() => setActiveTab('transactions')}
@@ -3296,7 +3484,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div className="pro-form-row-2">
                 <div>
                   <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748b', display: 'block', marginBottom: '4px' }}>GSTIN</label>
                   <input
@@ -3408,7 +3596,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div className="pro-form-row-2">
                 <div>
                   <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748b', display: 'block', marginBottom: '4px' }}>
                     Listing Price (₹) *
@@ -3436,7 +3624,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div className="pro-form-row-2">
                 <div>
                   <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748b', display: 'block', marginBottom: '4px' }}>
                     Category *
