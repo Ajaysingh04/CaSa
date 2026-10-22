@@ -236,24 +236,33 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
       <style>{`
         .myshop-container {
           background: #ffffff;
-          border-radius: 28px;
-          border: 1px solid #eef2f6;
-          box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.05);
+          width: 100%;
+          min-height: 100vh;
           display: flex;
-          min-height: 850px;
-          overflow: hidden;
+          border-radius: 0;
+          border: none;
+          box-shadow: none;
+          overflow: visible;
         }
 
         /* Sidebar Styling */
         .myshop-sidebar {
-          width: 230px;
+          width: 250px;
+          min-width: 250px;
           background: #f4f6fa;
-          padding: 28px 18px 24px;
+          padding: 24px 16px;
           display: flex;
           flex-direction: column;
           justifyContent: space-between;
           flex-shrink: 0;
           border-right: 1px solid #edf0f5;
+          min-height: 100vh;
+          position: sticky;
+          top: 0;
+          align-self: flex-start;
+          height: 100vh;
+          overflow-y: auto;
+          box-sizing: border-box;
         }
 
         .myshop-nav-item {
@@ -286,11 +295,13 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
         .myshop-main {
           flex: 1;
           min-width: 0;
-          padding: 32px 36px;
+          padding: 28px 40px 60px;
           display: flex;
           flex-direction: column;
           gap: 26px;
           background: #ffffff;
+          min-height: 100vh;
+          box-sizing: border-box;
         }
 
         /* Metric Pill Card */
@@ -311,6 +322,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
         /* Cream Banner Card with Radial Meters */
         .cream-banner-card {
           background: #fdf5ee;
+          border: 1px solid #fed7aa;
           border-radius: 22px;
           padding: 22px 30px;
           display: flex;
@@ -348,6 +360,8 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
           }
           .myshop-sidebar {
             width: 100%;
+            height: auto;
+            position: relative;
           }
           .myshop-main {
             padding: 20px;
@@ -513,39 +527,69 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
           {/* TOP HEADER: GREETING & ICONS */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
             <div>
-              <h1 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#1e1e24', margin: 0, letterSpacing: '-0.025em' }}>
-                Hello, {savedData.contactPerson?.split(' ')[0] || 'Robert'}
-              </h1>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <h1 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#1e1e24', margin: 0, letterSpacing: '-0.025em' }}>
+                  Hello, {savedData.contactPerson?.split(' ')[0] || user?.name || 'Aarav'}
+                </h1>
+                <span style={{ background: '#ecfdf5', color: '#059669', fontSize: '0.72rem', fontWeight: 800, padding: '3px 9px', borderRadius: '9999px', border: '1px solid #a7f3d0' }}>
+                  🟢 Live • 99.4% SLA
+                </span>
+              </div>
               <span style={{ fontSize: '0.82rem', color: '#94a3b8', fontWeight: 600 }}>
                 {savedData.storeName} • Marketplace Seller Center
               </span>
             </div>
 
             {/* Header Right Action Icons */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              {/* Quick Search */}
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <Search size={15} color="#94a3b8" style={{ position: 'absolute', left: '12px', pointerEvents: 'none' }} />
+                <input
+                  type="text"
+                  placeholder="Search orders, SKUs..."
+                  value={productSearch}
+                  onChange={(e) => setProductSearch(e.target.value)}
+                  style={{
+                    padding: '8px 14px 8px 34px',
+                    borderRadius: '10px',
+                    border: '1px solid #e2e8f0',
+                    background: '#f8fafc',
+                    fontSize: '0.82rem',
+                    color: '#1e1e24',
+                    width: '180px',
+                    outline: 'none',
+                  }}
+                />
+              </div>
+
+              {/* View Storefront Pill Button */}
               <button
                 type="button"
-                onClick={() => setActiveTab('products')}
+                onClick={() => switchRole('user')}
                 style={{
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: '50%',
-                  background: '#f4f6fa',
-                  border: 'none',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
+                  gap: '6px',
+                  background: '#f4f6fa',
+                  border: '1px solid #e2e8f0',
+                  padding: '7px 13px',
+                  borderRadius: '10px',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  color: '#475569',
                   cursor: 'pointer',
-                  color: '#64748b',
+                  transition: 'all 0.15s ease',
                 }}
-                title="Search Products"
+                title="View customer marketplace view"
               >
-                <Search size={17} />
+                <ShoppingBag size={14} color="#6366f1" />
+                <span>Storefront View</span>
               </button>
 
               <button
                 type="button"
-                onClick={() => success('All merchant notifications up-to-date.')}
+                onClick={() => success('All merchant messages up-to-date.')}
                 style={{
                   width: '38px',
                   height: '38px',
@@ -891,7 +935,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
 
                           <div style={{ textAlign: 'right' }}>
                             <div style={{ fontSize: '0.88rem', fontWeight: 900, color: '#1e1e24' }}>
-                              ${ord.price}
+                              {formatINR(ord.price)}
                             </div>
                             <span style={{ fontSize: '0.72rem', fontWeight: 800, color: ord.statusColor }}>
                               {ord.status}
@@ -1021,7 +1065,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                             <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>items: 150</span>
                           </div>
                         </div>
-                        <span style={{ fontSize: '0.9rem', fontWeight: 900, color: '#1e1e24' }}>$10k</span>
+                        <span style={{ fontSize: '0.9rem', fontWeight: 900, color: '#1e1e24' }}>₹10,000</span>
                       </div>
 
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -1034,7 +1078,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                             <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>items: 200</span>
                           </div>
                         </div>
-                        <span style={{ fontSize: '0.9rem', fontWeight: 900, color: '#1e1e24' }}>$4000</span>
+                        <span style={{ fontSize: '0.9rem', fontWeight: 900, color: '#1e1e24' }}>₹4,000</span>
                       </div>
 
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -1047,7 +1091,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                             <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>items: 290</span>
                           </div>
                         </div>
-                        <span style={{ fontSize: '0.9rem', fontWeight: 900, color: '#1e1e24' }}>$20k</span>
+                        <span style={{ fontSize: '0.9rem', fontWeight: 900, color: '#1e1e24' }}>₹20,000</span>
                       </div>
                     </div>
                   </div>

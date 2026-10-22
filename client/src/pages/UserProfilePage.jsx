@@ -218,6 +218,25 @@ const UserProfilePage = () => {
     }
   };
 
+  // If logged-in user is a Vendor, render the dedicated full-screen Professional Vendor Portal directly
+  if (isVendor) {
+    return (
+      <div style={{ width: '100%', minHeight: '100vh', margin: 0, padding: 0, background: '#f4f6fa' }}>
+        <ProfessionalVendorProfile
+          user={user}
+          onProfileUpdated={(updatedUser) => {
+            if (updatedUser) {
+              if (updatedUser.name) setName(updatedUser.name);
+              if (updatedUser.phone) setPhone(updatedUser.phone);
+              if (updatedUser.vendorStoreName) setVendorStoreName(updatedUser.vendorStoreName);
+              if (updatedUser.avatar) setAvatar(updatedUser.avatar);
+            }
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="profile-page-wrapper">
       <style>{`

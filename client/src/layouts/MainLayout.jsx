@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import AnnouncementBar from '../components/common/AnnouncementBar';
 import Header from '../components/common/Header';
 import CategoryNavbar from '../components/common/CategoryNavbar';
@@ -54,6 +54,17 @@ const MainLayout = () => {
       return () => clearTimeout(timer);
     }
   }, [user, openLanguageModal]);
+
+  const location = useLocation();
+  const isVendorPortal = location.pathname === '/vendor' || (location.pathname === '/profile' && user?.role === 'vendor');
+
+  if (isVendorPortal) {
+    return (
+      <div style={{ minHeight: '100vh', width: '100%', maxWidth: '100vw', background: '#f4f6fa', overflowX: 'hidden' }}>
+        <Outlet context={{ categories }} />
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: '#f8fafc', width: '100%', maxWidth: '100vw', overflowX: 'hidden' }}>
