@@ -14,6 +14,18 @@ const generateToken = (id) => {
 
 const sendTokenResponse = (user, statusCode, res) => {
   const userObj = user && typeof user.toObject === 'function' ? user.toObject() : { ...user };
+
+  // Strict role sanitization: only official designated accounts can have staff roles
+  if (
+    userObj.email !== 'vendor@casa.in' &&
+    userObj.email !== 'delivery@casa.in' &&
+    userObj.email !== 'admin@casa.in'
+  ) {
+    if (userObj.role === 'vendor' || userObj.role === 'delivery' || userObj.role === 'delivery_partner') {
+      userObj.role = 'user';
+    }
+  }
+
   const token = generateToken(userObj._id);
 
   const cookieOptions = {
@@ -259,9 +271,18 @@ exports.login = async (req, res, next) => {
 // @access  Private
 exports.getMe = async (req, res, next) => {
   try {
+    let user = req.user ? (typeof req.user.toObject === 'function' ? req.user.toObject() : { ...req.user }) : null;
+    if (user && user.email !== 'vendor@casa.in' && user.email !== 'delivery@casa.in' && user.email !== 'admin@casa.in') {
+      if (user.role === 'vendor' || user.role === 'delivery' || user.role === 'delivery_partner') {
+        user.role = 'user';
+        if (getDBStatus()) {
+          await User.findByIdAndUpdate(user._id, { role: 'user' });
+        }
+      }
+    }
     res.status(200).json({
       success: true,
-      user: req.user
+      user
     });
   } catch (err) {
     next(err);

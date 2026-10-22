@@ -60,28 +60,41 @@ const UserProfilePage = () => {
 
   const isDelivery = Boolean(
     user && (
-      user.role === 'delivery' ||
-      user.role === 'delivery_partner' ||
       user.email === 'delivery@casa.in' ||
+      (user.role === 'delivery' && user.email !== 'ajaysinghbanafer1@gmail.com') ||
+      (user.role === 'delivery_partner' && user.email !== 'ajaysinghbanafer1@gmail.com') ||
       (user.name && user.name.toLowerCase().includes('express'))
     )
   );
-  const isVendor = !isDelivery && (user?.role === 'vendor' || (user?.email === 'vendor@casa.in' && user?.role !== 'delivery'));
+  const isVendor = !isDelivery && Boolean(
+    user &&
+    user.email === 'vendor@casa.in'
+  );
 
   // Auto-restore vendor role only if the account is vendor@casa.in and not delivery
   useEffect(() => {
     if (user?.email === 'vendor@casa.in' && user?.role !== 'vendor' && user?.role !== 'delivery' && switchRole) {
       switchRole('vendor');
     }
+    // Auto-sanitize normal customer accounts if corrupted to vendor
+    if (
+      user &&
+      user.email !== 'vendor@casa.in' &&
+      user.email !== 'delivery@casa.in' &&
+      user.email !== 'admin@casa.in' &&
+      user.role === 'vendor' &&
+      switchRole
+    ) {
+      switchRole('user');
+    }
   }, [user?.email, user?.role, switchRole]);
 
-  // Auto-redirect vendor users or ?role=vendor requests directly to /vendor URL so browser bar explicitly says /vendor
+  // Auto-redirect vendor users directly to /vendor URL so browser bar explicitly says /vendor
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const isVendorParam = params.get('role') === 'vendor' || params.get('vendor') === 'true' || params.get('tab') === 'vendor';
     const isPersonalTab = params.get('personal') === 'true';
 
-    if (!isDelivery && (isVendor || isVendorParam) && !isPersonalTab) {
+    if (!isDelivery && isVendor && !isPersonalTab) {
       navigate('/vendor', { replace: true });
     }
   }, [isDelivery, isVendor, navigate]);

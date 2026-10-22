@@ -213,6 +213,21 @@ const Header = ({ onToggleMobileMenu }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Auto-sanitize customer accounts if role was corrupted to vendor or delivery
+  useEffect(() => {
+    if (
+      user &&
+      user.email !== 'vendor@casa.in' &&
+      user.email !== 'delivery@casa.in' &&
+      user.email !== 'admin@casa.in' &&
+      (user.role === 'vendor' || user.role === 'delivery' || user.role === 'delivery_partner')
+    ) {
+      if (switchRole) {
+        switchRole('user').catch(() => {});
+      }
+    }
+  }, [user?.email, user?.role, switchRole]);
+
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -700,8 +715,8 @@ const Header = ({ onToggleMobileMenu }) => {
             </div>
           )}
 
-          {/* Direct Vendor Portal Shortcut */}
-          {user && (user.role === 'vendor' || user.email === 'vendor@casa.in') && (
+          {/* Direct Vendor Portal Shortcut - STRICTLY for designated vendor account */}
+          {user && user.email === 'vendor@casa.in' && (
             <Link
               to="/vendor"
               style={{
@@ -777,18 +792,18 @@ const Header = ({ onToggleMobileMenu }) => {
             {showUserMenu && (() => {
               const isDeliveryUser = Boolean(
                 user && (
-                  user.role === 'delivery' ||
-                  user.role === 'delivery_partner' ||
                   user.email === 'delivery@casa.in' ||
+                  (user.role === 'delivery' && user.email !== 'ajaysinghbanafer1@gmail.com') ||
+                  (user.role === 'delivery_partner' && user.email !== 'ajaysinghbanafer1@gmail.com') ||
                   (user.name && user.name.toLowerCase().includes('express'))
                 )
               );
               const isVendorUser = Boolean(
                 user &&
                 !isDeliveryUser &&
-                (user.role === 'vendor' || (user.email === 'vendor@casa.in' && user.role !== 'delivery'))
+                user.email === 'vendor@casa.in'
               );
-              const isAdminUser = Boolean(isAdmin || user?.role === 'admin' || user?.role === 'super_admin');
+              const isAdminUser = Boolean(isAdmin || user?.email === 'admin@casa.in' || user?.role === 'admin' || user?.role === 'super_admin');
 
               return (
                 <div style={userDropdownStyle} className="user-dropdown-card">

@@ -4,11 +4,34 @@ import { useToast } from './ToastContext';
 
 const AuthContext = createContext();
 
+const sanitizeUserRole = (rawUser) => {
+  if (!rawUser) return rawUser;
+  const isSpecialStaff =
+    rawUser.email === 'vendor@casa.in' ||
+    rawUser.email === 'delivery@casa.in' ||
+    rawUser.email === 'admin@casa.in';
+
+  if (!isSpecialStaff) {
+    if (rawUser.role === 'vendor' || rawUser.role === 'delivery' || rawUser.role === 'delivery_partner' || rawUser.role === 'admin') {
+      return { ...rawUser, role: 'user' };
+    }
+  }
+  return rawUser;
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     try {
       const savedUser = localStorage.getItem('casa_user');
-      return savedUser ? JSON.parse(savedUser) : null;
+      if (savedUser) {
+        const parsed = JSON.parse(savedUser);
+        const sanitized = sanitizeUserRole(parsed);
+        if (sanitized && sanitized.role !== parsed?.role) {
+          localStorage.setItem('casa_user', JSON.stringify(sanitized));
+        }
+        return sanitized;
+      }
+      return null;
     } catch {
       return null;
     }
@@ -23,8 +46,12 @@ export const AuthProvider = ({ children }) => {
         try {
           const currentUser = await authService.getCurrentUser();
           if (currentUser) {
-            setUser(currentUser);
-            localStorage.setItem('casa_user', JSON.stringify(currentUser));
+            const sanitized = sanitizeUserRole(currentUser);
+            setUser(sanitized);
+            localStorage.setItem('casa_user', JSON.stringify(sanitized));
+            if (sanitized && sanitized.role !== currentUser.role) {
+              authService.switchRole('user').catch(() => {});
+            }
           }
         } catch (err) {
           // Only clear session if server explicitly returns 401 Unauthorized (token expired/invalid)
@@ -49,9 +76,14 @@ export const AuthProvider = ({ children }) => {
       if (!data || !data.user) {
         throw new Error(data?.message || 'Invalid login response from server.');
       }
-      setUser(data.user);
-      success(`Welcome back, ${data.user.name || 'User'}!`);
-      return { success: true, user: data.user };
+      const sanitized = sanitizeUserRole(data.user);
+      setUser(sanitized);
+      localStorage.setItem('casa_user', JSON.stringify(sanitized));
+      if (sanitized && sanitized.role !== data.user.role) {
+        authService.switchRole('user').catch(() => {});
+      }
+      success(`Welcome back, ${sanitized.name || 'User'}!`);
+      return { success: true, user: sanitized };
     } catch (err) {
       console.error('Login error details:', {
         status: err.response?.status,
@@ -84,9 +116,11 @@ export const AuthProvider = ({ children }) => {
       if (!data || !data.user) {
         throw new Error(data?.message || 'Invalid registration response from server.');
       }
-      setUser(data.user);
-      success(`Account created successfully! Welcome to CASA, ${data.user.name || 'User'}.`);
-      return { success: true, user: data.user };
+      const sanitized = sanitizeUserRole(data.user);
+      setUser(sanitized);
+      localStorage.setItem('casa_user', JSON.stringify(sanitized));
+      success(`Account created successfully! Welcome to CASA, ${sanitized.name || 'User'}.`);
+      return { success: true, user: sanitized };
     } catch (err) {
       console.error('Registration error details:', err);
       const msg =
@@ -112,9 +146,11 @@ export const AuthProvider = ({ children }) => {
   const updateProfile = async (profileData) => {
     try {
       const updatedUser = await authService.updateProfile(profileData);
-      setUser(updatedUser);
+      const sanitized = sanitizeUserRole(updatedUser);
+      setUser(sanitized);
+      localStorage.setItem('casa_user', JSON.stringify(sanitized));
       success('Profile updated successfully.');
-      return { success: true, user: updatedUser };
+      return { success: true, user: sanitized };
     } catch (err) {
       const msg = err.response?.data?.message || 'Profile update failed.';
       error(msg);
@@ -126,9 +162,11 @@ export const AuthProvider = ({ children }) => {
     try {
       const data = await authService.switchRole(newRole);
       if (data.user) {
-        setUser(data.user);
+        const sanitized = sanitizeUserRole(data.user);
+        setUser(sanitized);
+        localStorage.setItem('casa_user', JSON.stringify(sanitized));
         success(`Active persona switched to ${newRole.toUpperCase()} mode!`);
-        return { success: true, user: data.user };
+        return { success: true, user: sanitized };
       }
       return { success: false };
     } catch (err) {
@@ -138,10 +176,10 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const isSuperAdmin = user?.role === 'super_admin';
-  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
-  const isVendor = user?.role === 'vendor' || user?.role === 'admin' || user?.role === 'super_admin';
-  const isDelivery = user?.role === 'delivery' || user?.role === 'admin' || user?.role === 'super_admin';
+  const isSuperAdmin = user?.email === 'admin@casa.in' || user?.role === 'super_admin';
+  const isAdmin = user?.email === 'admin@casa.in' || user?.role === 'admin' || user?.role === 'super_admin';
+  const isVendor = user?.email === 'vendor@casa.in';
+  const isDelivery = user?.email === 'delivery@casa.in' || (user?.role === 'delivery' && user?.email !== 'ajaysinghbanafer1@gmail.com');
 
   return (
     <AuthContext.Provider
