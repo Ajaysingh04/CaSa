@@ -35,6 +35,7 @@ import {
   Rocket,
   Phone,
   MessageCircle,
+  Menu,
 } from 'lucide-react';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
@@ -49,6 +50,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
 
   // Active Sidebar Tab: 'dashboard' | 'products' | 'orders' | 'transactions' | 'settings' | 'kyc'
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   // Backend Data
   const [stats, setStats] = useState(null);
@@ -328,34 +330,43 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
     <div style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif", color: '#1e1e24' }}>
       <style>{`
         .myshop-container {
-          background: #ffffff;
+          background: #f8fafc;
           width: 100%;
           min-height: 100vh;
+          position: relative;
+          box-sizing: border-box;
           display: flex;
-          border-radius: 0;
-          border: none;
-          box-shadow: none;
-          overflow: visible;
         }
 
-        /* Sidebar Styling */
+        /* Fixed Sidebar on Desktop - Extends full 100vh viewport, never leaves any empty gap! */
         .myshop-sidebar {
-          width: 250px;
-          min-width: 250px;
-          background: #f4f6fa;
+          width: 260px;
+          min-width: 260px;
+          position: fixed;
+          top: 0;
+          left: 0;
+          bottom: 0;
+          height: 100vh;
+          background: #f8fafc;
           padding: 24px 16px;
           display: flex;
           flex-direction: column;
           justifyContent: space-between;
           flex-shrink: 0;
-          border-right: 1px solid #edf0f5;
-          min-height: 100vh;
-          position: sticky;
-          top: 0;
-          align-self: flex-start;
-          height: 100vh;
+          border-right: 1px solid #e2e8f0;
+          z-index: 50;
           overflow-y: auto;
           box-sizing: border-box;
+          scrollbar-width: thin;
+          scrollbar-color: #cbd5e1 transparent;
+        }
+
+        .myshop-sidebar::-webkit-scrollbar {
+          width: 5px;
+        }
+        .myshop-sidebar::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 9999px;
         }
 
         .myshop-nav-item {
@@ -376,7 +387,8 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
         }
         .myshop-nav-item:hover {
           color: #1e1e24;
-          background: rgba(255, 255, 255, 0.7);
+          background: rgba(255, 255, 255, 0.9);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
         }
         .myshop-nav-item.active {
           background: #1e1e24;
@@ -384,9 +396,10 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
           box-shadow: 0 4px 14px rgba(30, 30, 36, 0.25);
         }
 
-        /* Main Body Area */
+        /* Main Body Area - Seamlessly offset beside the fixed sidebar */
         .myshop-main {
-          flex: 1;
+          margin-left: 260px;
+          width: calc(100% - 260px);
           min-width: 0;
           padding: 28px 40px 60px;
           display: flex;
@@ -395,6 +408,28 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
           background: #ffffff;
           min-height: 100vh;
           box-sizing: border-box;
+        }
+
+        /* Mobile Top Header Bar - Visible only on mobile/tablet */
+        .myshop-mobile-topbar {
+          display: none;
+          align-items: center;
+          justify-content: space-between;
+          padding: 12px 16px;
+          background: #ffffff;
+          border-bottom: 1px solid #e2e8f0;
+          position: sticky;
+          top: 0;
+          z-index: 45;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .myshop-mobile-backdrop {
+          display: none;
+        }
+
+        .mobile-sidebar-close-btn {
+          display: none;
         }
 
         /* Metric Pill Card */
@@ -420,7 +455,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
           padding: 22px 30px;
           display: flex;
           align-items: center;
-          justifyContent: space-between;
+          justify-content: space-between;
           flex-wrap: wrap;
           gap: 20px;
         }
@@ -446,61 +481,201 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
           transition: height 0.3s ease;
         }
 
-        /* Responsive */
-        @media (max-width: 992px) {
+        /* Responsive Breakpoints */
+        @media (max-width: 1024px) {
           .myshop-container {
-            flex-direction: column;
+            display: block;
           }
           .myshop-sidebar {
-            width: 100%;
-            height: auto;
-            position: relative;
+            width: 280px !important;
+            max-width: 85vw !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            bottom: 0 !important;
+            height: 100vh !important;
+            z-index: 1000 !important;
+            transform: translateX(-100%);
+            transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+            background: #ffffff !important;
+            box-shadow: none;
+          }
+          .myshop-sidebar.mobile-open {
+            transform: translateX(0) !important;
+            box-shadow: 10px 0 36px rgba(15, 23, 42, 0.25) !important;
+          }
+          .mobile-sidebar-close-btn {
+            display: flex !important;
           }
           .myshop-main {
-            padding: 20px;
+            margin-left: 0 !important;
+            width: 100% !important;
+            padding: 18px 16px 60px !important;
+          }
+          .myshop-mobile-topbar {
+            display: flex !important;
+          }
+          .myshop-mobile-backdrop {
+            display: block !important;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            backdrop-filter: blur(4px);
+            z-index: 990;
+          }
+          .cream-banner-card {
+            padding: 18px 16px !important;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .myshop-main {
+            padding: 14px 12px 60px !important;
+            gap: 18px !important;
           }
         }
       `}</style>
 
+      {/* MOBILE TOP HEADER BAR */}
+      <div className="myshop-mobile-topbar">
+        <button
+          type="button"
+          onClick={() => setIsMobileSidebarOpen(true)}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            padding: '6px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            color: '#1e1e24',
+          }}
+          aria-label="Toggle navigation menu"
+        >
+          <Menu size={24} />
+        </button>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div
+            style={{
+              width: '30px',
+              height: '30px',
+              borderRadius: '8px',
+              background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#ffffff',
+              fontWeight: 900,
+              fontSize: '0.95rem',
+            }}
+          >
+            ⚡
+          </div>
+          <span style={{ fontSize: '1.05rem', fontWeight: 900, color: '#1e1e24', letterSpacing: '-0.02em' }}>
+            CaSa <span style={{ color: '#2563eb' }}>Vendor</span>
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button
+            type="button"
+            onClick={() => setIsAddProductModalOpen(true)}
+            style={{
+              background: '#2563eb',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '6px 10px',
+              fontSize: '0.74rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+            }}
+          >
+            <Plus size={14} /> Add
+          </button>
+          <img
+            src={savedData.avatar || user?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120'}
+            alt=""
+            style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }}
+          />
+        </div>
+      </div>
+
+      {/* BACKDROP FOR MOBILE DRAWER */}
+      {isMobileSidebarOpen && (
+        <div
+          className="myshop-mobile-backdrop"
+          onClick={() => setIsMobileSidebarOpen(false)}
+        />
+      )}
+
       {/* COMPLETE MYSHOP DASHBOARD CONTAINER */}
       <div className="myshop-container">
         {/* ================= LEFT SIDEBAR (CASA VENDOR SELLER HUB) ================= */}
-        <aside className="myshop-sidebar">
+        <aside className={`myshop-sidebar ${isMobileSidebarOpen ? 'mobile-open' : ''}`}>
           <div>
-            {/* Logo */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '0 8px 28px' }}>
-              <div
+            {/* Logo & Mobile Close Button */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 8px 24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div
+                  style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '10px',
+                    background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 50%, #f59e0b 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 4px 12px rgba(37, 99, 235, 0.35)',
+                    color: '#ffffff',
+                    fontWeight: 900,
+                    fontSize: '1.15rem',
+                  }}
+                >
+                  ⚡
+                </div>
+                <div>
+                  <div style={{ fontSize: '1.2rem', fontWeight: 900, color: '#1e1e24', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
+                    CaSa <span style={{ color: '#2563eb' }}>Vendor</span>
+                  </div>
+                  <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                    Merchant Center
+                  </span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="mobile-sidebar-close-btn"
+                onClick={() => setIsMobileSidebarOpen(false)}
                 style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '10px',
-                  background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 50%, #f59e0b 100%)',
-                  display: 'flex',
+                  background: '#f1f5f9',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '6px',
+                  cursor: 'pointer',
+                  color: '#64748b',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  boxShadow: '0 4px 12px rgba(37, 99, 235, 0.35)',
-                  color: '#ffffff',
-                  fontWeight: 900,
-                  fontSize: '1.15rem',
                 }}
+                aria-label="Close menu"
               >
-                ⚡
-              </div>
-              <div>
-                <div style={{ fontSize: '1.2rem', fontWeight: 900, color: '#1e1e24', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
-                  CaSa <span style={{ color: '#2563eb' }}>Vendor</span>
-                </div>
-                <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-                  Merchant Center
-                </span>
-              </div>
+                <X size={18} />
+              </button>
             </div>
 
             {/* Nav Menu Items */}
             <nav style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <button
                 type="button"
-                onClick={() => setActiveTab('dashboard')}
+                onClick={() => {
+                  setActiveTab('dashboard');
+                  setIsMobileSidebarOpen(false);
+                }}
                 className={`myshop-nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
               >
                 <LayoutDashboard size={18} />
@@ -509,7 +684,10 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
 
               <button
                 type="button"
-                onClick={() => setActiveTab('products')}
+                onClick={() => {
+                  setActiveTab('products');
+                  setIsMobileSidebarOpen(false);
+                }}
                 className={`myshop-nav-item ${activeTab === 'products' ? 'active' : ''}`}
               >
                 <Boxes size={18} />
@@ -518,7 +696,10 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
 
               <button
                 type="button"
-                onClick={() => setActiveTab('orders')}
+                onClick={() => {
+                  setActiveTab('orders');
+                  setIsMobileSidebarOpen(false);
+                }}
                 className={`myshop-nav-item ${activeTab === 'orders' ? 'active' : ''}`}
               >
                 <Package size={18} />
@@ -527,7 +708,10 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
 
               <button
                 type="button"
-                onClick={() => setActiveTab('transactions')}
+                onClick={() => {
+                  setActiveTab('transactions');
+                  setIsMobileSidebarOpen(false);
+                }}
                 className={`myshop-nav-item ${activeTab === 'transactions' ? 'active' : ''}`}
               >
                 <CreditCard size={18} />
@@ -536,7 +720,10 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
 
               <button
                 type="button"
-                onClick={() => setActiveTab('settings')}
+                onClick={() => {
+                  setActiveTab('settings');
+                  setIsMobileSidebarOpen(false);
+                }}
                 className={`myshop-nav-item ${activeTab === 'settings' ? 'active' : ''}`}
               >
                 <Sliders size={18} />
@@ -545,7 +732,10 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
 
               <button
                 type="button"
-                onClick={() => setActiveTab('kyc')}
+                onClick={() => {
+                  setActiveTab('kyc');
+                  setIsMobileSidebarOpen(false);
+                }}
                 className={`myshop-nav-item ${activeTab === 'kyc' ? 'active' : ''}`}
               >
                 <Building2 size={18} />
@@ -554,7 +744,10 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
 
               <button
                 type="button"
-                onClick={() => switchRole('user')}
+                onClick={() => {
+                  switchRole('user');
+                  setIsMobileSidebarOpen(false);
+                }}
                 className="myshop-nav-item"
                 style={{ marginTop: '12px', color: '#6366f1' }}
               >
@@ -564,7 +757,10 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
 
               <button
                 type="button"
-                onClick={() => switchRole('user')}
+                onClick={() => {
+                  switchRole('user');
+                  setIsMobileSidebarOpen(false);
+                }}
                 className="myshop-nav-item"
                 style={{ color: '#94a3b8' }}
               >

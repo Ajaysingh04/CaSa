@@ -239,6 +239,26 @@ const VendorStoreSettings = ({ user, onSettingsSaved }) => {
           background: #ffffff;
           box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
         }
+
+        @media (max-width: 768px) {
+          .casa-settings-card {
+            padding: 16px 14px !important;
+            border-radius: 14px !important;
+          }
+          .casa-setting-row {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 12px !important;
+          }
+          .casa-select-input {
+            width: 100% !important;
+            max-width: 100% !important;
+          }
+          .casa-save-btn {
+            width: 100% !important;
+            justify-content: center !important;
+          }
+        }
       `}</style>
 
       {/* Top Banner: CaSa Executive Merchant Engine */}
