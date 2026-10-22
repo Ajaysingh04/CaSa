@@ -25,6 +25,17 @@ import {
   FileText,
   Plus,
   X,
+  Star,
+  Award,
+  Calendar,
+  Building2,
+  MapPin,
+  CreditCard,
+  ChevronRight,
+  Sliders,
+  HelpCircle,
+  Copy,
+  Info,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -35,7 +46,8 @@ const VendorDashboardPage = () => {
   const { user, switchRole, login } = useAuth();
   const { success, error, info } = useToast();
 
-  const [activeTab, setActiveTab] = useState('orders'); // 'orders' | 'inventory' | 'financials'
+  // Flipkart Seller Hub Tabs: 'dashboard' | 'orders' | 'inventory' | 'financials' | 'profile'
+  const [activeTab, setActiveTab] = useState('orders');
   const [orderFilter, setOrderFilter] = useState('ALL');
   const [stats, setStats] = useState(null);
   const [orders, setOrders] = useState([]);
@@ -44,6 +56,7 @@ const VendorDashboardPage = () => {
   const [loading, setLoading] = useState(true);
   const [updatingOrderId, setUpdatingOrderId] = useState(null);
   const [productSearch, setProductSearch] = useState('');
+  const [copiedKey, setCopiedKey] = useState(null);
 
   // Invoice / Packing slip modal
   const [selectedInvoiceOrder, setSelectedInvoiceOrder] = useState(null);
@@ -59,7 +72,7 @@ const VendorDashboardPage = () => {
     price: '',
     discountPrice: '',
     stock: 25,
-    sku: `SKU-${Date.now().toString().slice(-5)}`,
+    sku: `FSN-${Date.now().toString().slice(-6)}`,
     image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop&q=80',
     description: '',
   });
@@ -98,6 +111,12 @@ const VendorDashboardPage = () => {
     loadData();
   }, [orderFilter, user]);
 
+  const handleCopy = (text, key) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKey(key);
+    setTimeout(() => setCopiedKey(null), 2000);
+  };
+
   const handleCreateProduct = async (e) => {
     e.preventDefault();
     if (!newProd.name || !newProd.price) {
@@ -113,7 +132,7 @@ const VendorDashboardPage = () => {
         stock: Number(newProd.stock || 10),
         images: [newProd.image],
       });
-      success(`Product "${newProd.name}" added to catalog successfully!`);
+      success(`Product "${newProd.name}" added to Flipkart-style catalog successfully!`);
       setShowAddProductModal(false);
       setNewProd({
         name: '',
@@ -123,7 +142,7 @@ const VendorDashboardPage = () => {
         price: '',
         discountPrice: '',
         stock: 25,
-        sku: `SKU-${Date.now().toString().slice(-5)}`,
+        sku: `FSN-${Date.now().toString().slice(-6)}`,
         image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop&q=80',
         description: '',
       });
@@ -139,7 +158,7 @@ const VendorDashboardPage = () => {
     setUpdatingOrderId(orderId);
     try {
       await vendorService.updateOrderStatus(orderId, newStatus, `Vendor handled milestone: ${newStatus}`);
-      success(`Order updated to ${newStatus}! Customer tracking notified.`);
+      success(`Order updated to ${newStatus}! Dispatch SLA recorded.`);
       await loadData();
     } catch (err) {
       error(err.response?.data?.message || 'Could not update order status.');
@@ -164,75 +183,168 @@ const VendorDashboardPage = () => {
     }
   };
 
-  const filteredProducts = products.filter(p =>
-    p.name.toLowerCase().includes(productSearch.toLowerCase()) ||
-    (p.brand && p.brand.toLowerCase().includes(productSearch.toLowerCase()))
+  const filteredProducts = products.filter(
+    (p) =>
+      p.name?.toLowerCase().includes(productSearch.toLowerCase()) ||
+      (p.brand && p.brand.toLowerCase().includes(productSearch.toLowerCase())) ||
+      (p.sku && p.sku.toLowerCase().includes(productSearch.toLowerCase()))
   );
 
+  // Flipkart Seller Hub Landing when not logged in
   if (!user) {
     return (
-      <div className="container" style={{ padding: '60px 16px', maxWidth: '520px', margin: '0 auto', textAlign: 'center' }}>
-        <div
-          className="card"
-          style={{
-            padding: '40px 32px',
-            borderRadius: '24px',
-            background: '#ffffff',
-            boxShadow: '0 20px 40px -15px rgba(22, 163, 74, 0.15)',
-            border: '1px solid #dcfce7',
-          }}
-        >
+      <div style={{ background: '#f1f3f6', minHeight: '85vh', padding: '40px 16px 80px' }}>
+        <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+          {/* Flipkart Seller Hub Brand Header */}
           <div
             style={{
-              width: '72px',
-              height: '72px',
-              borderRadius: '20px',
-              background: '#f0fdf4',
-              color: '#16a34a',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 20px',
+              background: '#2874f0',
+              borderRadius: '12px 12px 0 0',
+              padding: '28px 32px',
+              color: '#ffffff',
+              textAlign: 'center',
+              boxShadow: '0 4px 12px rgba(40, 116, 240, 0.2)',
             }}
           >
-            <Store size={38} />
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+              <div
+                style={{
+                  background: '#ffe500',
+                  color: '#2874f0',
+                  fontWeight: 900,
+                  fontSize: '1.25rem',
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+                }}
+              >
+                ⚡
+              </div>
+              <div style={{ textAlign: 'left' }}>
+                <span style={{ fontSize: '1.4rem', fontWeight: 900, letterSpacing: '-0.02em', color: '#ffffff' }}>
+                  CaSa <span style={{ color: '#ffe500' }}>Seller Hub</span>
+                </span>
+                <span style={{ display: 'block', fontSize: '0.72rem', color: '#dbeafe', fontWeight: 600 }}>
+                  GROW YOUR BUSINESS WITH 50 CRORE+ REGISTERED BUYERS
+                </span>
+              </div>
+            </div>
           </div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0f172a' }}>Vendor / Merchant Hub</h2>
-          <p style={{ color: '#64748b', fontSize: '0.92rem', marginTop: '10px', lineHeight: 1.55 }}>
-            Access order fulfillment pipelines, dispatch shipments, track gross sales metrics, and manage product inventory.
-          </p>
-          <div style={{ marginTop: '28px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <button
-              onClick={async () => {
-                const res = await login({ email: 'vendor@casa.in', password: 'Vendor@Casa2026' });
-                if (res.success) {
-                  success('Welcome to CASA Vendor Hub! Demo session started.');
-                }
-              }}
-              className="btn btn-primary"
+
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: '0 0 12px 12px',
+              padding: '36px 32px',
+              border: '1px solid #dfe3e8',
+              borderTop: 'none',
+              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.06)',
+              textAlign: 'center',
+            }}
+          >
+            <div
               style={{
-                padding: '13px',
-                borderRadius: '12px',
-                background: 'linear-gradient(135deg, #16a34a, #15803d)',
-                border: 'none',
-                fontWeight: 800,
-                fontSize: '0.95rem',
-                display: 'flex',
+                display: 'inline-flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                boxShadow: '0 8px 20px -4px rgba(22, 163, 74, 0.4)',
+                gap: '6px',
+                background: '#e8f0fe',
+                color: '#1a73e8',
+                padding: '6px 14px',
+                borderRadius: '9999px',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                marginBottom: '16px',
               }}
             >
-              <Sparkles size={17} /> ⚡ 1-Click Launch Vendor Demo
-            </button>
-            <Link
-              to="/login?redirect=/vendor"
-              className="btn btn-outline"
-              style={{ padding: '12px', borderRadius: '12px', fontWeight: 700 }}
+              <Award size={14} /> Flipkart Certified Merchant Ecosystem
+            </div>
+
+            <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#212121', margin: '0 0 10px' }}>
+              Welcome to CaSa Seller Hub
+            </h2>
+            <p style={{ color: '#878787', fontSize: '0.9rem', lineHeight: 1.55, margin: '0 0 24px' }}>
+              Access fast order fulfillment pipelines, automated packing slips, instant inventory stock replenishment, and regular T+2 direct bank settlements.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <button
+                onClick={async () => {
+                  const res = await login({ email: 'vendor@casa.in', password: 'Vendor@Casa2026' });
+                  if (res.success) {
+                    success('Welcome to CaSa Seller Hub! Partner Merchant session active.');
+                  }
+                }}
+                style={{
+                  padding: '14px 20px',
+                  borderRadius: '4px',
+                  background: '#fb641b',
+                  color: '#ffffff',
+                  border: 'none',
+                  fontWeight: 800,
+                  fontSize: '0.95rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(251, 100, 27, 0.35)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                }}
+              >
+                <Sparkles size={18} /> ⚡ Launch 1-Click Vendor Demo Portal
+              </button>
+
+              <Link
+                to="/login?redirect=/vendor"
+                style={{
+                  padding: '12px 20px',
+                  borderRadius: '4px',
+                  background: '#ffffff',
+                  color: '#2874f0',
+                  border: '1.5px solid #2874f0',
+                  fontWeight: 800,
+                  fontSize: '0.88rem',
+                  textDecoration: 'none',
+                  display: 'block',
+                  textAlign: 'center',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.03em',
+                }}
+              >
+                Sign In With Existing Seller Account
+              </Link>
+            </div>
+
+            {/* Flipkart Seller Perks Grid */}
+            <div
+              style={{
+                marginTop: '32px',
+                paddingTop: '24px',
+                borderTop: '1px solid #f1f3f6',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                gap: '12px',
+                textAlign: 'center',
+              }}
             >
-              Sign In with Other Account
-            </Link>
+              <div>
+                <div style={{ fontWeight: 800, color: '#388e3c', fontSize: '1rem' }}>T+2</div>
+                <div style={{ fontSize: '0.72rem', color: '#878787', marginTop: '2px' }}>Rolling Payouts</div>
+              </div>
+              <div>
+                <div style={{ fontWeight: 800, color: '#2874f0', fontSize: '1rem' }}>0%</div>
+                <div style={{ fontSize: '0.72rem', color: '#878787', marginTop: '2px' }}>Listing Fee</div>
+              </div>
+              <div>
+                <div style={{ fontWeight: 800, color: '#fb641b', fontSize: '1rem' }}>50 Cr+</div>
+                <div style={{ fontSize: '0.72rem', color: '#878787', marginTop: '2px' }}>Pan-India Reach</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -240,15 +352,407 @@ const VendorDashboardPage = () => {
   }
 
   return (
-    <div className="container" style={{ padding: '24px 16px 60px' }}>
-      {/* Non-vendor role warning banner with 1-click switch */}
-      {user.role !== 'vendor' && user.role !== 'admin' && (
+    <div style={{ background: '#f1f3f6', minHeight: '92vh', paddingBottom: '60px' }}>
+      <style>{`
+        .fk-seller-header {
+          background: #2874f0;
+          color: #ffffff;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .fk-subnav {
+          background: #ffffff;
+          border-bottom: 1px solid #dfe3e8;
+        }
+        .fk-tab-btn {
+          padding: 14px 20px;
+          background: transparent;
+          border: none;
+          border-bottom: 3px solid transparent;
+          color: #212121;
+          font-weight: 700;
+          font-size: 0.88rem;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          transition: all 0.15s ease;
+          white-space: nowrap;
+        }
+        .fk-tab-btn:hover {
+          color: #2874f0;
+          background: #f9fbfd;
+        }
+        .fk-tab-btn.active {
+          color: #2874f0;
+          border-bottom: 3px solid #2874f0;
+          font-weight: 800;
+        }
+        .fk-card {
+          background: #ffffff;
+          border: 1px solid #dfe3e8;
+          border-radius: 4px;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+        .fk-btn-primary {
+          background: #fb641b;
+          color: #ffffff;
+          border: none;
+          border-radius: 2px;
+          padding: 9px 18px;
+          font-weight: 700;
+          font-size: 0.84rem;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          text-transform: uppercase;
+          letter-spacing: 0.03em;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+          transition: all 0.15s ease;
+        }
+        .fk-btn-primary:hover {
+          background: #e65510;
+        }
+        .fk-btn-outline {
+          background: #ffffff;
+          color: #2874f0;
+          border: 1.5px solid #2874f0;
+          border-radius: 2px;
+          padding: 8px 16px;
+          font-weight: 700;
+          font-size: 0.84rem;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          transition: all 0.15s ease;
+        }
+        .fk-btn-outline:hover {
+          background: #f1f7ff;
+        }
+        .fk-assured-tag {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          background: #2874f0;
+          color: #ffffff;
+          padding: 2px 7px;
+          border-radius: 3px;
+          font-size: 0.68rem;
+          font-weight: 900;
+          font-style: italic;
+          letter-spacing: 0.02em;
+        }
+        .fk-assured-star {
+          color: #ffe500;
+          font-size: 0.72rem;
+        }
+        .fk-rating-badge {
+          background: #388e3c;
+          color: #ffffff;
+          font-weight: 800;
+          font-size: 0.75rem;
+          padding: 2px 7px;
+          border-radius: 3px;
+          display: inline-flex;
+          align-items: center;
+          gap: 3px;
+        }
+        .fk-filter-pill {
+          padding: 6px 14px;
+          border-radius: 2px;
+          font-size: 0.8rem;
+          font-weight: 700;
+          border: 1px solid #dfe3e8;
+          background: #ffffff;
+          color: #212121;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          transition: all 0.15s ease;
+        }
+        .fk-filter-pill:hover {
+          border-color: #2874f0;
+        }
+        .fk-filter-pill.active {
+          background: #2874f0;
+          color: #ffffff;
+          border-color: #2874f0;
+        }
+      `}</style>
+
+      {/* TOP BRAND HEADER - FLIPKART SELLER HUB STYLE */}
+      <div className="fk-seller-header">
+        <div style={{ maxWidth: '1360px', margin: '0 auto', padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px' }}>
+          {/* Logo & Identity */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <Link to="/vendor" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div
+                style={{
+                  background: '#ffe500',
+                  color: '#2874f0',
+                  fontWeight: 900,
+                  fontSize: '1.25rem',
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.12)',
+                }}
+              >
+                ⚡
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+                  <span style={{ fontSize: '1.35rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em' }}>
+                    CaSa
+                  </span>
+                  <span
+                    style={{
+                      background: '#ffe500',
+                      color: '#2874f0',
+                      fontWeight: 900,
+                      fontSize: '0.72rem',
+                      padding: '1px 6px',
+                      borderRadius: '3px',
+                      letterSpacing: '0.04em',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    Seller Hub
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.68rem', color: '#dbeafe', letterSpacing: '0.02em', fontWeight: 600 }}>
+                  PARTNER MERCHANT PORTAL
+                </div>
+              </div>
+            </Link>
+
+            {/* Flipkart Assured Badge */}
+            <div className="fk-assured-tag" style={{ marginLeft: '6px' }}>
+              <span>CaSa Assured</span>
+              <span className="fk-assured-star">★</span>
+            </div>
+          </div>
+
+          {/* Center: Search Orders & SKU */}
+          <div style={{ position: 'relative', minWidth: '280px', maxWidth: '380px', flex: 1, display: 'none', md: 'block' }}>
+            <input
+              type="text"
+              placeholder="Search by Order ID, SKU, or Title..."
+              value={productSearch}
+              onChange={(e) => {
+                setProductSearch(e.target.value);
+                if (activeTab !== 'inventory') setActiveTab('inventory');
+              }}
+              style={{
+                width: '100%',
+                padding: '8px 12px 8px 34px',
+                borderRadius: '3px',
+                border: 'none',
+                fontSize: '0.82rem',
+                outline: 'none',
+                background: '#ffffff',
+                color: '#212121',
+              }}
+            />
+            <Search size={15} color="#878787" style={{ position: 'absolute', left: '10px', top: '10px' }} />
+          </div>
+
+          {/* Right: Seller Profile & Switchers */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            {/* SLA Badge */}
+            <div
+              style={{
+                background: 'rgba(255, 255, 255, 0.15)',
+                border: '1px solid rgba(255, 255, 255, 0.25)',
+                borderRadius: '4px',
+                padding: '4px 10px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+              }}
+            >
+              <Clock size={13} color="#ffe500" />
+              <span>SLA Cutoff: 4:30 PM (99.4% On-Time)</span>
+            </div>
+
+            {/* Seller Rating */}
+            <div className="fk-rating-badge" title="Seller Performance Rating">
+              <span>4.8</span>
+              <Star size={11} fill="#ffffff" color="#ffffff" />
+            </div>
+
+            {/* Store Name Dropdown Pill */}
+            <div
+              style={{
+                background: '#ffffff',
+                color: '#212121',
+                borderRadius: '3px',
+                padding: '5px 12px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '0.8rem',
+                fontWeight: 800,
+              }}
+            >
+              <Store size={14} color="#2874f0" />
+              <span>{user?.vendorStoreName || user?.name || 'Verified Merchant'}</span>
+            </div>
+
+            {/* Quick Switch Button to User / Delivery */}
+            <button
+              onClick={() => switchRole('user')}
+              style={{
+                background: 'rgba(255, 255, 255, 0.18)',
+                color: '#ffffff',
+                border: 'none',
+                padding: '6px 12px',
+                borderRadius: '3px',
+                fontSize: '0.74rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+              title="Switch to customer marketplace"
+            >
+              🛒 Buyer Store
+            </button>
+
+            <button
+              onClick={loadData}
+              style={{
+                background: 'rgba(255, 255, 255, 0.18)',
+                color: '#ffffff',
+                border: 'none',
+                padding: '6px 8px',
+                borderRadius: '3px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+              title="Refresh Seller Hub Data"
+            >
+              <RotateCw size={14} />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* FLIPKART SELLER HUB SUB-NAVBAR TABS */}
+      <div className="fk-subnav">
+        <div style={{ maxWidth: '1360px', margin: '0 auto', padding: '0 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', overflowX: 'auto' }}>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <button
+              onClick={() => setActiveTab('dashboard')}
+              className={`fk-tab-btn ${activeTab === 'dashboard' ? 'active' : ''}`}
+            >
+              <TrendingUp size={16} />
+              <span>Dashboard</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('orders')}
+              className={`fk-tab-btn ${activeTab === 'orders' ? 'active' : ''}`}
+            >
+              <Package size={16} />
+              <span>
+                Orders & Fulfillment ({orders.length})
+              </span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('inventory')}
+              className={`fk-tab-btn ${activeTab === 'inventory' ? 'active' : ''}`}
+            >
+              <Boxes size={16} />
+              <span>
+                Listings & Catalog ({products.length})
+              </span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('financials')}
+              className={`fk-tab-btn ${activeTab === 'financials' ? 'active' : ''}`}
+            >
+              <DollarSign size={16} />
+              <span>Payments & Settlements</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('profile')}
+              className={`fk-tab-btn ${activeTab === 'profile' ? 'active' : ''}`}
+            >
+              <Building2 size={16} />
+              <span>Store KYC & Business Profile</span>
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setShowAddProductModal(true)}
+            className="fk-btn-primary"
+            style={{ margin: '8px 0', flexShrink: 0 }}
+          >
+            <Plus size={15} /> + Add Single Listing
+          </button>
+        </div>
+      </div>
+
+      {/* MAIN CONTAINER */}
+      <div style={{ maxWidth: '1360px', margin: '20px auto 0', padding: '0 20px' }}>
+        {/* NON-VENDOR ROLE WARNING BANNER */}
+        {user.role !== 'vendor' && user.role !== 'admin' && (
+          <div
+            style={{
+              background: '#fff9e6',
+              border: '1px solid #ffe599',
+              borderRadius: '4px',
+              padding: '12px 18px',
+              marginBottom: '18px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '12px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <AlertCircle size={20} color="#d97706" />
+              <div>
+                <strong style={{ color: '#8c5800', fontSize: '0.86rem' }}>
+                  Viewing with: {user.name} ({user.role.toUpperCase()})
+                </strong>
+                <div style={{ color: '#a66a00', fontSize: '0.78rem' }}>
+                  Switch your account persona to Vendor Partner to update order dispatches and manage catalog inventory.
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={async () => {
+                await switchRole('vendor');
+                success('Switched to Flipkart Vendor Partner mode!');
+              }}
+              className="fk-btn-primary"
+              style={{ padding: '7px 14px', fontSize: '0.78rem' }}
+            >
+              ⚡ Switch to Vendor Partner
+            </button>
+          </div>
+        )}
+
+        {/* FLIPKART FESTIVE / SELLER NOTICE ANNOUNCEMENT */}
         <div
           style={{
-            background: '#fffbeb',
-            border: '1.5px solid #fde68a',
-            borderRadius: '14px',
-            padding: '14px 20px',
+            background: 'linear-gradient(90deg, #e8f0fe 0%, #fef3c7 100%)',
+            border: '1px solid #c2dbfe',
+            borderRadius: '4px',
+            padding: '12px 18px',
             marginBottom: '20px',
             display: 'flex',
             alignItems: 'center',
@@ -257,898 +761,985 @@ const VendorDashboardPage = () => {
             gap: '12px',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <AlertCircle size={20} color="#d97706" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                background: '#2874f0',
+                color: '#ffffff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                fontWeight: 800,
+                fontSize: '0.85rem',
+              }}
+            >
+              📢
+            </div>
             <div>
-              <strong style={{ color: '#92400e', fontSize: '0.9rem' }}>You are viewing with account: {user.name} ({user.role.toUpperCase()})</strong>
-              <div style={{ color: '#b45309', fontSize: '0.8rem' }}>Switch your persona to Vendor Partner to manage order shipments and product catalog.</div>
+              <strong style={{ fontSize: '0.86rem', color: '#1a73e8' }}>
+                Festive Mega Sale Season Readiness: Keep your listings in stock!
+              </strong>
+              <div style={{ fontSize: '0.76rem', color: '#4b5563', marginTop: '2px' }}>
+                Maintain 99%+ SLA on-time dispatch and at least 15 units stock to stay eligible for Flipkart-style <strong>CaSa Assured</strong> badge and 3x organic impressions.
+              </div>
             </div>
           </div>
-          <button
-            onClick={async () => {
-              await switchRole('vendor');
-              success('Switched to Vendor Partner persona!');
-            }}
-            className="btn"
-            style={{
-              background: '#d97706',
-              color: '#ffffff',
-              border: 'none',
-              padding: '8px 14px',
-              borderRadius: '8px',
-              fontWeight: 700,
-              fontSize: '0.8rem',
-            }}
-          >
-            ⚡ Switch to Vendor Partner (1-Click)
-          </button>
-        </div>
-      )}
-      <style>{`
-        .vendor-stat-card {
-          transition: transform 0.22s ease, box-shadow 0.22s ease;
-        }
-        .vendor-stat-card:hover {
-          transform: translateY(-3px);
-          box-shadow: 0 12px 24px -6px rgba(15, 23, 42, 0.1);
-        }
-        .vendor-order-row {
-          transition: background-color 0.18s ease;
-        }
-        .vendor-order-row:hover {
-          background-color: #f8fafc;
-        }
-        .action-step-btn {
-          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
-        }
-        .action-step-btn:hover {
-          transform: translateY(-2px) !important;
-          box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15) !important;
-        }
-      `}</style>
-
-      {/* Top Banner / Role Switcher Header */}
-      <div
-        style={{
-          background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-          borderRadius: '20px',
-          padding: '24px 28px',
-          color: '#ffffff',
-          marginBottom: '28px',
-          boxShadow: '0 20px 35px -10px rgba(15, 23, 42, 0.2)',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '16px',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div
-            style={{
-              width: '56px',
-              height: '56px',
-              borderRadius: '16px',
-              background: 'linear-gradient(135deg, #2563eb, #3b82f6)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 6px 16px rgba(37, 99, 235, 0.35)',
-            }}
-          >
-            <Store size={28} color="#ffffff" />
-          </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <h1 style={{ fontSize: '1.45rem', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>
-                {user?.vendorStoreName || `${user?.name || 'CASA'}'s Merchant Hub`}
-              </h1>
-              <span
-                style={{
-                  background: '#38bdf8',
-                  color: '#0f172a',
-                  padding: '2px 8px',
-                  borderRadius: '9999px',
-                  fontSize: '0.68rem',
-                  fontWeight: 800,
-                  letterSpacing: '0.04em',
-                }}
-              >
-                VERIFIED VENDOR
-              </span>
-            </div>
-            <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginTop: '4px' }}>
-              Manage incoming customer orders, inventory stock, and courier handovers
-            </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '0.76rem', fontWeight: 700, color: '#388e3c' }}>
+              ✓ Current SLA: 99.4% (Tier 1 Gold)
+            </span>
           </div>
         </div>
 
-        {/* Quick Portal Switcher Pills */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '0.75rem', color: '#94a3b8', marginRight: '4px' }}>Quick Switch:</span>
-          <button
-            onClick={() => switchRole('user')}
-            className="btn btn-sm"
-            style={{
-              background: 'rgba(255, 255, 255, 0.1)',
-              color: '#ffffff',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              borderRadius: '8px',
-              fontSize: '0.75rem',
-              fontWeight: 700,
-              padding: '6px 12px',
-            }}
-          >
-            🛒 Customer Store
-          </button>
-          <button
-            onClick={() => switchRole('delivery')}
-            className="btn btn-sm"
-            style={{
-              background: '#f97316',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '0.75rem',
-              fontWeight: 700,
-              padding: '6px 12px',
-            }}
-          >
-            🚚 Delivery Partner Portal
-          </button>
-          <button
-            onClick={loadData}
-            style={{
-              background: 'rgba(255,255,255,0.15)',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '6px 10px',
-              color: '#fff',
-              cursor: 'pointer',
-            }}
-            title="Refresh Data"
-          >
-            <RotateCw size={15} />
-          </button>
-        </div>
-      </div>
-
-      {/* KPI Stats Grid */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
-          gap: '16px',
-          marginBottom: '28px',
-        }}
-      >
-        <div className="card vendor-stat-card" style={{ padding: '20px', borderRadius: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 700 }}>TOTAL REVENUE</span>
-            <div style={{ padding: '6px', borderRadius: '8px', background: '#ecfdf5', color: '#059669' }}>
-              <TrendingUp size={18} />
-            </div>
-          </div>
-          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#0f172a', marginTop: '10px' }}>
-            {formatINR(stats?.totalRevenue || 0)}
-          </div>
-          <span style={{ fontSize: '0.75rem', color: '#059669', fontWeight: 600 }}>Lifetime vendor sales</span>
-        </div>
-
-        <div className="card vendor-stat-card" style={{ padding: '20px', borderRadius: '16px', borderLeft: '4px solid #f59e0b' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 700 }}>NEEDS PACKING</span>
-            <div style={{ padding: '6px', borderRadius: '8px', background: '#fef3c7', color: '#d97706' }}>
-              <Clock size={18} />
-            </div>
-          </div>
-          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#d97706', marginTop: '10px' }}>
-            {stats?.pendingToPack || 0}
-          </div>
-          <span style={{ fontSize: '0.75rem', color: '#d97706', fontWeight: 600 }}>Orders awaiting fulfillment</span>
-        </div>
-
-        <div className="card vendor-stat-card" style={{ padding: '20px', borderRadius: '16px', borderLeft: '4px solid #7c3aed' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 700 }}>PACKED / READY</span>
-            <div style={{ padding: '6px', borderRadius: '8px', background: '#f5f3ff', color: '#7c3aed' }}>
-              <Package size={18} />
-            </div>
-          </div>
-          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#7c3aed', marginTop: '10px' }}>
-            {stats?.packedOrders || 0}
-          </div>
-          <span style={{ fontSize: '0.75rem', color: '#7c3aed', fontWeight: 600 }}>Ready for courier pickup</span>
-        </div>
-
-        <div className="card vendor-stat-card" style={{ padding: '20px', borderRadius: '16px', borderLeft: '4px solid #2563eb' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 700 }}>CATALOG PRODUCTS</span>
-            <div style={{ padding: '6px', borderRadius: '8px', background: '#eff6ff', color: '#2563eb' }}>
-              <Boxes size={18} />
-            </div>
-          </div>
-          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#2563eb', marginTop: '10px' }}>
-            {stats?.productsCount || products.length}
-          </div>
-          <span style={{ fontSize: '0.75rem', color: '#2563eb', fontWeight: 600 }}>Active items in marketplace</span>
-        </div>
-      </div>
-
-      {/* Main Tab Controls */}
-      <div style={{ display: 'flex', gap: '12px', borderBottom: '2px solid #e2e8f0', marginBottom: '24px' }}>
-        <button
-          onClick={() => setActiveTab('orders')}
+        {/* FLIPKART SELLER SCORECARD (KPI METRICS ROW) */}
+        <div
           style={{
-            padding: '12px 20px',
-            background: 'none',
-            border: 'none',
-            borderBottom: activeTab === 'orders' ? '3px solid #2563eb' : '3px solid transparent',
-            color: activeTab === 'orders' ? '#2563eb' : '#64748b',
-            fontWeight: 800,
-            fontSize: '0.95rem',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+            gap: '14px',
+            marginBottom: '22px',
           }}
         >
-          <Package size={18} />
-          <span>Customer Orders ({orders.length})</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('inventory')}
-          style={{
-            padding: '12px 20px',
-            background: 'none',
-            border: 'none',
-            borderBottom: activeTab === 'inventory' ? '3px solid #2563eb' : '3px solid transparent',
-            color: activeTab === 'inventory' ? '#2563eb' : '#64748b',
-            fontWeight: 800,
-            fontSize: '0.95rem',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-          }}
-        >
-          <Boxes size={18} />
-          <span>Inventory & Stock ({products.length})</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('financials')}
-          style={{
-            padding: '12px 20px',
-            background: 'none',
-            border: 'none',
-            borderBottom: activeTab === 'financials' ? '3px solid #2563eb' : '3px solid transparent',
-            color: activeTab === 'financials' ? '#2563eb' : '#64748b',
-            fontWeight: 800,
-            fontSize: '0.95rem',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-          }}
-        >
-          <DollarSign size={18} />
-          <span>Sales & Settlements</span>
-        </button>
-      </div>
-
-      {/* Orders Tab */}
-      {activeTab === 'orders' && (
-        <div>
-          {/* Order Status Filter Buttons */}
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '18px', overflowX: 'auto', paddingBottom: '4px' }}>
-            {['ALL', 'Confirmed', 'Processing', 'Packed', 'Shipped', 'Delivered'].map((st) => (
-              <button
-                key={st}
-                onClick={() => setOrderFilter(st)}
-                style={{
-                  padding: '6px 14px',
-                  borderRadius: '9999px',
-                  fontSize: '0.8rem',
-                  fontWeight: 700,
-                  border: orderFilter === st ? '1.5px solid #2563eb' : '1.5px solid #cbd5e1',
-                  background: orderFilter === st ? '#2563eb' : '#ffffff',
-                  color: orderFilter === st ? '#ffffff' : '#475569',
-                  cursor: 'pointer',
-                }}
-              >
-                {st === 'ALL' ? 'All Orders' : st}
-              </button>
-            ))}
+          {/* Card 1: Revenue */}
+          <div className="fk-card" style={{ padding: '18px 20px', borderLeft: '4px solid #2874f0' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <span style={{ fontSize: '0.72rem', color: '#878787', fontWeight: 800, letterSpacing: '0.04em' }}>
+                  GROSS REVENUE (LIFETIME)
+                </span>
+                <div style={{ fontSize: '1.65rem', fontWeight: 900, color: '#212121', marginTop: '6px' }}>
+                  {formatINR(stats?.totalRevenue || 0)}
+                </div>
+              </div>
+              <div style={{ padding: '8px', borderRadius: '4px', background: '#e8f0fe', color: '#2874f0' }}>
+                <TrendingUp size={20} />
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px', fontSize: '0.74rem' }}>
+              <span style={{ color: '#388e3c', fontWeight: 800 }}>▲ +14.8%</span>
+              <span style={{ color: '#878787' }}>vs last settlement period</span>
+            </div>
           </div>
 
-          {loading ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {[1, 2, 3].map(i => (
-                <div key={i} className="skeleton" style={{ height: '120px', borderRadius: '14px' }} />
-              ))}
+          {/* Card 2: Pending Dispatch */}
+          <div className="fk-card" style={{ padding: '18px 20px', borderLeft: '4px solid #fb641b' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <span style={{ fontSize: '0.72rem', color: '#878787', fontWeight: 800, letterSpacing: '0.04em' }}>
+                  PENDING TO PACK & DISPATCH
+                </span>
+                <div style={{ fontSize: '1.65rem', fontWeight: 900, color: '#fb641b', marginTop: '6px' }}>
+                  {stats?.pendingToPack || 0}
+                </div>
+              </div>
+              <div style={{ padding: '8px', borderRadius: '4px', background: '#fff0e8', color: '#fb641b' }}>
+                <Clock size={20} />
+              </div>
             </div>
-          ) : orders.length === 0 ? (
-            <div className="card" style={{ padding: '48px 20px', textAlign: 'center', borderRadius: '16px' }}>
-              <Package size={48} color="#94a3b8" style={{ margin: '0 auto 12px' }} />
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#0f172a' }}>No Orders Found</h3>
-              <p style={{ color: '#64748b', fontSize: '0.875rem' }}>
-                There are currently no orders under the "{orderFilter}" filter.
-              </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px', fontSize: '0.74rem' }}>
+              <span style={{ color: '#fb641b', fontWeight: 700 }}>⚡ SLA Cutoff 4:30 PM</span>
+              <span style={{ color: '#878787' }}>• Pack & label now</span>
             </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {orders.map((order) => {
-                const isUpdating = updatingOrderId === order._id;
+          </div>
+
+          {/* Card 3: Ready for Courier Pickup */}
+          <div className="fk-card" style={{ padding: '18px 20px', borderLeft: '4px solid #7c3aed' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <span style={{ fontSize: '0.72rem', color: '#878787', fontWeight: 800, letterSpacing: '0.04em' }}>
+                  PACKED & AWAITING COURIER
+                </span>
+                <div style={{ fontSize: '1.65rem', fontWeight: 900, color: '#7c3aed', marginTop: '6px' }}>
+                  {stats?.packedOrders || 0}
+                </div>
+              </div>
+              <div style={{ padding: '8px', borderRadius: '4px', background: '#f5f3ff', color: '#7c3aed' }}>
+                <Truck size={20} />
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px', fontSize: '0.74rem' }}>
+              <span style={{ color: '#7c3aed', fontWeight: 700 }}>Courier Partner:</span>
+              <span style={{ color: '#878787' }}>Delhivery Express</span>
+            </div>
+          </div>
+
+          {/* Card 4: Catalog Listings */}
+          <div className="fk-card" style={{ padding: '18px 20px', borderLeft: '4px solid #388e3c' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <span style={{ fontSize: '0.72rem', color: '#878787', fontWeight: 800, letterSpacing: '0.04em' }}>
+                  ACTIVE LIVE LISTINGS
+                </span>
+                <div style={{ fontSize: '1.65rem', fontWeight: 900, color: '#388e3c', marginTop: '6px' }}>
+                  {stats?.productsCount || products.length}
+                </div>
+              </div>
+              <div style={{ padding: '8px', borderRadius: '4px', background: '#eafaf1', color: '#388e3c' }}>
+                <Boxes size={20} />
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px', fontSize: '0.74rem' }}>
+              <span style={{ color: '#388e3c', fontWeight: 700 }}>100% Live</span>
+              <span style={{ color: '#878787' }}>on Marketplace</span>
+            </div>
+          </div>
+        </div>
+
+        {/* TAB CONTENT: 1. DASHBOARD OVERVIEW */}
+        {activeTab === 'dashboard' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {/* Quick Action Bar */}
+            <div className="fk-card" style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#212121' }}>
+                  Seller Performance & Operations Center
+                </h3>
+                <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#878787' }}>
+                  Manage listings health, track daily order dispatch speed, and review rolling weekly financial settlements.
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('orders')}
+                  className="fk-btn-primary"
+                >
+                  <Package size={15} /> View Active Orders ({orders.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAddProductModal(true)}
+                  className="fk-btn-outline"
+                >
+                  <Plus size={15} /> Add Product
+                </button>
+              </div>
+            </div>
+
+            {/* Seller Scorecard & Growth Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
+              {/* Box 1: SLA and Tier */}
+              <div className="fk-card" style={{ padding: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', borderBottom: '1px solid #f1f3f6', paddingBottom: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Award size={18} color="#2874f0" />
+                    <span style={{ fontWeight: 800, fontSize: '0.92rem', color: '#212121' }}>Seller Tier & Compliance</span>
+                  </div>
+                  <span className="fk-rating-badge">
+                    4.8 <Star size={11} fill="#ffffff" color="#ffffff" />
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
+                    <span style={{ color: '#878787' }}>Tier Status:</span>
+                    <strong style={{ color: '#b45309' }}>Gold Tier (Tier 1 Seller)</strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
+                    <span style={{ color: '#878787' }}>On-Time Dispatch SLA:</span>
+                    <strong style={{ color: '#388e3c' }}>99.4% (Exceeds Target 98%)</strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
+                    <span style={{ color: '#878787' }}>Cancellation Rate:</span>
+                    <strong style={{ color: '#388e3c' }}>0.18% (Benchmark &lt; 1.0%)</strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
+                    <span style={{ color: '#878787' }}>Return / RTO Rate:</span>
+                    <strong style={{ color: '#2874f0' }}>1.8% (Healthy)</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Box 2: Next Settlement Snapshot */}
+              <div className="fk-card" style={{ padding: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', borderBottom: '1px solid #f1f3f6', paddingBottom: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <CreditCard size={18} color="#388e3c" />
+                    <span style={{ fontWeight: 800, fontSize: '0.92rem', color: '#212121' }}>Next Bank Settlement</span>
+                  </div>
+                  <span style={{ background: '#eafaf1', color: '#388e3c', fontSize: '0.72rem', fontWeight: 800, padding: '2px 8px', borderRadius: '3px' }}>
+                    T+2 CYCLE
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div style={{ fontSize: '1.45rem', fontWeight: 900, color: '#388e3c' }}>
+                    {formatINR(financials?.summary?.netPayoutEarned || 0)}
+                  </div>
+                  <span style={{ fontSize: '0.78rem', color: '#878787' }}>
+                    Scheduled Direct Deposit to HDFC Bank (**** 9081) on <strong>{financials?.summary?.nextSettlementDate || 'Upcoming Friday'}</strong>
+                  </span>
+                  <button
+                    onClick={() => setActiveTab('financials')}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#2874f0',
+                      fontSize: '0.8rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      padding: 0,
+                      marginTop: '4px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                    }}
+                  >
+                    View detailed statements & deductions <ChevronRight size={14} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB CONTENT: 2. ORDERS & FULFILLMENT */}
+        {activeTab === 'orders' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* Filter Pipeline Header */}
+            <div className="fk-card" style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#878787', marginRight: '4px' }}>
+                  FILTER BY PIPELINE:
+                </span>
+                {[
+                  { key: 'ALL', label: 'All Orders' },
+                  { key: 'Confirmed', label: 'New / To Pack' },
+                  { key: 'Processing', label: 'In Progress' },
+                  { key: 'Packed', label: 'Ready for Courier' },
+                  { key: 'Shipped', label: 'Dispatched (In Transit)' },
+                  { key: 'Delivered', label: 'Delivered' },
+                ].map((st) => (
+                  <button
+                    key={st.key}
+                    onClick={() => setOrderFilter(st.key)}
+                    className={`fk-filter-pill ${orderFilter === st.key ? 'active' : ''}`}
+                  >
+                    <span>{st.label}</span>
+                  </button>
+                ))}
+              </div>
+
+              <div style={{ fontSize: '0.8rem', color: '#878787' }}>
+                Showing <strong>{orders.length}</strong> customer shipments
+              </div>
+            </div>
+
+            {/* Orders List */}
+            {loading ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="fk-card" style={{ height: '140px', background: '#ffffff', opacity: 0.7 }} />
+                ))}
+              </div>
+            ) : orders.length === 0 ? (
+              <div className="fk-card" style={{ padding: '60px 20px', textAlign: 'center' }}>
+                <Package size={52} color="#878787" style={{ margin: '0 auto 12px' }} />
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#212121', margin: '0 0 6px' }}>
+                  No Orders in this Status
+                </h3>
+                <p style={{ color: '#878787', fontSize: '0.88rem', margin: '0 0 16px' }}>
+                  There are currently no customer orders matching "{orderFilter}".
+                </p>
+                <button onClick={() => setOrderFilter('ALL')} className="fk-btn-primary">
+                  View All Orders
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {orders.map((order) => {
+                  const isUpdating = updatingOrderId === order._id;
+                  const isReadyToPack = ['Confirmed', 'Processing'].includes(order.orderStatus);
+
+                  return (
+                    <div key={order._id} className="fk-card" style={{ overflow: 'hidden' }}>
+                      {/* Order Strip Top */}
+                      <div
+                        style={{
+                          background: '#f9fbfd',
+                          borderBottom: '1px solid #dfe3e8',
+                          padding: '12px 18px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          flexWrap: 'wrap',
+                          gap: '12px',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+                          <div>
+                            <span style={{ fontSize: '0.7rem', color: '#878787', fontWeight: 800 }}>ORDER ID:</span>{' '}
+                            <strong style={{ fontSize: '0.92rem', color: '#2874f0', letterSpacing: '0.02em' }}>
+                              #{order.orderNumber}
+                            </strong>
+                          </div>
+
+                          <div style={{ fontSize: '0.78rem', color: '#878787' }}>
+                            Placed on: <strong>{formatDate(order.createdAt)}</strong>
+                          </div>
+
+                          <span
+                            style={{
+                              padding: '2px 8px',
+                              borderRadius: '3px',
+                              fontSize: '0.72rem',
+                              fontWeight: 800,
+                              background:
+                                order.orderStatus === 'Delivered'
+                                  ? '#eafaf1'
+                                  : order.orderStatus === 'Packed'
+                                  ? '#f5f3ff'
+                                  : order.orderStatus === 'Shipped'
+                                  ? '#e8f0fe'
+                                  : '#fff0e8',
+                              color:
+                                order.orderStatus === 'Delivered'
+                                  ? '#388e3c'
+                                  : order.orderStatus === 'Packed'
+                                  ? '#7c3aed'
+                                  : order.orderStatus === 'Shipped'
+                                  ? '#2874f0'
+                                  : '#fb641b',
+                            }}
+                          >
+                            ● {order.orderStatus?.toUpperCase()}
+                          </span>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                          <span style={{ fontSize: '0.92rem', fontWeight: 900, color: '#212121' }}>
+                            {formatINR(order.totalPrice)}
+                          </span>
+                          <span style={{ fontSize: '0.74rem', color: '#878787', fontWeight: 700 }}>
+                            {order.paymentMethod?.toUpperCase()} ({order.isPaid ? 'PREPAID' : 'COD'})
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Items + Buyer Information */}
+                      <div style={{ padding: '16px 18px', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+                        {/* Items Column */}
+                        <div style={{ flex: 1, minWidth: '280px' }}>
+                          <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#878787', marginBottom: '8px', letterSpacing: '0.04em' }}>
+                            ORDERED ITEMS ({order.items?.length || 0}):
+                          </div>
+                          {order.items?.map((item, idx) => (
+                            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
+                              <img
+                                src={item.image}
+                                alt={item.name}
+                                style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #dfe3e8' }}
+                              />
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontSize: '0.86rem', fontWeight: 700, color: '#212121', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                  {item.name}
+                                </div>
+                                <div style={{ fontSize: '0.74rem', color: '#878787', marginTop: '2px' }}>
+                                  SKU: <strong>{item.sku || `FSN-${item.product?.slice(-6) || 'STD'}`}</strong> • Qty: <strong>{item.quantity}</strong> • {formatINR(item.price)}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Customer & Shipping Destination */}
+                        <div
+                          style={{
+                            minWidth: '240px',
+                            maxWidth: '320px',
+                            background: '#f9fbfd',
+                            border: '1px solid #eef2f6',
+                            borderRadius: '4px',
+                            padding: '12px 14px',
+                            fontSize: '0.8rem',
+                          }}
+                        >
+                          <div style={{ fontSize: '0.7rem', color: '#878787', fontWeight: 800, marginBottom: '4px' }}>
+                            DELIVERY DESTINATION:
+                          </div>
+                          <div style={{ fontWeight: 800, color: '#212121' }}>
+                            {order.shippingAddress?.fullName || order.user?.name || 'Customer'}
+                          </div>
+                          <div style={{ color: '#555', marginTop: '2px', lineHeight: 1.4 }}>
+                            {order.shippingAddress?.street}, {order.shippingAddress?.city} - {order.shippingAddress?.pincode}
+                          </div>
+                          <div style={{ marginTop: '4px', color: '#2874f0', fontWeight: 700 }}>
+                            Phone: {order.shippingAddress?.phone || order.user?.phone || 'Provided at Dispatch'}
+                          </div>
+                          {order.deliveryPartnerName && (
+                            <div style={{ marginTop: '6px', paddingTop: '6px', borderTop: '1px solid #dfe3e8', fontSize: '0.74rem', color: '#388e3c', fontWeight: 700 }}>
+                              🚚 Assigned Courier: {order.deliveryPartnerName}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Footer Actions: Step-by-Step Vendor Fulfillment */}
+                      <div
+                        style={{
+                          background: '#f9fbfd',
+                          borderTop: '1px solid #dfe3e8',
+                          padding: '10px 18px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          flexWrap: 'wrap',
+                          gap: '10px',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '0.75rem', color: '#878787' }}>
+                            SLA Compliance: <strong style={{ color: '#388e3c' }}>Within 24h Window</strong>
+                          </span>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedInvoiceOrder(order)}
+                            className="fk-btn-outline"
+                            style={{ padding: '6px 12px', fontSize: '0.78rem' }}
+                          >
+                            <Printer size={13} /> Packing Slip / Invoice
+                          </button>
+
+                          {order.orderStatus === 'Confirmed' && (
+                            <button
+                              onClick={() => handleUpdateStatus(order._id, 'Processing')}
+                              disabled={isUpdating}
+                              className="fk-btn-primary"
+                              style={{ padding: '6px 14px', fontSize: '0.78rem' }}
+                            >
+                              📦 Confirm & Pack
+                            </button>
+                          )}
+
+                          {['Confirmed', 'Processing'].includes(order.orderStatus) && (
+                            <button
+                              onClick={() => handleUpdateStatus(order._id, 'Packed')}
+                              disabled={isUpdating}
+                              className="fk-btn-primary"
+                              style={{ padding: '6px 14px', fontSize: '0.78rem', background: '#7c3aed' }}
+                            >
+                              🏷️ Mark Ready for Courier
+                            </button>
+                          )}
+
+                          {order.orderStatus === 'Packed' && (
+                            <button
+                              onClick={() => handleUpdateStatus(order._id, 'Shipped')}
+                              disabled={isUpdating}
+                              className="fk-btn-primary"
+                              style={{ padding: '6px 14px', fontSize: '0.78rem', background: '#388e3c' }}
+                            >
+                              🚚 Hand Over to Logistics (Dispatch)
+                            </button>
+                          )}
+
+                          <Link
+                            to={`/orders/${order._id}`}
+                            className="fk-btn-outline"
+                            style={{ padding: '6px 12px', fontSize: '0.78rem', textDecoration: 'none' }}
+                          >
+                            Details
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB CONTENT: 3. LISTINGS & INVENTORY */}
+        {activeTab === 'inventory' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* Top Toolbar */}
+            <div className="fk-card" style={{ padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+              <div style={{ position: 'relative', width: '100%', maxWidth: '360px' }}>
+                <input
+                  type="text"
+                  placeholder="Search listings by title, brand, or SKU..."
+                  value={productSearch}
+                  onChange={(e) => setProductSearch(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px 8px 36px',
+                    borderRadius: '3px',
+                    border: '1px solid #dfe3e8',
+                    fontSize: '0.84rem',
+                    outline: 'none',
+                  }}
+                />
+                <Search size={16} color="#878787" style={{ position: 'absolute', left: '10px', top: '10px' }} />
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <span style={{ fontSize: '0.82rem', color: '#878787' }}>
+                  Showing <strong>{filteredProducts.length}</strong> active SKUs
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowAddProductModal(true)}
+                  className="fk-btn-primary"
+                >
+                  <Plus size={15} /> + Add Single Listing
+                </button>
+              </div>
+            </div>
+
+            {/* Flipkart Style Product Table / Cards */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                gap: '14px',
+              }}
+            >
+              {filteredProducts.map((p) => {
+                const isLowStock = (p.stock || 0) < 5;
 
                 return (
                   <div
-                    key={order._id}
-                    className="card vendor-order-row"
+                    key={p._id}
+                    className="fk-card"
                     style={{
-                      borderRadius: '16px',
-                      overflow: 'hidden',
-                      border: '1px solid #e2e8f0',
-                      boxShadow: '0 2px 8px rgba(15, 23, 42, 0.04)',
+                      padding: '14px',
+                      display: 'flex',
+                      gap: '12px',
+                      position: 'relative',
                     }}
                   >
-                    {/* Header */}
-                    <div
+                    <img
+                      src={p.image || p.images?.[0]}
+                      alt={p.name}
                       style={{
-                        padding: '12px 18px',
-                        background: '#f8fafc',
-                        borderBottom: '1px solid #f1f5f9',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        flexWrap: 'wrap',
-                        gap: '10px',
+                        width: '74px',
+                        height: '74px',
+                        objectFit: 'cover',
+                        borderRadius: '4px',
+                        border: '1px solid #dfe3e8',
+                        flexShrink: 0,
                       }}
-                    >
-                      <div>
-                        <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>ORDER NO:</span>{' '}
-                        <strong style={{ fontSize: '0.925rem', color: '#0f172a' }}>{order.orderNumber}</strong>
-                        <span style={{ fontSize: '0.78rem', color: '#64748b', marginLeft: '12px' }}>
-                          Placed {formatDate(order.createdAt)}
+                    />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span className="fk-assured-tag" style={{ fontSize: '0.62rem', padding: '1px 5px' }}>
+                          CaSa Assured
                         </span>
+                        {p.brand && (
+                          <span style={{ fontSize: '0.7rem', color: '#878787', fontWeight: 700 }}>
+                            {p.brand}
+                          </span>
+                        )}
                       </div>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#1d4ed8' }}>
-                          {formatINR(order.totalPrice)}
+                      <div
+                        style={{
+                          fontSize: '0.88rem',
+                          fontWeight: 700,
+                          color: '#212121',
+                          marginTop: '4px',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                        title={p.name}
+                      >
+                        {p.name}
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                        <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#212121' }}>
+                          {formatINR(p.discountPrice || p.price)}
                         </span>
+                        {p.discountPrice && (
+                          <span style={{ fontSize: '0.76rem', color: '#878787', textDecoration: 'line-through' }}>
+                            {formatINR(p.price)}
+                          </span>
+                        )}
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '8px' }}>
                         <span
                           style={{
-                            padding: '3px 10px',
-                            borderRadius: '9999px',
+                            padding: '2px 8px',
+                            borderRadius: '3px',
                             fontSize: '0.72rem',
                             fontWeight: 800,
-                            background: order.orderStatus === 'Delivered' ? '#dcfce7' : order.orderStatus === 'Packed' ? '#f3e8ff' : '#dbeafe',
-                            color: order.orderStatus === 'Delivered' ? '#15803d' : order.orderStatus === 'Packed' ? '#7e22ce' : '#1d4ed8',
+                            background: isLowStock ? '#fee2e2' : '#eafaf1',
+                            color: isLowStock ? '#dc2626' : '#388e3c',
                           }}
                         >
-                          {order.orderStatus}
+                          {isLowStock ? `⚠️ Low Stock: ${p.stock || 0}` : `In Stock: ${p.stock || 0} units`}
                         </span>
-                      </div>
-                    </div>
 
-                    {/* Body: Items + Customer Info */}
-                    <div style={{ padding: '16px 18px', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
-                      {/* Items */}
-                      <div style={{ flex: 1, minWidth: '260px' }}>
-                        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', marginBottom: '8px' }}>
-                          ITEMS TO PACK ({order.items?.length || 0}):
-                        </div>
-                        {order.items?.map((item, idx) => (
-                          <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                            <img
-                              src={item.image}
-                              alt={item.name}
-                              style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #e2e8f0' }}
-                            />
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                {item.name}
-                              </div>
-                              <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                                Qty: <strong>{item.quantity}</strong> • {formatINR(item.price)}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Customer & Shipping */}
-                      <div style={{ minWidth: '220px', maxWidth: '300px', fontSize: '0.8rem', color: '#475569', background: '#fafbfc', padding: '12px', borderRadius: '10px' }}>
-                        <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: '4px' }}>
-                          Customer: {order.user?.name || order.shippingAddress?.fullName || 'Shopper'}
-                        </div>
-                        <div>{order.shippingAddress?.street}, {order.shippingAddress?.city} {order.shippingAddress?.pincode}</div>
-                        <div style={{ marginTop: '4px', color: '#2563eb', fontWeight: 600 }}>
-                          Phone: {order.shippingAddress?.phone || order.user?.phone || 'Not provided'}
-                        </div>
-                        {order.deliveryPartnerName && (
-                          <div style={{ marginTop: '6px', paddingTop: '6px', borderTop: '1px solid #e2e8f0', fontSize: '0.75rem' }}>
-                            Courier: <strong>{order.deliveryPartnerName}</strong>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Footer Actions: Step-by-Step Vendor Fulfillment */}
-                    <div
-                      style={{
-                        padding: '12px 18px',
-                        background: '#f8fafc',
-                        borderTop: '1px solid #f1f5f9',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        flexWrap: 'wrap',
-                        gap: '10px',
-                      }}
-                    >
-                      <span style={{ fontSize: '0.78rem', color: '#64748b' }}>
-                        Payment: <strong>{order.paymentMethod?.toUpperCase()}</strong>
-                      </span>
-
-                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                         <button
-                          type="button"
-                          onClick={() => setSelectedInvoiceOrder(order)}
-                          className="action-step-btn"
-                          style={{
-                            padding: '7px 12px',
-                            borderRadius: '8px',
-                            background: '#ffffff',
-                            color: '#334155',
-                            border: '1.5px solid #cbd5e1',
-                            fontSize: '0.78rem',
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px',
+                          onClick={() => {
+                            setEditingProduct(p);
+                            setNewStock(String(p.stock || 0));
+                            setNewPrice(String(p.price || 0));
                           }}
+                          className="fk-btn-outline"
+                          style={{ padding: '3px 8px', fontSize: '0.72rem' }}
                         >
-                          <Printer size={13} /> Packing Slip / Invoice
+                          <Edit3 size={11} /> Update Stock
                         </button>
-
-                        {order.orderStatus === 'Confirmed' && (
-                          <button
-                            onClick={() => handleUpdateStatus(order._id, 'Processing')}
-                            disabled={isUpdating}
-                            className="action-step-btn"
-                            style={{
-                              padding: '7px 14px',
-                              borderRadius: '8px',
-                              background: '#3b82f6',
-                              color: '#ffffff',
-                              border: 'none',
-                              fontSize: '0.78rem',
-                              fontWeight: 700,
-                              cursor: 'pointer',
-                            }}
-                          >
-                            📦 Start Processing
-                          </button>
-                        )}
-
-                        {['Confirmed', 'Processing'].includes(order.orderStatus) && (
-                          <button
-                            onClick={() => handleUpdateStatus(order._id, 'Packed')}
-                            disabled={isUpdating}
-                            className="action-step-btn"
-                            style={{
-                              padding: '7px 14px',
-                              borderRadius: '8px',
-                              background: '#7c3aed',
-                              color: '#ffffff',
-                              border: 'none',
-                              fontSize: '0.78rem',
-                              fontWeight: 700,
-                              cursor: 'pointer',
-                            }}
-                          >
-                            🏷️ Mark As Packed & Ready
-                          </button>
-                        )}
-
-                        {order.orderStatus === 'Packed' && (
-                          <button
-                            onClick={() => handleUpdateStatus(order._id, 'Shipped')}
-                            disabled={isUpdating}
-                            className="action-step-btn"
-                            style={{
-                              padding: '7px 14px',
-                              borderRadius: '8px',
-                              background: '#059669',
-                              color: '#ffffff',
-                              border: 'none',
-                              fontSize: '0.78rem',
-                              fontWeight: 700,
-                              cursor: 'pointer',
-                            }}
-                          >
-                            🚚 Hand Over to Courier (Dispatch)
-                          </button>
-                        )}
-
-                        <Link
-                          to={`/orders/${order._id}`}
-                          className="btn btn-outline btn-sm"
-                          style={{ fontSize: '0.75rem', borderRadius: '8px' }}
-                        >
-                          View Details
-                        </Link>
                       </div>
                     </div>
                   </div>
                 );
               })}
             </div>
-          )}
-        </div>
-      )}
+          </div>
+        )}
 
-      {/* Inventory & Stock Tab */}
-      {activeTab === 'inventory' && (
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', gap: '12px', flexWrap: 'wrap' }}>
-            <div style={{ position: 'relative', width: '100%', maxWidth: '340px' }}>
-              <input
-                type="text"
-                placeholder="Search products in inventory..."
-                value={productSearch}
-                onChange={(e) => setProductSearch(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '9px 12px 9px 36px',
-                  borderRadius: '10px',
-                  border: '1.5px solid #cbd5e1',
-                  fontSize: '0.85rem',
-                }}
-              />
-              <Search size={16} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '11px' }} />
+        {/* TAB CONTENT: 4. PAYMENTS & SETTLEMENTS */}
+        {activeTab === 'financials' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+            {/* Financial Summary Cards */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                gap: '14px',
+              }}
+            >
+              <div className="fk-card" style={{ padding: '18px 20px', borderTop: '4px solid #2874f0' }}>
+                <span style={{ fontSize: '0.72rem', color: '#878787', fontWeight: 800 }}>
+                  GROSS MERCHANDISE VALUE (GMV)
+                </span>
+                <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#212121', marginTop: '6px' }}>
+                  {formatINR(financials?.summary?.totalGrossSales || 0)}
+                </div>
+                <span style={{ fontSize: '0.74rem', color: '#878787' }}>
+                  From {financials?.summary?.deliveredOrdersCount || 0} fulfilled customer deliveries
+                </span>
+              </div>
+
+              <div className="fk-card" style={{ padding: '18px 20px', borderTop: '4px solid #dc2626' }}>
+                <span style={{ fontSize: '0.72rem', color: '#878787', fontWeight: 800 }}>
+                  MARKETPLACE COMMISSION ({financials?.summary?.commissionRate || 8}%)
+                </span>
+                <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#dc2626', marginTop: '6px' }}>
+                  - {formatINR(financials?.summary?.platformCommission || 0)}
+                </div>
+                <span style={{ fontSize: '0.74rem', color: '#878787' }}>
+                  Payment gateway, technology, & logistics fee
+                </span>
+              </div>
+
+              <div className="fk-card" style={{ padding: '18px 20px', borderTop: '4px solid #388e3c' }}>
+                <span style={{ fontSize: '0.72rem', color: '#878787', fontWeight: 800 }}>
+                  NET PAYOUT CLEARED
+                </span>
+                <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#388e3c', marginTop: '6px' }}>
+                  {formatINR(financials?.summary?.netPayoutEarned || 0)}
+                </div>
+                <span style={{ fontSize: '0.74rem', color: '#388e3c', fontWeight: 700 }}>
+                  92% Net Merchant Disbursement
+                </span>
+              </div>
+
+              <div className="fk-card" style={{ padding: '18px 20px', borderTop: '4px solid #7c3aed' }}>
+                <span style={{ fontSize: '0.72rem', color: '#878787', fontWeight: 800 }}>
+                  NEXT DISBURSEMENT CYCLE
+                </span>
+                <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#7c3aed', marginTop: '6px' }}>
+                  {financials?.summary?.nextSettlementDate || 'Upcoming Friday'}
+                </div>
+                <span style={{ fontSize: '0.74rem', color: '#878787' }}>
+                  Direct NEFT/IMPS Bank Transfer
+                </span>
+              </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ fontSize: '0.825rem', color: '#64748b' }}>
-                Showing <strong>{filteredProducts.length}</strong> items in merchant catalog
+            {/* Bank Verification Strip */}
+            <div
+              className="fk-card"
+              style={{
+                padding: '16px 20px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '12px',
+                background: '#f9fbfd',
+              }}
+            >
+              <div>
+                <div style={{ fontSize: '0.86rem', fontWeight: 800, color: '#212121' }}>
+                  Disbursement Account: {user?.vendorStoreName || user?.businessName || 'CASA Merchant Hub'}
+                </div>
+                <div style={{ fontSize: '0.78rem', color: '#878787', marginTop: '3px' }}>
+                  Bank: <strong>HDFC Bank Ltd</strong> • Account: <strong>50200084920194</strong> • IFSC: <strong>HDFC0000412</strong> • GSTIN: <strong>{user?.gstNumber || '23AAACA9876Q1Z5'}</strong>
+                </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setShowAddProductModal(true)}
-                className="btn btn-primary"
-                style={{
-                  padding: '9px 16px',
-                  borderRadius: '10px',
-                  fontSize: '0.85rem',
-                  fontWeight: 700,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  background: '#2563eb',
-                }}
-              >
-                <Plus size={16} /> Add New Product
-              </button>
+              <span style={{ padding: '4px 10px', borderRadius: '3px', background: '#eafaf1', color: '#388e3c', fontSize: '0.75rem', fontWeight: 800 }}>
+                ✓ Bank Account Verified & Active
+              </span>
+            </div>
+
+            {/* Settlement Ledger Table */}
+            <div className="fk-card" style={{ overflow: 'hidden' }}>
+              <div style={{ padding: '16px 20px', borderBottom: '1px solid #dfe3e8' }}>
+                <h3 style={{ fontSize: '0.98rem', fontWeight: 800, color: '#212121', margin: 0 }}>
+                  Flipkart Seller Settlement Ledger
+                </h3>
+                <p style={{ fontSize: '0.78rem', color: '#878787', margin: '4px 0 0' }}>
+                  Record of weekly automated bank payouts processed to your registered merchant account.
+                </p>
+              </div>
+
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.84rem' }}>
+                  <thead>
+                    <tr style={{ background: '#f9fbfd', borderBottom: '1px solid #dfe3e8', color: '#878787', fontSize: '0.74rem', fontWeight: 800 }}>
+                      <th style={{ padding: '12px 16px' }}>SETTLEMENT ID</th>
+                      <th style={{ padding: '12px 16px' }}>SETTLEMENT DATE</th>
+                      <th style={{ padding: '12px 16px' }}>GROSS SALES</th>
+                      <th style={{ padding: '12px 16px' }}>PLATFORM FEE (8%)</th>
+                      <th style={{ padding: '12px 16px' }}>NET DISBURSED</th>
+                      <th style={{ padding: '12px 16px' }}>BANK UTR</th>
+                      <th style={{ padding: '12px 16px' }}>STATUS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {!financials?.settlementHistory || financials.settlementHistory.length === 0 ? (
+                      <tr>
+                        <td colSpan="7" style={{ padding: '36px', textAlign: 'center', color: '#878787' }}>
+                          No settlement records found yet. First payout occurs following your initial completed order delivery.
+                        </td>
+                      </tr>
+                    ) : (
+                      financials.settlementHistory.map((s, idx) => (
+                        <tr key={idx} style={{ borderBottom: '1px solid #f1f3f6' }}>
+                          <td style={{ padding: '12px 16px', fontWeight: 800, color: '#2874f0' }}>{s.id}</td>
+                          <td style={{ padding: '12px 16px', color: '#555' }}>{s.date}</td>
+                          <td style={{ padding: '12px 16px', fontWeight: 700 }}>{formatINR(s.gross)}</td>
+                          <td style={{ padding: '12px 16px', color: '#dc2626' }}>- {formatINR(s.commission)}</td>
+                          <td style={{ padding: '12px 16px', fontWeight: 900, color: '#388e3c' }}>{formatINR(s.net)}</td>
+                          <td style={{ padding: '12px 16px', fontFamily: 'monospace', fontSize: '0.78rem', color: '#555' }}>{s.utr}</td>
+                          <td style={{ padding: '12px 16px' }}>
+                            <span
+                              style={{
+                                padding: '3px 8px',
+                                borderRadius: '3px',
+                                fontSize: '0.72rem',
+                                fontWeight: 800,
+                                background: s.status === 'Completed' ? '#eafaf1' : '#fff0e8',
+                                color: s.status === 'Completed' ? '#388e3c' : '#fb641b',
+                              }}
+                            >
+                              {s.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
+        )}
 
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-              gap: '16px',
-            }}
-          >
-            {filteredProducts.map((p) => (
-              <div
-                key={p._id}
-                className="card"
-                style={{
-                  borderRadius: '14px',
-                  padding: '14px',
-                  border: '1px solid #e2e8f0',
-                  display: 'flex',
-                  gap: '12px',
-                }}
-              >
-                <img
-                  src={p.image || p.images?.[0]}
-                  alt={p.name}
-                  style={{ width: '64px', height: '64px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #e2e8f0' }}
-                />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {p.name}
-                  </div>
-                  <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '2px' }}>
-                    Price: <strong>{formatINR(p.discountPrice || p.price)}</strong>
-                  </div>
-                  <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span
-                      style={{
-                        padding: '2px 8px',
-                        borderRadius: '6px',
-                        fontSize: '0.72rem',
-                        fontWeight: 700,
-                        background: (p.stock || 0) < 5 ? '#fee2e2' : '#ecfdf5',
-                        color: (p.stock || 0) < 5 ? '#dc2626' : '#059669',
-                      }}
-                    >
-                      Stock: {p.stock || 0} units
-                    </span>
+        {/* TAB CONTENT: 5. STORE KYC & BUSINESS PROFILE */}
+        {activeTab === 'profile' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div className="fk-card" style={{ padding: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #dfe3e8', paddingBottom: '16px', marginBottom: '20px' }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#212121', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Building2 size={20} color="#2874f0" /> Flipkart Verified Seller Profile
+                  </h3>
+                  <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#878787' }}>
+                    Statutory business identification, tax registrations, and dispatch hub address.
+                  </p>
+                </div>
+                <Link to="/profile" className="fk-btn-outline" style={{ textDecoration: 'none' }}>
+                  <Edit3 size={14} /> Manage Store Profile
+                </Link>
+              </div>
 
-                    <button
-                      onClick={() => {
-                        setEditingProduct(p);
-                        setNewStock(String(p.stock || 0));
-                        setNewPrice(String(p.price || 0));
-                      }}
-                      className="btn btn-outline btn-sm"
-                      style={{ fontSize: '0.72rem', padding: '3px 8px', borderRadius: '6px' }}
-                    >
-                      <Edit3 size={12} /> Edit
-                    </button>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '18px' }}>
+                <div style={{ background: '#f9fbfd', border: '1px solid #dfe3e8', borderRadius: '4px', padding: '16px' }}>
+                  <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#878787', textTransform: 'uppercase' }}>REGISTERED STORE NAME</div>
+                  <div style={{ fontSize: '1rem', fontWeight: 800, color: '#212121', marginTop: '4px' }}>
+                    {user?.vendorStoreName || 'Aarav Luxury Handlooms & Apparel'}
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: '#878787', marginTop: '4px' }}>
+                    Merchant ID: <strong style={{ color: '#2874f0' }}>VND-MP-4520</strong>
+                  </div>
+                </div>
+
+                <div style={{ background: '#f9fbfd', border: '1px solid #dfe3e8', borderRadius: '4px', padding: '16px' }}>
+                  <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#878787', textTransform: 'uppercase' }}>TAX & STATUTORY REGISTRATIONS</div>
+                  <div style={{ fontSize: '0.86rem', fontWeight: 700, color: '#212121', marginTop: '4px' }}>
+                    GSTIN: <strong>23AAACA9876Q1Z5</strong> (Verified)
+                  </div>
+                  <div style={{ fontSize: '0.86rem', color: '#555', marginTop: '3px' }}>
+                    PAN: <strong>AAACA9876Q</strong> • MSME: <strong>UDYAM-MP-26-0048123</strong>
+                  </div>
+                </div>
+
+                <div style={{ background: '#f9fbfd', border: '1px solid #dfe3e8', borderRadius: '4px', padding: '16px' }}>
+                  <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#878787', textTransform: 'uppercase' }}>PRIMARY LOGISTICS PICKUP HUB</div>
+                  <div style={{ fontSize: '0.86rem', fontWeight: 700, color: '#212121', marginTop: '4px' }}>
+                    Indore Central Logistics & Textile Hub #14
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: '#555', marginTop: '3px' }}>
+                    Plot 14-B, Sector C, Sanwer Road Industrial Area, Indore, MP - 452015
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Sales & Settlements Tab */}
-      {activeTab === 'financials' && (
-        <div>
-          {/* Financial summary overview cards */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-              gap: '16px',
-              marginBottom: '24px',
-            }}
-          >
-            <div className="card" style={{ padding: '20px', borderRadius: '16px', borderTop: '4px solid #2563eb' }}>
-              <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 700 }}>GROSS MERCHANDISE VALUE (GMV)</span>
-              <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#0f172a', marginTop: '10px' }}>
-                {formatINR(financials?.summary?.totalGrossSales || 0)}
-              </div>
-              <span style={{ fontSize: '0.75rem', color: '#64748b' }}>From {financials?.summary?.deliveredOrdersCount || 0} completed orders</span>
-            </div>
-
-            <div className="card" style={{ padding: '20px', borderRadius: '16px', borderTop: '4px solid #ef4444' }}>
-              <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 700 }}>MARKETPLACE COMMISSION ({financials?.summary?.commissionRate || 10}%)</span>
-              <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#dc2626', marginTop: '10px' }}>
-                - {formatINR(financials?.summary?.platformCommission || 0)}
-              </div>
-              <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Platform facilitation & payment gateway fee</span>
-            </div>
-
-            <div className="card" style={{ padding: '20px', borderRadius: '16px', borderTop: '4px solid #16a34a' }}>
-              <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 700 }}>NET PAYOUT EARNED</span>
-              <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#16a34a', marginTop: '10px' }}>
-                {formatINR(financials?.summary?.netPayoutEarned || 0)}
-              </div>
-              <span style={{ fontSize: '0.75rem', color: '#16a34a', fontWeight: 600 }}>90% net merchant disbursement</span>
-            </div>
-
-            <div className="card" style={{ padding: '20px', borderRadius: '16px', borderTop: '4px solid #8b5cf6' }}>
-              <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 700 }}>NEXT SETTLEMENT RUN</span>
-              <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#7c3aed', marginTop: '10px' }}>
-                {financials?.summary?.nextSettlementDate || 'Upcoming Friday'}
-              </div>
-              <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Weekly Direct NEFT/IMPS cycle</span>
             </div>
           </div>
+        )}
+      </div>
 
-          {/* Business & Bank info banner */}
-          <div
-            className="card"
-            style={{
-              padding: '16px 20px',
-              borderRadius: '14px',
-              background: '#f8fafc',
-              border: '1px solid #e2e8f0',
-              marginBottom: '24px',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: '12px',
-            }}
-          >
-            <div>
-              <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#0f172a' }}>
-                Registered Business: {user?.vendorStoreName || user?.businessName || 'CASA Partner Merchant'}
-              </div>
-              <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '4px' }}>
-                GSTIN: <strong>{user?.gstNumber || '27AAAAA0000A1Z5 (Verified)'}</strong> • Bank Account: <strong>HDFC Bank **** 9081</strong> (IFSC: HDFC0001234)
-              </div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ padding: '4px 10px', borderRadius: '9999px', background: '#dcfce7', color: '#15803d', fontSize: '0.75rem', fontWeight: 800 }}>
-                ✓ Payouts Active & Verified
-              </span>
-            </div>
-          </div>
-
-          {/* Settlements History Table */}
-          <div className="card" style={{ borderRadius: '16px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
-            <div style={{ padding: '16px 20px', background: '#ffffff', borderBottom: '1px solid #e2e8f0' }}>
-              <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                Settlement & Payout History
-              </h3>
-              <p style={{ fontSize: '0.78rem', color: '#64748b', margin: '4px 0 0' }}>
-                Audit ledger of weekly direct bank transfers processed by CaSa Marketplace Finance.
-              </p>
-            </div>
-
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
-                <thead>
-                  <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#64748b', fontSize: '0.75rem', fontWeight: 700 }}>
-                    <th style={{ padding: '12px 16px' }}>SETTLEMENT ID</th>
-                    <th style={{ padding: '12px 16px' }}>DATE</th>
-                    <th style={{ padding: '12px 16px' }}>GROSS SALES</th>
-                    <th style={{ padding: '12px 16px' }}>PLATFORM FEE (10%)</th>
-                    <th style={{ padding: '12px 16px' }}>NET PAYOUT</th>
-                    <th style={{ padding: '12px 16px' }}>UTR / REF</th>
-                    <th style={{ padding: '12px 16px' }}>STATUS</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(!financials?.settlementHistory || financials.settlementHistory.length === 0) ? (
-                    <tr>
-                      <td colSpan="7" style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>
-                        No settlement records yet. First payout occurs following your initial completed order delivery.
-                      </td>
-                    </tr>
-                  ) : (
-                    financials.settlementHistory.map((s, idx) => (
-                      <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                        <td style={{ padding: '12px 16px', fontWeight: 700, color: '#0f172a' }}>{s.id}</td>
-                        <td style={{ padding: '12px 16px', color: '#64748b' }}>{s.date}</td>
-                        <td style={{ padding: '12px 16px', fontWeight: 600 }}>{formatINR(s.gross)}</td>
-                        <td style={{ padding: '12px 16px', color: '#dc2626' }}>- {formatINR(s.commission)}</td>
-                        <td style={{ padding: '12px 16px', fontWeight: 800, color: '#16a34a' }}>{formatINR(s.net)}</td>
-                        <td style={{ padding: '12px 16px', fontFamily: 'monospace', fontSize: '0.8rem', color: '#475569' }}>{s.utr}</td>
-                        <td style={{ padding: '12px 16px' }}>
-                          <span
-                            style={{
-                              padding: '3px 10px',
-                              borderRadius: '9999px',
-                              fontSize: '0.72rem',
-                              fontWeight: 800,
-                              background: s.status === 'Completed' ? '#dcfce7' : '#fef3c7',
-                              color: s.status === 'Completed' ? '#15803d' : '#d97706',
-                            }}
-                          >
-                            {s.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Packing Slip / Invoice Modal */}
+      {/* MODAL 1: FLIPKART TAX INVOICE & PACKING SLIP */}
       {selectedInvoiceOrder && (
         <div
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(15, 23, 42, 0.7)',
+            background: 'rgba(0, 0, 0, 0.65)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 2500,
+            zIndex: 3000,
             padding: '16px',
           }}
         >
           <div
-            className="card"
+            className="fk-card"
             style={{
-              maxWidth: '680px',
+              maxWidth: '720px',
               width: '100%',
-              maxHeight: '90vh',
+              maxHeight: '92vh',
               overflowY: 'auto',
-              background: '#ffffff',
-              borderRadius: '20px',
-              padding: '28px',
-              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+              padding: '24px',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.25)',
             }}
           >
             {/* Modal Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #e2e8f0', paddingBottom: '14px' }}>
-              <div>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <FileText size={20} color="#2563eb" /> TAX INVOICE & PACKING SLIP
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #dfe3e8', paddingBottom: '12px', marginBottom: '18px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <FileText size={20} color="#2874f0" />
+                <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 900, color: '#212121' }}>
+                  TAX INVOICE & SHIPPING SLIP (FLIPKART FORMAT)
                 </h3>
-                <span style={{ fontSize: '0.78rem', color: '#64748b' }}>Flipkart Marketplace Certified Merchant Document</span>
               </div>
               <button
                 type="button"
                 onClick={() => setSelectedInvoiceOrder(null)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#878787' }}
               >
                 <X size={22} />
               </button>
             </div>
 
-            {/* Slip Printable Box */}
-            <div style={{ border: '2px dashed #cbd5e1', borderRadius: '12px', padding: '20px', background: '#fafbfc' }}>
-              {/* Slip Top: Seller & Order Meta */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px', borderBottom: '1px solid #e2e8f0', paddingBottom: '14px' }}>
+            {/* Slip Paper Box */}
+            <div style={{ border: '1.5px solid #212121', padding: '20px', background: '#ffffff' }}>
+              {/* Top Seller Bar */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1.5px solid #212121', paddingBottom: '12px' }}>
                 <div>
-                  <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>SOLD BY (SELLER):</div>
-                  <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#0f172a' }}>{user?.vendorStoreName || 'CASA Verified Merchant Hub'}</div>
-                  <div style={{ fontSize: '0.78rem', color: '#475569' }}>GSTIN: {user?.gstNumber || '27AAAAA0000A1Z5'}</div>
-                  <div style={{ fontSize: '0.78rem', color: '#475569' }}>Hub: Mumbai Fulfillment Centre B-14</div>
+                  <div style={{ fontSize: '0.7rem', color: '#878787', fontWeight: 800 }}>SOLD BY (REGISTERED SELLER):</div>
+                  <div style={{ fontSize: '1rem', fontWeight: 900, color: '#212121' }}>
+                    {user?.vendorStoreName || 'Aarav Luxury Handlooms & Apparel Pvt Ltd'}
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: '#555' }}>
+                    GSTIN: <strong>{user?.gstNumber || '23AAACA9876Q1Z5'}</strong> • PAN: <strong>AAACA9876Q</strong>
+                  </div>
+                  <div style={{ fontSize: '0.76rem', color: '#555' }}>
+                    Hub: Plot 14-B, Sector C, Sanwer Road Industrial Area, Indore - 452015
+                  </div>
                 </div>
 
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>ORDER REFERENCE:</div>
-                  <div style={{ fontSize: '1rem', fontWeight: 900, color: '#2563eb' }}>{selectedInvoiceOrder.orderNumber}</div>
-                  <div style={{ fontSize: '0.78rem', color: '#475569' }}>Date: {formatDateTime(selectedInvoiceOrder.createdAt)}</div>
-                  <div style={{ fontSize: '0.78rem', color: '#16a34a', fontWeight: 700 }}>
-                    Payment: {selectedInvoiceOrder.paymentMethod?.toUpperCase()} ({selectedInvoiceOrder.isPaid ? 'PAID' : 'COLLECT COD'})
+                  <div className="fk-assured-tag" style={{ marginBottom: '4px' }}>
+                    <span>CaSa Assured</span> ★
+                  </div>
+                  <div style={{ fontSize: '0.7rem', color: '#878787', fontWeight: 800 }}>ORDER ID:</div>
+                  <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#2874f0' }}>
+                    #{selectedInvoiceOrder.orderNumber}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#555' }}>
+                    Date: {formatDateTime(selectedInvoiceOrder.createdAt)}
+                  </div>
+                  <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#388e3c' }}>
+                    {selectedInvoiceOrder.paymentMethod?.toUpperCase()} ({selectedInvoiceOrder.isPaid ? 'PAID' : 'COD'})
                   </div>
                 </div>
               </div>
 
+              {/* Barcode & Courier Routing Placeholder */}
+              <div style={{ background: '#f9fbfd', borderBottom: '1px solid #dfe3e8', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <span style={{ fontSize: '0.7rem', color: '#878787', fontWeight: 800 }}>COURIER AWB / TRACKING:</span>
+                  <div style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: '0.92rem', color: '#212121' }}>
+                    AWB-FK-{selectedInvoiceOrder.orderNumber?.replace(/[^0-9]/g, '') || '987213'}
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right', fontSize: '0.72rem', color: '#878787' }}>
+                  Routing Code: <strong>MP-IND-EXPR-D2D</strong>
+                </div>
+              </div>
+
               {/* Shipping Address */}
-              <div style={{ marginTop: '14px', borderBottom: '1px solid #e2e8f0', paddingBottom: '14px' }}>
-                <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700, marginBottom: '4px' }}>SHIP TO (CUSTOMER):</div>
-                <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#0f172a' }}>
+              <div style={{ padding: '12px 0', borderBottom: '1px solid #dfe3e8' }}>
+                <div style={{ fontSize: '0.7rem', color: '#878787', fontWeight: 800 }}>SHIP TO (CUSTOMER):</div>
+                <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#212121', marginTop: '2px' }}>
                   {selectedInvoiceOrder.shippingAddress?.fullName || selectedInvoiceOrder.user?.name || 'Customer'}
                 </div>
-                <div style={{ fontSize: '0.8rem', color: '#475569', lineHeight: 1.4 }}>
+                <div style={{ fontSize: '0.8rem', color: '#444', lineHeight: 1.4 }}>
                   {selectedInvoiceOrder.shippingAddress?.street}, {selectedInvoiceOrder.shippingAddress?.city}, {selectedInvoiceOrder.shippingAddress?.state} - {selectedInvoiceOrder.shippingAddress?.pincode}
                 </div>
-                <div style={{ fontSize: '0.8rem', color: '#2563eb', fontWeight: 600, marginTop: '2px' }}>
-                  Phone: {selectedInvoiceOrder.shippingAddress?.phone || 'Provided at Dispatch'}
+                <div style={{ fontSize: '0.8rem', color: '#2874f0', fontWeight: 700, marginTop: '3px' }}>
+                  Contact: {selectedInvoiceOrder.shippingAddress?.phone || selectedInvoiceOrder.user?.phone || 'Verified'}
                 </div>
               </div>
 
               {/* Itemized Table */}
-              <div style={{ marginTop: '14px' }}>
-                <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700, marginBottom: '8px' }}>ITEMS TO PACK:</div>
+              <div style={{ marginTop: '12px' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
                   <thead>
-                    <tr style={{ background: '#f1f5f9', color: '#475569', textAlign: 'left' }}>
-                      <th style={{ padding: '8px' }}>Item Description</th>
+                    <tr style={{ background: '#f1f3f6', borderBottom: '1px solid #dfe3e8', textAlign: 'left', color: '#555' }}>
+                      <th style={{ padding: '8px' }}>Product Description</th>
                       <th style={{ padding: '8px', textAlign: 'center' }}>Qty</th>
-                      <th style={{ padding: '8px', textAlign: 'right' }}>Unit Price</th>
-                      <th style={{ padding: '8px', textAlign: 'right' }}>Total</th>
+                      <th style={{ padding: '8px', textAlign: 'right' }}>Price</th>
+                      <th style={{ padding: '8px', textAlign: 'right' }}>Amount</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {selectedInvoiceOrder.items?.map((item, i) => (
-                      <tr key={i} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    {selectedInvoiceOrder.items?.map((item, idx) => (
+                      <tr key={idx} style={{ borderBottom: '1px solid #f1f3f6' }}>
                         <td style={{ padding: '8px' }}>
-                          <strong>{item.name}</strong>
-                          <div style={{ fontSize: '0.72rem', color: '#64748b' }}>SKU: {item.sku || `PROD-${item.product?.slice(-6) || 'STD'}`}</div>
+                          <strong style={{ color: '#212121' }}>{item.name}</strong>
+                          <div style={{ fontSize: '0.72rem', color: '#878787' }}>
+                            SKU: {item.sku || `FSN-${item.product?.slice(-6) || 'PROD'}`}
+                          </div>
                         </td>
                         <td style={{ padding: '8px', textAlign: 'center', fontWeight: 800 }}>{item.quantity}</td>
                         <td style={{ padding: '8px', textAlign: 'right' }}>{formatINR(item.price)}</td>
-                        <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700 }}>{formatINR(item.price * item.quantity)}</td>
+                        <td style={{ padding: '8px', textAlign: 'right', fontWeight: 800 }}>{formatINR(item.price * item.quantity)}</td>
                       </tr>
                     ))}
                   </tbody>
                   <tfoot>
-                    <tr>
-                      <td colSpan="3" style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 800, fontSize: '0.88rem' }}>Grand Total:</td>
-                      <td style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 900, fontSize: '0.95rem', color: '#0f172a' }}>
+                    <tr style={{ borderTop: '1.5px solid #212121' }}>
+                      <td colSpan="3" style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 800, fontSize: '0.9rem' }}>
+                        Total Amount Payable:
+                      </td>
+                      <td style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 900, fontSize: '1.05rem', color: '#212121' }}>
                         {formatINR(selectedInvoiceOrder.totalPrice)}
                       </td>
                     </tr>
@@ -1158,225 +1749,221 @@ const VendorDashboardPage = () => {
             </div>
 
             {/* Modal Actions */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '18px' }}>
               <button
                 type="button"
                 onClick={() => setSelectedInvoiceOrder(null)}
-                className="btn btn-outline"
-                style={{ padding: '9px 18px', borderRadius: '10px' }}
+                className="fk-btn-outline"
               >
                 Close
               </button>
               <button
                 type="button"
                 onClick={() => window.print()}
-                className="btn btn-primary"
-                style={{ padding: '9px 20px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                className="fk-btn-primary"
               >
-                <Printer size={16} /> Print Slip
+                <Printer size={15} /> Print Packing Slip
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Add New Product Modal */}
+      {/* MODAL 2: ADD SINGLE PRODUCT (FLIPKART STYLE) */}
       {showAddProductModal && (
         <div
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(15, 23, 42, 0.7)',
+            background: 'rgba(0, 0, 0, 0.65)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 2500,
+            zIndex: 3000,
             padding: '16px',
           }}
         >
           <div
-            className="card"
+            className="fk-card"
             style={{
-              maxWidth: '600px',
+              maxWidth: '640px',
               width: '100%',
               maxHeight: '92vh',
               overflowY: 'auto',
-              background: '#ffffff',
-              borderRadius: '20px',
-              padding: '28px',
-              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+              padding: '24px',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.25)',
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #dfe3e8', paddingBottom: '12px', marginBottom: '16px' }}>
               <div>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>
-                  Add Product to Merchant Catalog
+                <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 900, color: '#212121' }}>
+                  Create Single Catalog Listing
                 </h3>
-                <span style={{ fontSize: '0.78rem', color: '#64748b' }}>Fill in SKU, pricing, category, and initial inventory stock</span>
+                <span style={{ fontSize: '0.78rem', color: '#878787' }}>
+                  Publish your product with FSN code, pricing, and fulfillment inventory
+                </span>
               </div>
               <button
                 type="button"
                 onClick={() => setShowAddProductModal(false)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#878787' }}
               >
                 <X size={22} />
               </button>
             </div>
 
             <form onSubmit={handleCreateProduct}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '16px' }}>
                 <div style={{ gridColumn: 'span 2' }}>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '5px' }}>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#212121', marginBottom: '4px' }}>
                     Product Title *
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Sony Wireless Noise Cancelling Headphones"
+                    placeholder="e.g. Pure Silk Banarasi Saree with Zari Border"
                     value={newProd.name}
                     onChange={(e) => setNewProd({ ...newProd, name: e.target.value })}
-                    style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1.5px solid #cbd5e1', fontSize: '0.85rem' }}
+                    style={{ width: '100%', padding: '8px 12px', border: '1px solid #dfe3e8', borderRadius: '3px', fontSize: '0.85rem' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '5px' }}>
-                    Brand
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#212121', marginBottom: '4px' }}>
+                    Brand Name
                   </label>
                   <input
                     type="text"
                     value={newProd.brand}
                     onChange={(e) => setNewProd({ ...newProd, brand: e.target.value })}
-                    style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1.5px solid #cbd5e1', fontSize: '0.85rem' }}
+                    style={{ width: '100%', padding: '8px 12px', border: '1px solid #dfe3e8', borderRadius: '3px', fontSize: '0.85rem' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '5px' }}>
-                    SKU Code
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#212121', marginBottom: '4px' }}>
+                    FSN / SKU Code
                   </label>
                   <input
                     type="text"
                     value={newProd.sku}
                     onChange={(e) => setNewProd({ ...newProd, sku: e.target.value })}
-                    style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1.5px solid #cbd5e1', fontSize: '0.85rem' }}
+                    style={{ width: '100%', padding: '8px 12px', border: '1px solid #dfe3e8', borderRadius: '3px', fontSize: '0.85rem' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '5px' }}>
-                    Category Slug
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#212121', marginBottom: '4px' }}>
+                    Marketplace Category
                   </label>
                   <select
                     value={newProd.categorySlug}
                     onChange={(e) => setNewProd({ ...newProd, categorySlug: e.target.value })}
-                    style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1.5px solid #cbd5e1', fontSize: '0.85rem', background: '#fff' }}
+                    style={{ width: '100%', padding: '8px 12px', border: '1px solid #dfe3e8', borderRadius: '3px', fontSize: '0.85rem', background: '#fff' }}
                   >
                     <option value="electronics">Electronics</option>
-                    <option value="fashion">Fashion</option>
-                    <option value="home">Home & Kitchen</option>
+                    <option value="fashion">Fashion & Apparel</option>
+                    <option value="home">Home & Furniture</option>
                     <option value="beauty">Beauty & Grooming</option>
-                    <option value="sports">Sports & Outdoors</option>
+                    <option value="sports">Sports & Fitness</option>
                   </select>
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '5px' }}>
-                    Subcategory
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#212121', marginBottom: '4px' }}>
+                    Subcategory / Vertical
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. Headphones"
+                    placeholder="e.g. Handloom Sarees"
                     value={newProd.subcategory}
                     onChange={(e) => setNewProd({ ...newProd, subcategory: e.target.value })}
-                    style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1.5px solid #cbd5e1', fontSize: '0.85rem' }}
+                    style={{ width: '100%', padding: '8px 12px', border: '1px solid #dfe3e8', borderRadius: '3px', fontSize: '0.85rem' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '5px' }}>
-                    MRP / Standard Price (₹) *
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#212121', marginBottom: '4px' }}>
+                    Maximum Retail Price (MRP ₹) *
                   </label>
                   <input
                     type="number"
                     required
                     min="1"
-                    placeholder="e.g. 2999"
+                    placeholder="e.g. 4999"
                     value={newProd.price}
                     onChange={(e) => setNewProd({ ...newProd, price: e.target.value })}
-                    style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1.5px solid #cbd5e1', fontSize: '0.85rem' }}
+                    style={{ width: '100%', padding: '8px 12px', border: '1px solid #dfe3e8', borderRadius: '3px', fontSize: '0.85rem' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '5px' }}>
-                    Discount / Selling Price (₹)
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#212121', marginBottom: '4px' }}>
+                    Flipkart Selling Price (₹)
                   </label>
                   <input
                     type="number"
                     min="1"
-                    placeholder="e.g. 1999"
+                    placeholder="e.g. 2499"
                     value={newProd.discountPrice}
                     onChange={(e) => setNewProd({ ...newProd, discountPrice: e.target.value })}
-                    style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1.5px solid #cbd5e1', fontSize: '0.85rem' }}
+                    style={{ width: '100%', padding: '8px 12px', border: '1px solid #dfe3e8', borderRadius: '3px', fontSize: '0.85rem' }}
                   />
                 </div>
 
                 <div style={{ gridColumn: 'span 2' }}>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '5px' }}>
-                    Initial Stock Inventory Units
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#212121', marginBottom: '4px' }}>
+                    Initial Inventory Units Available
                   </label>
                   <input
                     type="number"
                     min="1"
                     value={newProd.stock}
                     onChange={(e) => setNewProd({ ...newProd, stock: e.target.value })}
-                    style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1.5px solid #cbd5e1', fontSize: '0.85rem' }}
+                    style={{ width: '100%', padding: '8px 12px', border: '1px solid #dfe3e8', borderRadius: '3px', fontSize: '0.85rem' }}
                   />
                 </div>
 
                 <div style={{ gridColumn: 'span 2' }}>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '5px' }}>
-                    Product Image URL
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#212121', marginBottom: '4px' }}>
+                    High-Resolution Image URL
                   </label>
                   <input
                     type="url"
                     value={newProd.image}
                     onChange={(e) => setNewProd({ ...newProd, image: e.target.value })}
-                    style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1.5px solid #cbd5e1', fontSize: '0.85rem' }}
+                    style={{ width: '100%', padding: '8px 12px', border: '1px solid #dfe3e8', borderRadius: '3px', fontSize: '0.85rem' }}
                   />
                 </div>
 
                 <div style={{ gridColumn: 'span 2' }}>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '5px' }}>
-                    Description
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#212121', marginBottom: '4px' }}>
+                    Key Product Highlights & Description
                   </label>
                   <textarea
                     rows="3"
-                    placeholder="Short product highlights, specifications, warranty..."
+                    placeholder="Fabric details, weave type, wash care instructions, pack contains..."
                     value={newProd.description}
                     onChange={(e) => setNewProd({ ...newProd, description: e.target.value })}
-                    style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1.5px solid #cbd5e1', fontSize: '0.85rem', resize: 'vertical' }}
+                    style={{ width: '100%', padding: '8px 12px', border: '1px solid #dfe3e8', borderRadius: '3px', fontSize: '0.85rem', resize: 'vertical' }}
                   />
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
                 <button
                   type="button"
                   onClick={() => setShowAddProductModal(false)}
-                  className="btn btn-outline"
-                  style={{ padding: '9px 18px', borderRadius: '10px' }}
+                  className="fk-btn-outline"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={creatingProduct}
-                  className="btn btn-primary"
-                  style={{ padding: '9px 22px', borderRadius: '10px', fontWeight: 700 }}
+                  className="fk-btn-primary"
                 >
-                  {creatingProduct ? 'Adding Product...' : 'Publish to Catalog'}
+                  {creatingProduct ? 'Publishing...' : 'Publish Listing to Store'}
                 </button>
               </div>
             </form>
@@ -1384,63 +1971,61 @@ const VendorDashboardPage = () => {
         </div>
       )}
 
-      {/* Edit Product Stock Modal */}
+      {/* MODAL 3: EDIT STOCK & PRICE */}
       {editingProduct && (
         <div
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(15, 23, 42, 0.6)',
+            background: 'rgba(0, 0, 0, 0.65)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 2000,
+            zIndex: 3000,
             padding: '16px',
           }}
         >
           <div
-            className="card"
+            className="fk-card"
             style={{
-              maxWidth: '420px',
+              maxWidth: '440px',
               width: '100%',
-              background: '#ffffff',
-              borderRadius: '20px',
-              padding: '24px',
-              boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
+              padding: '22px',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.25)',
             }}
           >
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', marginBottom: '8px' }}>
-              Update Stock & Price
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#212121', margin: '0 0 6px' }}>
+              Update Stock & Listing Price
             </h3>
-            <p style={{ fontSize: '0.825rem', color: '#64748b', marginBottom: '16px' }}>
+            <p style={{ fontSize: '0.8rem', color: '#878787', margin: '0 0 16px' }}>
               {editingProduct.name}
             </p>
 
             <form onSubmit={handleSaveProductStock}>
               <div style={{ marginBottom: '14px' }}>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
-                  Available Inventory Stock Units
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#212121', marginBottom: '4px' }}>
+                  Available Inventory (Units)
                 </label>
                 <input
                   type="number"
                   min="0"
                   value={newStock}
                   onChange={(e) => setNewStock(e.target.value)}
-                  style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1.5px solid #cbd5e1' }}
+                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #dfe3e8', borderRadius: '3px' }}
                   required
                 />
               </div>
 
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
-                  Listing Price (₹)
+              <div style={{ marginBottom: '18px' }}>
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#212121', marginBottom: '4px' }}>
+                  Listing Selling Price (₹)
                 </label>
                 <input
                   type="number"
                   min="1"
                   value={newPrice}
                   onChange={(e) => setNewPrice(e.target.value)}
-                  style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1.5px solid #cbd5e1' }}
+                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #dfe3e8', borderRadius: '3px' }}
                   required
                 />
               </div>
@@ -1449,15 +2034,13 @@ const VendorDashboardPage = () => {
                 <button
                   type="button"
                   onClick={() => setEditingProduct(null)}
-                  className="btn btn-outline"
-                  style={{ padding: '8px 16px', borderRadius: '8px' }}
+                  className="fk-btn-outline"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="btn btn-primary"
-                  style={{ padding: '8px 18px', borderRadius: '8px', fontWeight: 700 }}
+                  className="fk-btn-primary"
                 >
                   Save Changes
                 </button>

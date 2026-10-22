@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Sliders,
   Bell,
@@ -76,7 +76,7 @@ const VendorStoreSettings = ({ user, onSettingsSaved }) => {
 
       const res = await api.put('/auth/profile', payload);
       if (res.data?.success) {
-        success('Vendor business operations and store settings saved successfully!');
+        success('Vendor operations and Flipkart store fulfillment settings saved successfully!');
         setSavedRecently(true);
         setTimeout(() => setSavedRecently(false), 3000);
         if (onSettingsSaved) {
@@ -91,21 +91,21 @@ const VendorStoreSettings = ({ user, onSettingsSaved }) => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
       <style>{`
         .setting-section-card {
           background: #ffffff;
-          border: 1px solid #e2e8f0;
-          border-radius: 16px;
-          padding: 22px 24px;
-          box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+          border: 1px solid #dfe3e8;
+          border-radius: 4px;
+          padding: 20px 22px;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
         }
         .setting-row {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 14px 0;
-          border-bottom: 1px solid #f1f5f9;
+          padding: 13px 0;
+          border-bottom: 1px solid #f1f3f6;
           gap: 16px;
           flex-wrap: wrap;
         }
@@ -125,33 +125,53 @@ const VendorStoreSettings = ({ user, onSettingsSaved }) => {
         .toggle-switch-btn:hover {
           transform: scale(1.05);
         }
+        .fk-btn-primary {
+          background: #fb641b;
+          color: #ffffff;
+          border: none;
+          border-radius: 2px;
+          padding: 10px 22px;
+          font-weight: 700;
+          font-size: 0.85rem;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          text-transform: uppercase;
+          letter-spacing: 0.03em;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+          transition: all 0.15s ease;
+        }
+        .fk-btn-primary:hover {
+          background: #e65510;
+        }
       `}</style>
 
-      {/* Header Banner */}
+      {/* Header Banner - Flipkart Blue Header */}
       <div
         style={{
-          background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-          borderRadius: '16px',
-          padding: '24px 28px',
+          background: '#2874f0',
+          borderRadius: '4px',
+          padding: '20px 24px',
           color: '#ffffff',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           flexWrap: 'wrap',
           gap: '16px',
-          boxShadow: '0 8px 24px -6px rgba(15, 23, 42, 0.4)',
+          boxShadow: '0 2px 6px rgba(40, 116, 240, 0.2)',
         }}
       >
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: '#ea580c', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Sliders size={20} color="#ffffff" />
+            <div style={{ width: '36px', height: '36px', borderRadius: '4px', background: '#ffe500', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Sliders size={20} color="#2874f0" />
             </div>
             <div>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#ffffff', margin: 0 }}>
-                Merchant Operations & Store Automation Settings
+              <h2 style={{ fontSize: '1.2rem', fontWeight: 900, color: '#ffffff', margin: 0 }}>
+                Flipkart Store Operations & Automation Settings
               </h2>
-              <p style={{ margin: '3px 0 0 0', fontSize: '0.8rem', color: '#94a3b8' }}>
+              <p style={{ margin: '3px 0 0 0', fontSize: '0.8rem', color: '#dbeafe' }}>
                 Configure real-time order alerts, courier fulfillment rules, automated GST billing, and return policies.
               </p>
             </div>
@@ -162,21 +182,8 @@ const VendorStoreSettings = ({ user, onSettingsSaved }) => {
           type="button"
           onClick={handleSaveSettings}
           disabled={isSaving}
-          style={{
-            background: savedRecently ? '#16a34a' : 'linear-gradient(135deg, #ea580c 0%, #c2410c 100%)',
-            color: '#ffffff',
-            padding: '10px 22px',
-            borderRadius: '10px',
-            fontSize: '0.85rem',
-            fontWeight: 800,
-            border: 'none',
-            cursor: isSaving ? 'not-allowed' : 'pointer',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            boxShadow: '0 4px 14px rgba(234, 88, 12, 0.4)',
-            transition: 'all 0.2s ease',
-          }}
+          className="fk-btn-primary"
+          style={{ background: savedRecently ? '#388e3c' : '#fb641b' }}
         >
           {savedRecently ? <Check size={16} /> : <Save size={16} />}
           <span>{isSaving ? 'Saving Settings...' : savedRecently ? 'Settings Saved!' : 'Save All Settings'}</span>
@@ -185,21 +192,21 @@ const VendorStoreSettings = ({ user, onSettingsSaved }) => {
 
       {/* 1. ORDER DISPATCH & FULFILLMENT AUTOMATION */}
       <div className="setting-section-card">
-        <h3 style={{ fontSize: '1.05rem', fontWeight: 900, color: '#0f172a', margin: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Truck size={18} color="#ea580c" />
+        <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#212121', margin: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Truck size={18} color="#2874f0" />
           Fulfillment & Courier Logistics Rules
         </h3>
-        <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '0 0 16px 0' }}>
-          Automate order acceptance and daily shipping dispatch with integrated logistics partners.
+        <p style={{ fontSize: '0.78rem', color: '#878787', margin: '0 0 16px 0' }}>
+          Automate order acceptance and daily shipping dispatch with integrated Flipkart logistics partners.
         </p>
 
         {/* Auto Confirm Orders */}
         <div className="setting-row">
           <div>
-            <strong style={{ fontSize: '0.9rem', color: '#0f172a', display: 'block' }}>
+            <strong style={{ fontSize: '0.88rem', color: '#212121', display: 'block' }}>
               Auto-Confirm Incoming Customer Orders
             </strong>
-            <span style={{ fontSize: '0.78rem', color: '#64748b' }}>
+            <span style={{ fontSize: '0.76rem', color: '#878787' }}>
               Immediately switch new orders to "Confirmed" status so warehouse pickers can begin packing without waiting for manual confirmation.
             </span>
           </div>
@@ -210,9 +217,9 @@ const VendorStoreSettings = ({ user, onSettingsSaved }) => {
             title="Toggle Auto-Confirm"
           >
             {settings.autoConfirmOrders ? (
-              <ToggleRight size={38} color="#ea580c" />
+              <ToggleRight size={38} color="#2874f0" />
             ) : (
-              <ToggleLeft size={38} color="#94a3b8" />
+              <ToggleLeft size={38} color="#878787" />
             )}
           </button>
         </div>
@@ -220,10 +227,10 @@ const VendorStoreSettings = ({ user, onSettingsSaved }) => {
         {/* Preferred Courier Fleet */}
         <div className="setting-row">
           <div>
-            <strong style={{ fontSize: '0.9rem', color: '#0f172a', display: 'block' }}>
+            <strong style={{ fontSize: '0.88rem', color: '#212121', display: 'block' }}>
               Preferred Express Logistics Fleet
             </strong>
-            <span style={{ fontSize: '0.78rem', color: '#64748b' }}>
+            <span style={{ fontSize: '0.76rem', color: '#878787' }}>
               Default delivery network assigned for automatic pickup manifests and airway bill (AWB) generation.
             </span>
           </div>
@@ -231,20 +238,20 @@ const VendorStoreSettings = ({ user, onSettingsSaved }) => {
             value={settings.preferredCourier}
             onChange={(e) => setSettings({ ...settings, preferredCourier: e.target.value })}
             style={{
-              padding: '8px 14px',
-              borderRadius: '8px',
-              border: '1.5px solid #cbd5e1',
-              fontSize: '0.85rem',
+              padding: '7px 12px',
+              borderRadius: '3px',
+              border: '1px solid #dfe3e8',
+              fontSize: '0.82rem',
               fontWeight: 700,
-              color: '#0f172a',
-              background: '#f8fafc',
+              color: '#212121',
+              background: '#f9fbfd',
               cursor: 'pointer',
               maxWidth: '320px',
             }}
           >
             <option value="Delhivery Express Air & Surface">Delhivery Express Air & Surface (Recommended)</option>
             <option value="BlueDart Air Express Cargo">BlueDart Air Express Cargo</option>
-            <option value="CASA Dedicated Express Fleet">CASA Dedicated Express Fleet</option>
+            <option value="Flipkart Dedicated Express Logistics">Flipkart Dedicated Express Logistics</option>
             <option value="Smart Auto-Routing (Fastest Available)">Smart Auto-Routing (Fastest Available)</option>
           </select>
         </div>
@@ -252,10 +259,10 @@ const VendorStoreSettings = ({ user, onSettingsSaved }) => {
         {/* Daily Courier Cutoff */}
         <div className="setting-row">
           <div>
-            <strong style={{ fontSize: '0.9rem', color: '#0f172a', display: 'block' }}>
+            <strong style={{ fontSize: '0.88rem', color: '#212121', display: 'block' }}>
               Daily Courier Handover Cutoff Window
             </strong>
-            <span style={{ fontSize: '0.78rem', color: '#64748b' }}>
+            <span style={{ fontSize: '0.76rem', color: '#878787' }}>
               Scheduled time when delivery riders arrive at your Indore warehouse hub for daily parcel collection.
             </span>
           </div>
@@ -263,13 +270,13 @@ const VendorStoreSettings = ({ user, onSettingsSaved }) => {
             value={settings.dispatchCutoffTime}
             onChange={(e) => setSettings({ ...settings, dispatchCutoffTime: e.target.value })}
             style={{
-              padding: '8px 14px',
-              borderRadius: '8px',
-              border: '1.5px solid #cbd5e1',
-              fontSize: '0.85rem',
+              padding: '7px 12px',
+              borderRadius: '3px',
+              border: '1px solid #dfe3e8',
+              fontSize: '0.82rem',
               fontWeight: 700,
-              color: '#0f172a',
-              background: '#f8fafc',
+              color: '#212121',
+              background: '#f9fbfd',
               cursor: 'pointer',
             }}
           >
@@ -282,14 +289,14 @@ const VendorStoreSettings = ({ user, onSettingsSaved }) => {
         {/* Standard Packaging Type */}
         <div className="setting-row">
           <div>
-            <strong style={{ fontSize: '0.9rem', color: '#0f172a', display: 'block' }}>
+            <strong style={{ fontSize: '0.88rem', color: '#212121', display: 'block' }}>
               Standard Dispatch Packaging Unit
             </strong>
-            <span style={{ fontSize: '0.78rem', color: '#64748b' }}>
-              Official CASA branded packaging tier used for calculating courier volumetric weight.
+            <span style={{ fontSize: '0.76rem', color: '#878787' }}>
+              Official Flipkart branded packaging tier used for calculating courier volumetric weight.
             </span>
           </div>
-          <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#334155', background: '#f1f5f9', padding: '6px 12px', borderRadius: '8px' }}>
+          <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#2874f0', background: '#e8f0fe', padding: '4px 10px', borderRadius: '3px' }}>
             {settings.packagingBagType}
           </span>
         </div>
@@ -297,23 +304,23 @@ const VendorStoreSettings = ({ user, onSettingsSaved }) => {
 
       {/* 2. REAL-TIME ORDER ALERTS & NOTIFICATIONS */}
       <div className="setting-section-card">
-        <h3 style={{ fontSize: '1.05rem', fontWeight: 900, color: '#0f172a', margin: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Bell size={18} color="#ea580c" />
-          Real-Time Order Alerts & Merchant Notification Channels
+        <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#212121', margin: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Bell size={18} color="#2874f0" />
+          Real-Time Order Alerts & Seller Notification Channels
         </h3>
-        <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '0 0 16px 0' }}>
+        <p style={{ fontSize: '0.78rem', color: '#878787', margin: '0 0 16px 0' }}>
           Never miss an order with instant sound alerts, WhatsApp notifications, and inventory triggers.
         </p>
 
         {/* New Order Audio Chime */}
         <div className="setting-row">
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Volume2 size={20} color="#2563eb" style={{ flexShrink: 0 }} />
+            <Volume2 size={20} color="#2874f0" style={{ flexShrink: 0 }} />
             <div>
-              <strong style={{ fontSize: '0.9rem', color: '#0f172a', display: 'block' }}>
+              <strong style={{ fontSize: '0.88rem', color: '#212121', display: 'block' }}>
                 New Order Audio Chime Alert
               </strong>
-              <span style={{ fontSize: '0.78rem', color: '#64748b' }}>
+              <span style={{ fontSize: '0.76rem', color: '#878787' }}>
                 Play a distinctive notification bell on the vendor workstation whenever a customer places an order.
               </span>
             </div>
@@ -324,9 +331,9 @@ const VendorStoreSettings = ({ user, onSettingsSaved }) => {
             onClick={() => handleToggle('newOrderSoundAlert')}
           >
             {settings.newOrderSoundAlert ? (
-              <ToggleRight size={38} color="#2563eb" />
+              <ToggleRight size={38} color="#2874f0" />
             ) : (
-              <ToggleLeft size={38} color="#94a3b8" />
+              <ToggleLeft size={38} color="#878787" />
             )}
           </button>
         </div>
@@ -334,12 +341,12 @@ const VendorStoreSettings = ({ user, onSettingsSaved }) => {
         {/* WhatsApp Alerts */}
         <div className="setting-row">
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <MessageSquare size={20} color="#16a34a" style={{ flexShrink: 0 }} />
+            <MessageSquare size={20} color="#388e3c" style={{ flexShrink: 0 }} />
             <div>
-              <strong style={{ fontSize: '0.9rem', color: '#0f172a', display: 'block' }}>
+              <strong style={{ fontSize: '0.88rem', color: '#212121', display: 'block' }}>
                 WhatsApp Direct Order Notifications
               </strong>
-              <span style={{ fontSize: '0.78rem', color: '#64748b' }}>
+              <span style={{ fontSize: '0.76rem', color: '#878787' }}>
                 Send instant order summary, buyer pincode, and packing slip links to registered phone (+91 {user?.phone || '9876524680'}).
               </span>
             </div>
@@ -350,9 +357,9 @@ const VendorStoreSettings = ({ user, onSettingsSaved }) => {
             onClick={() => handleToggle('whatsappAlerts')}
           >
             {settings.whatsappAlerts ? (
-              <ToggleRight size={38} color="#16a34a" />
+              <ToggleRight size={38} color="#388e3c" />
             ) : (
-              <ToggleLeft size={38} color="#94a3b8" />
+              <ToggleLeft size={38} color="#878787" />
             )}
           </button>
         </div>
@@ -360,12 +367,12 @@ const VendorStoreSettings = ({ user, onSettingsSaved }) => {
         {/* Low Stock Alert Threshold */}
         <div className="setting-row">
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <AlertTriangle size={20} color="#f59e0b" style={{ flexShrink: 0 }} />
+            <AlertTriangle size={20} color="#fb641b" style={{ flexShrink: 0 }} />
             <div>
-              <strong style={{ fontSize: '0.9rem', color: '#0f172a', display: 'block' }}>
+              <strong style={{ fontSize: '0.88rem', color: '#212121', display: 'block' }}>
                 Low Inventory Warning Threshold
               </strong>
-              <span style={{ fontSize: '0.78rem', color: '#64748b' }}>
+              <span style={{ fontSize: '0.76rem', color: '#878787' }}>
                 Trigger automatic red badges and restocking warnings in catalog when available inventory units drop below this limit.
               </span>
             </div>
@@ -379,25 +386,25 @@ const VendorStoreSettings = ({ user, onSettingsSaved }) => {
               onChange={(e) => setSettings({ ...settings, lowStockThreshold: Number(e.target.value) || 1 })}
               style={{
                 width: '70px',
-                padding: '7px 10px',
-                borderRadius: '8px',
-                border: '1.5px solid #cbd5e1',
-                fontSize: '0.9rem',
+                padding: '6px 10px',
+                borderRadius: '3px',
+                border: '1px solid #dfe3e8',
+                fontSize: '0.88rem',
                 fontWeight: 800,
                 textAlign: 'center',
               }}
             />
-            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b' }}>Units remaining</span>
+            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#878787' }}>Units remaining</span>
           </div>
         </div>
 
         {/* Daily Sales Digest */}
         <div className="setting-row">
           <div>
-            <strong style={{ fontSize: '0.9rem', color: '#0f172a', display: 'block' }}>
+            <strong style={{ fontSize: '0.88rem', color: '#212121', display: 'block' }}>
               End-of-Day 9:00 PM Financial Digest Email
             </strong>
-            <span style={{ fontSize: '0.78rem', color: '#64748b' }}>
+            <span style={{ fontSize: '0.76rem', color: '#878787' }}>
               Daily automated email with total gross sales, commission deductions, packed volume, and rolling settlement projection.
             </span>
           </div>
@@ -407,9 +414,9 @@ const VendorStoreSettings = ({ user, onSettingsSaved }) => {
             onClick={() => handleToggle('dailyDigestEmail')}
           >
             {settings.dailyDigestEmail ? (
-              <ToggleRight size={38} color="#ea580c" />
+              <ToggleRight size={38} color="#2874f0" />
             ) : (
-              <ToggleLeft size={38} color="#94a3b8" />
+              <ToggleLeft size={38} color="#878787" />
             )}
           </button>
         </div>
@@ -417,22 +424,22 @@ const VendorStoreSettings = ({ user, onSettingsSaved }) => {
 
       {/* 3. GST INVOICING & TAX AUTOMATION */}
       <div className="setting-section-card">
-        <h3 style={{ fontSize: '1.05rem', fontWeight: 900, color: '#0f172a', margin: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <FileText size={18} color="#ea580c" />
+        <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#212121', margin: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <FileText size={18} color="#2874f0" />
           GST Billing, Tax Invoices & Surcharge Preferences
         </h3>
-        <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '0 0 16px 0' }}>
+        <p style={{ fontSize: '0.78rem', color: '#878787', margin: '0 0 16px 0' }}>
           Digital invoices generated for buyers adhere to Government of India GST and Section 194-O standards.
         </p>
 
         {/* Tax Inclusive Pricing */}
         <div className="setting-row">
           <div>
-            <strong style={{ fontSize: '0.9rem', color: '#0f172a', display: 'block' }}>
+            <strong style={{ fontSize: '0.88rem', color: '#212121', display: 'block' }}>
               Tax-Inclusive Catalog Pricing
             </strong>
-            <span style={{ fontSize: '0.78rem', color: '#64748b' }}>
-              Listed product prices on CASA marketplace already include applicable Handloom GST (5% / 12%).
+            <span style={{ fontSize: '0.76rem', color: '#878787' }}>
+              Listed product prices on the marketplace already include applicable Handloom GST (5% / 12%).
             </span>
           </div>
           <button
@@ -441,9 +448,9 @@ const VendorStoreSettings = ({ user, onSettingsSaved }) => {
             onClick={() => handleToggle('taxInclusive')}
           >
             {settings.taxInclusive ? (
-              <ToggleRight size={38} color="#16a34a" />
+              <ToggleRight size={38} color="#388e3c" />
             ) : (
-              <ToggleLeft size={38} color="#94a3b8" />
+              <ToggleLeft size={38} color="#878787" />
             )}
           </button>
         </div>
@@ -451,10 +458,10 @@ const VendorStoreSettings = ({ user, onSettingsSaved }) => {
         {/* Custom Invoice Series Prefix */}
         <div className="setting-row">
           <div>
-            <strong style={{ fontSize: '0.9rem', color: '#0f172a', display: 'block' }}>
+            <strong style={{ fontSize: '0.88rem', color: '#212121', display: 'block' }}>
               Official Tax Invoice Series Prefix
             </strong>
-            <span style={{ fontSize: '0.78rem', color: '#64748b' }}>
+            <span style={{ fontSize: '0.76rem', color: '#878787' }}>
               Unique sequential identifier printed on customer tax invoices generated by your merchant store.
             </span>
           </div>
@@ -463,10 +470,10 @@ const VendorStoreSettings = ({ user, onSettingsSaved }) => {
             value={settings.invoicePrefix}
             onChange={(e) => setSettings({ ...settings, invoicePrefix: e.target.value.toUpperCase() })}
             style={{
-              padding: '7px 12px',
-              borderRadius: '8px',
-              border: '1.5px solid #cbd5e1',
-              fontSize: '0.85rem',
+              padding: '6px 12px',
+              borderRadius: '3px',
+              border: '1px solid #dfe3e8',
+              fontSize: '0.84rem',
               fontWeight: 800,
               fontFamily: 'monospace',
               maxWidth: '220px',
@@ -477,21 +484,21 @@ const VendorStoreSettings = ({ user, onSettingsSaved }) => {
 
       {/* 4. CUSTOMER RETURN & RTO POLICIES */}
       <div className="setting-section-card">
-        <h3 style={{ fontSize: '1.05rem', fontWeight: 900, color: '#0f172a', margin: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <RotateCcw size={18} color="#ea580c" />
+        <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#212121', margin: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <RotateCcw size={18} color="#2874f0" />
           Customer Returns & RTO Restocking Rules
         </h3>
-        <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '0 0 16px 0' }}>
+        <p style={{ fontSize: '0.78rem', color: '#878787', margin: '0 0 16px 0' }}>
           Define window for customer doorstep returns and reverse courier handover procedures.
         </p>
 
         {/* Return Window */}
         <div className="setting-row">
           <div>
-            <strong style={{ fontSize: '0.9rem', color: '#0f172a', display: 'block' }}>
+            <strong style={{ fontSize: '0.88rem', color: '#212121', display: 'block' }}>
               Customer Return Eligibility Window
             </strong>
-            <span style={{ fontSize: '0.78rem', color: '#64748b' }}>
+            <span style={{ fontSize: '0.76rem', color: '#878787' }}>
               Number of days from delivery date during which buyers may request a return or size exchange.
             </span>
           </div>
@@ -499,17 +506,17 @@ const VendorStoreSettings = ({ user, onSettingsSaved }) => {
             value={settings.returnWindowDays}
             onChange={(e) => setSettings({ ...settings, returnWindowDays: Number(e.target.value) })}
             style={{
-              padding: '8px 14px',
-              borderRadius: '8px',
-              border: '1.5px solid #cbd5e1',
-              fontSize: '0.85rem',
+              padding: '7px 12px',
+              borderRadius: '3px',
+              border: '1px solid #dfe3e8',
+              fontSize: '0.82rem',
               fontWeight: 700,
-              color: '#0f172a',
-              background: '#f8fafc',
+              color: '#212121',
+              background: '#f9fbfd',
               cursor: 'pointer',
             }}
           >
-            <option value={7}>7 Days Easy Return (CASA Standard Policy)</option>
+            <option value={7}>7 Days Easy Return (Flipkart Standard Policy)</option>
             <option value={10}>10 Days Extended Return Window</option>
             <option value={14}>14 Days Premium Handloom Privilege</option>
           </select>
@@ -518,10 +525,10 @@ const VendorStoreSettings = ({ user, onSettingsSaved }) => {
         {/* Auto Accept RTO */}
         <div className="setting-row">
           <div>
-            <strong style={{ fontSize: '0.9rem', color: '#0f172a', display: 'block' }}>
+            <strong style={{ fontSize: '0.88rem', color: '#212121', display: 'block' }}>
               Automated RTO (Return to Origin) Inbound Acceptance
             </strong>
-            <span style={{ fontSize: '0.78rem', color: '#64748b' }}>
+            <span style={{ fontSize: '0.76rem', color: '#878787' }}>
               Automatically log undelivered RTO packages upon arrival at your Indore hub for quality audit before restocking.
             </span>
           </div>
@@ -531,9 +538,9 @@ const VendorStoreSettings = ({ user, onSettingsSaved }) => {
             onClick={() => handleToggle('autoAcceptReturns')}
           >
             {settings.autoAcceptReturns ? (
-              <ToggleRight size={38} color="#ea580c" />
+              <ToggleRight size={38} color="#2874f0" />
             ) : (
-              <ToggleLeft size={38} color="#94a3b8" />
+              <ToggleLeft size={38} color="#878787" />
             )}
           </button>
         </div>
@@ -543,17 +550,17 @@ const VendorStoreSettings = ({ user, onSettingsSaved }) => {
       <div
         className="setting-section-card"
         style={{
-          border: settings.vacationMode ? '2px solid #ef4444' : '1px solid #e2e8f0',
+          border: settings.vacationMode ? '1.5px solid #dc2626' : '1px solid #dfe3e8',
           background: settings.vacationMode ? '#fef2f2' : '#ffffff',
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
           <div>
-            <h3 style={{ fontSize: '1.05rem', fontWeight: 900, color: settings.vacationMode ? '#991b1b' : '#0f172a', margin: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Store size={18} color={settings.vacationMode ? '#dc2626' : '#ea580c'} />
+            <h3 style={{ fontSize: '1rem', fontWeight: 800, color: settings.vacationMode ? '#991b1b' : '#212121', margin: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Store size={18} color={settings.vacationMode ? '#dc2626' : '#2874f0'} />
               Temporary Store Vacation / Holiday Mode
             </h3>
-            <p style={{ fontSize: '0.8rem', color: settings.vacationMode ? '#b91c1c' : '#64748b', margin: 0, maxWidth: '600px' }}>
+            <p style={{ fontSize: '0.78rem', color: settings.vacationMode ? '#b91c1c' : '#878787', margin: 0, maxWidth: '600px' }}>
               Enable this when your workshop is closed for festivals, inventory audits, or holidays. Your products will be temporarily paused on marketplace search so dispatch SLA is not impacted.
             </p>
           </div>
@@ -566,7 +573,7 @@ const VendorStoreSettings = ({ user, onSettingsSaved }) => {
             {settings.vacationMode ? (
               <ToggleRight size={44} color="#dc2626" />
             ) : (
-              <ToggleLeft size={44} color="#94a3b8" />
+              <ToggleLeft size={44} color="#878787" />
             )}
           </button>
         </div>
@@ -578,23 +585,11 @@ const VendorStoreSettings = ({ user, onSettingsSaved }) => {
           type="button"
           onClick={handleSaveSettings}
           disabled={isSaving}
-          style={{
-            background: savedRecently ? '#16a34a' : 'linear-gradient(135deg, #ea580c 0%, #c2410c 100%)',
-            color: '#ffffff',
-            padding: '12px 28px',
-            borderRadius: '12px',
-            fontSize: '0.9rem',
-            fontWeight: 800,
-            border: 'none',
-            cursor: isSaving ? 'not-allowed' : 'pointer',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            boxShadow: '0 4px 16px rgba(234, 88, 12, 0.35)',
-          }}
+          className="fk-btn-primary"
+          style={{ background: savedRecently ? '#388e3c' : '#fb641b', padding: '11px 26px', fontSize: '0.88rem' }}
         >
           {savedRecently ? <Check size={18} /> : <Save size={18} />}
-          <span>{isSaving ? 'Saving Changes...' : savedRecently ? 'Settings Saved Successfully!' : 'Save All Merchant Settings'}</span>
+          <span>{isSaving ? 'Saving Changes...' : savedRecently ? 'Settings Saved Successfully!' : 'Save All Settings'}</span>
         </button>
       </div>
     </div>
