@@ -64,6 +64,19 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
   const [productSearch, setProductSearch] = useState('');
   const [regionFilter, setRegionFilter] = useState('Weekly');
 
+  // Add Product Modal & Form State
+  const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
+  const [isCreatingProduct, setIsCreatingProduct] = useState(false);
+  const [newProductData, setNewProductData] = useState({
+    name: '',
+    price: '',
+    discountPrice: '',
+    category: 'Apparel & Sarees',
+    stock: 50,
+    description: '',
+    image: '',
+  });
+
   // Merchant Store Details
   const initialDetails = {
     storeName: user?.vendorStoreName || 'Aarav Luxury Handlooms',
@@ -138,6 +151,46 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
       loadData();
     } catch (err) {
       error('Could not update order status.');
+    }
+  };
+
+  const handleCreateProduct = async (e) => {
+    e.preventDefault();
+    if (!newProductData.name || !newProductData.price) {
+      error('Please enter product name and price.');
+      return;
+    }
+    try {
+      setIsCreatingProduct(true);
+      const payload = {
+        name: newProductData.name,
+        price: Number(newProductData.price),
+        discountPrice: newProductData.discountPrice ? Number(newProductData.discountPrice) : Number(newProductData.price),
+        category: newProductData.category,
+        stock: Number(newProductData.stock) || 1,
+        description: newProductData.description || `${newProductData.name} - Official listing by ${savedData.storeName}`,
+        image: newProductData.image || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&auto=format&fit=crop&q=80',
+      };
+      const created = await vendorService.createProduct(payload);
+      if (created) {
+        setProducts((prev) => [created, ...prev]);
+        success(`"${payload.name}" published to CaSa Marketplace!`);
+        setIsAddProductModalOpen(false);
+        setNewProductData({
+          name: '',
+          price: '',
+          discountPrice: '',
+          category: 'Apparel & Sarees',
+          stock: 50,
+          description: '',
+          image: '',
+        });
+        loadData();
+      }
+    } catch (err) {
+      error(err.response?.data?.message || 'Failed to publish new product.');
+    } finally {
+      setIsCreatingProduct(false);
     }
   };
 
@@ -371,28 +424,36 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
 
       {/* COMPLETE MYSHOP DASHBOARD CONTAINER */}
       <div className="myshop-container">
-        {/* ================= LEFT SIDEBAR (MYSHOP STYLE) ================= */}
+        {/* ================= LEFT SIDEBAR (CASA VENDOR SELLER HUB) ================= */}
         <aside className="myshop-sidebar">
           <div>
             {/* Logo */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '0 8px 28px' }}>
               <div
                 style={{
-                  width: '32px',
-                  height: '32px',
+                  width: '36px',
+                  height: '36px',
                   borderRadius: '10px',
-                  background: 'linear-gradient(135deg, #38bdf8 0%, #6366f1 50%, #ec4899 100%)',
+                  background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 50%, #f59e0b 100%)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  boxShadow: '0 4px 10px rgba(99, 102, 241, 0.35)',
+                  boxShadow: '0 4px 12px rgba(37, 99, 235, 0.35)',
+                  color: '#ffffff',
+                  fontWeight: 900,
+                  fontSize: '1.15rem',
                 }}
               >
-                <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#ffffff' }} />
+                ⚡
               </div>
-              <span style={{ fontSize: '1.25rem', fontWeight: 900, color: '#1e1e24', letterSpacing: '-0.02em' }}>
-                My<span style={{ color: '#6366f1' }}>SHOP</span>
-              </span>
+              <div>
+                <div style={{ fontSize: '1.2rem', fontWeight: 900, color: '#1e1e24', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
+                  CaSa <span style={{ color: '#2563eb' }}>Vendor</span>
+                </div>
+                <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                  Merchant Center
+                </span>
+              </div>
             </div>
 
             {/* Nav Menu Items */}
@@ -412,7 +473,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                 className={`myshop-nav-item ${activeTab === 'products' ? 'active' : ''}`}
               >
                 <Boxes size={18} />
-                <span>Products</span>
+                <span>Products & Stock</span>
               </button>
 
               <button
@@ -420,8 +481,8 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                 onClick={() => setActiveTab('orders')}
                 className={`myshop-nav-item ${activeTab === 'orders' ? 'active' : ''}`}
               >
-                <Users size={18} />
-                <span>Customers</span>
+                <Package size={18} />
+                <span>Orders & Shipping</span>
               </button>
 
               <button
@@ -430,7 +491,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                 className={`myshop-nav-item ${activeTab === 'transactions' ? 'active' : ''}`}
               >
                 <CreditCard size={18} />
-                <span>Transactions</span>
+                <span>Payouts & Finances</span>
               </button>
 
               <button
@@ -439,7 +500,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                 className={`myshop-nav-item ${activeTab === 'settings' ? 'active' : ''}`}
               >
                 <Settings size={18} />
-                <span>Settings</span>
+                <span>Vendor Settings</span>
               </button>
 
               <button
@@ -448,14 +509,24 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                 className={`myshop-nav-item ${activeTab === 'kyc' ? 'active' : ''}`}
               >
                 <Building2 size={18} />
-                <span>Store Profile</span>
+                <span>Store & KYC Info</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => switchRole('user')}
                 className="myshop-nav-item"
-                style={{ marginTop: '12px', color: '#94a3b8' }}
+                style={{ marginTop: '12px', color: '#6366f1' }}
+              >
+                <ShoppingBag size={18} />
+                <span>View Storefront</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => switchRole('user')}
+                className="myshop-nav-item"
+                style={{ color: '#94a3b8' }}
               >
                 <LogOut size={18} />
                 <span>Sign out</span>
@@ -463,7 +534,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
             </nav>
           </div>
 
-          {/* Bottom Upgrade to Pro Promo Card (Matching Dribbble Illustration) */}
+          {/* Bottom Upgrade to Pro Promo Card */}
           <div
             style={{
               background: 'linear-gradient(135deg, #a78bfa 0%, #818cf8 100%)',
@@ -493,7 +564,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
               <Rocket size={22} color="#ffffff" />
             </div>
             <h4 style={{ margin: '0 0 4px', fontSize: '0.95rem', fontWeight: 800 }}>
-              Gold Merchant Tier
+              CaSa Gold Merchant Tier
             </h4>
             <p style={{ margin: '0 0 14px', fontSize: '0.72rem', color: '#e0e7ff', lineHeight: 1.4 }}>
               99.4% On-time SLA. Enjoy T+2 daily rolling settlements & 0% listing fee.
@@ -536,12 +607,36 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                 </span>
               </div>
               <span style={{ fontSize: '0.82rem', color: '#94a3b8', fontWeight: 600 }}>
-                {savedData.storeName} • Marketplace Seller Center
+                {savedData.storeName} • CaSa Verified Seller Center
               </span>
             </div>
 
             {/* Header Right Action Icons */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              {/* + Add New Product Button */}
+              <button
+                type="button"
+                onClick={() => setIsAddProductModalOpen(true)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: '#1e1e24',
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '8px 14px',
+                  borderRadius: '10px',
+                  fontSize: '0.8rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(30, 30, 36, 0.2)',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <Plus size={15} />
+                <span>Add Product</span>
+              </button>
+
               {/* Quick Search */}
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                 <Search size={15} color="#94a3b8" style={{ position: 'absolute', left: '12px', pointerEvents: 'none' }} />
@@ -1094,9 +1189,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                         <span style={{ fontSize: '0.9rem', fontWeight: 900, color: '#1e1e24' }}>₹20,000</span>
                       </div>
                     </div>
-                  </div>
-
-                  {/* Card 3: Top countries / Logistics Distribution Map */}
+                    {/* Card 3: Top Delivery Hubs (India) */}
                   <div
                     style={{
                       background: '#ffffff',
@@ -1111,9 +1204,14 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                   >
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 900, color: '#1e1e24' }}>
-                          Top countries
-                        </h3>
+                        <div>
+                          <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 900, color: '#1e1e24' }}>
+                            Top Delivery Hubs (India)
+                          </h3>
+                          <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+                            Express Courier Handover
+                          </span>
+                        </div>
                         <select
                           value={regionFilter}
                           onChange={(e) => setRegionFilter(e.target.value)}
@@ -1134,56 +1232,62 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                         </select>
                       </div>
 
-                      {/* World Map SVG Mockup with Regional Dots */}
+                      {/* India Logistics Network Nodes */}
                       <div style={{ margin: '14px 0', textAlign: 'center', position: 'relative' }}>
-                        <svg viewBox="0 0 280 120" style={{ width: '100%', height: 'auto', opacity: 0.75 }}>
+                        <svg viewBox="0 0 280 120" style={{ width: '100%', height: 'auto', opacity: 0.85 }}>
+                          {/* India Map stylized geometry */}
                           <path
-                            d="M 20 40 Q 30 20 60 30 T 90 45 Q 80 70 50 65 T 20 40 Z"
-                            fill="#e2e8f0"
+                            d="M 130 15 L 150 25 L 170 30 L 165 55 L 185 65 L 175 80 L 150 110 L 135 112 L 125 90 L 105 70 L 115 45 L 120 25 Z"
+                            fill="#f1f5f9"
+                            stroke="#e2e8f0"
+                            strokeWidth="1.5"
                           />
-                          <path
-                            d="M 110 30 Q 140 10 180 25 T 220 50 Q 200 80 150 70 T 110 30 Z"
-                            fill="#e2e8f0"
-                          />
-                          <path
-                            d="M 50 75 Q 70 80 80 110 T 55 105 Z"
-                            fill="#cbd5e1"
-                          />
-                          <path
-                            d="M 200 75 Q 240 85 250 110 T 210 105 Z"
-                            fill="#cbd5e1"
-                          />
-                          {/* Colored Location Pulsing Dots */}
-                          <circle cx="55" cy="45" r="4.5" fill="#f43f5e" />
-                          <circle cx="150" cy="35" r="3.5" fill="#38bdf8" />
-                          <circle cx="170" cy="50" r="3" fill="#818cf8" />
-                          <circle cx="225" cy="95" r="3.5" fill="#10b981" />
+                          {/* Courier Routing Lines */}
+                          <line x1="138" y1="35" x2="118" y2="60" stroke="#93c5fd" strokeWidth="1.5" strokeDasharray="3 3" />
+                          <line x1="118" y1="60" x2="135" y2="88" stroke="#93c5fd" strokeWidth="1.5" strokeDasharray="3 3" />
+                          <line x1="138" y1="35" x2="165" y2="62" stroke="#93c5fd" strokeWidth="1.5" strokeDasharray="3 3" />
+
+                          {/* Pulsing Hub Pins */}
+                          <circle cx="138" cy="35" r="5" fill="#2563eb" />
+                          <circle cx="138" cy="35" r="9" fill="#2563eb" opacity="0.2" />
+
+                          <circle cx="118" cy="60" r="5" fill="#f59e0b" />
+                          <circle cx="118" cy="60" r="9" fill="#f59e0b" opacity="0.2" />
+
+                          <circle cx="135" cy="88" r="5" fill="#10b981" />
+                          <circle cx="135" cy="88" r="9" fill="#10b981" opacity="0.2" />
+
+                          <circle cx="165" cy="62" r="5" fill="#ec4899" />
+                          <circle cx="165" cy="62" r="9" fill="#ec4899" opacity="0.2" />
                         </svg>
                       </div>
                     </div>
 
                     {/* Regional breakdown legend */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', fontSize: '0.68rem', color: '#64748b', fontWeight: 700 }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#f43f5e' }} /> 34% USA
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#2563eb' }} />
+                        34% North (Delhi NCR & UP)
                       </span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#38bdf8' }} /> 15% Canada
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f59e0b' }} />
+                        28% West (Mumbai & MP)
                       </span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#818cf8' }} /> 13% Italy
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }} />
+                        22% South (Bengaluru)
                       </span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#a855f7' }} /> 18% UK
-                      </span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981' }} /> 12% India
-                      </span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#64748b' }} /> 8% UAE
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ec4899' }} />
+                        16% East (Kolkata)
                       </span>
                     </div>
-                  </div>
+
+                    <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.7rem', color: '#10b981', fontWeight: 800 }}>
+                      <span>⚡ BlueDart • Delhivery • Shadowfax</span>
+                      <span>100% Insured</span>
+                    </div>
+                  </div>                  </div>
                 </div>
               </div>
             </>
@@ -1788,6 +1892,173 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                   style={{ padding: '8px 20px', borderRadius: '10px', background: '#1e1e24', color: '#ffffff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: '0.82rem' }}
                 >
                   {isSaving ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ADD NEW PRODUCT MODAL */}
+      {isAddProductModalOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(30, 30, 36, 0.6)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: '16px',
+          }}
+        >
+          <div
+            style={{
+              maxWidth: '620px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              background: '#ffffff',
+              borderRadius: '24px',
+              padding: '26px',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #eef2f6', paddingBottom: '14px', marginBottom: '16px' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 900, color: '#1e1e24' }}>
+                  Add Product to CaSa Catalog
+                </h3>
+                <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>
+                  Create and publish a verified merchant listing to marketplace.
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAddProductModalOpen(false)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateProduct} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748b', display: 'block', marginBottom: '4px' }}>
+                  Product Title *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Handcrafted Chanderi Silk Saree"
+                  value={newProductData.name}
+                  onChange={(e) => setNewProductData({ ...newProductData, name: e.target.value })}
+                  style={{ width: '100%', padding: '9px 12px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '0.86rem', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748b', display: 'block', marginBottom: '4px' }}>
+                    Listing Price (₹) *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    placeholder="e.g. 2999"
+                    value={newProductData.price}
+                    onChange={(e) => setNewProductData({ ...newProductData, price: e.target.value })}
+                    style={{ width: '100%', padding: '9px 12px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '0.86rem', boxSizing: 'border-box' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748b', display: 'block', marginBottom: '4px' }}>
+                    Discount / Special Price (₹)
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="e.g. 2499"
+                    value={newProductData.discountPrice}
+                    onChange={(e) => setNewProductData({ ...newProductData, discountPrice: e.target.value })}
+                    style={{ width: '100%', padding: '9px 12px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '0.86rem', boxSizing: 'border-box' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748b', display: 'block', marginBottom: '4px' }}>
+                    Category *
+                  </label>
+                  <select
+                    value={newProductData.category}
+                    onChange={(e) => setNewProductData({ ...newProductData, category: e.target.value })}
+                    style={{ width: '100%', padding: '9px 12px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '0.86rem', background: '#ffffff', boxSizing: 'border-box' }}
+                  >
+                    <option value="Apparel & Sarees">Apparel & Sarees</option>
+                    <option value="Footwear">Footwear</option>
+                    <option value="Handicrafts & Decor">Handicrafts & Decor</option>
+                    <option value="Electronics">Electronics</option>
+                    <option value="Home & Kitchen">Home & Kitchen</option>
+                    <option value="Beauty & Personal Care">Beauty & Personal Care</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748b', display: 'block', marginBottom: '4px' }}>
+                    Initial Stock Inventory (Units)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={newProductData.stock}
+                    onChange={(e) => setNewProductData({ ...newProductData, stock: e.target.value })}
+                    style={{ width: '100%', padding: '9px 12px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '0.86rem', boxSizing: 'border-box' }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748b', display: 'block', marginBottom: '4px' }}>
+                  Image URL
+                </label>
+                <input
+                  type="url"
+                  placeholder="https://images.unsplash.com/..."
+                  value={newProductData.image}
+                  onChange={(e) => setNewProductData({ ...newProductData, image: e.target.value })}
+                  style={{ width: '100%', padding: '9px 12px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '0.86rem', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748b', display: 'block', marginBottom: '4px' }}>
+                  Product Description
+                </label>
+                <textarea
+                  rows="3"
+                  placeholder="Material, weave origin, care instructions, warranty..."
+                  value={newProductData.description}
+                  onChange={(e) => setNewProductData({ ...newProductData, description: e.target.value })}
+                  style={{ width: '100%', padding: '9px 12px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '0.86rem', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setIsAddProductModalOpen(false)}
+                  style={{ padding: '8px 16px', borderRadius: '10px', background: '#f4f6fa', border: 'none', cursor: 'pointer', fontWeight: 700, color: '#64748b' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isCreatingProduct}
+                  style={{ padding: '9px 22px', borderRadius: '10px', background: '#1e1e24', color: '#ffffff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: '0.84rem' }}
+                >
+                  {isCreatingProduct ? 'Publishing...' : 'Publish to Marketplace'}
                 </button>
               </div>
             </form>
