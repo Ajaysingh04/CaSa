@@ -57,6 +57,7 @@ const MainLayout = () => {
 
   const location = useLocation();
   const isVendorPortal = location.pathname.startsWith('/vendor') || (location.pathname === '/profile' && user?.email === 'vendor@casa.in');
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
 
   if (isVendorPortal) {
     return (
@@ -70,7 +71,7 @@ const MainLayout = () => {
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: '#f8fafc', width: '100%', maxWidth: '100vw', overflowX: 'hidden' }}>
       <AnnouncementBar />
       <Header onToggleMobileMenu={() => setIsMobileMenuOpen(true)} />
-      <CategoryNavbar categories={categories} />
+      {!isAuthPage && <CategoryNavbar categories={categories} />}
 
       <main style={{ flex: 1, minHeight: '60vh', width: '100%', maxWidth: '100vw', overflowX: 'hidden', boxSizing: 'border-box' }}>
         <Outlet context={{ categories }} />

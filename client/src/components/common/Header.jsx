@@ -30,6 +30,8 @@ import { formatINR } from '../../utils/formatters';
 
 const Header = ({ onToggleMobileMenu }) => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
   const { user, logout, isAdmin, switchRole } = useAuth();
   const { success } = useToast();
   const { cartCount, openDrawer } = useCart();
@@ -159,7 +161,6 @@ const Header = ({ onToggleMobileMenu }) => {
     );
   };
 
-  const location = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -437,13 +438,15 @@ const Header = ({ onToggleMobileMenu }) => {
       `}</style>
       <div className="container header-container-responsive" style={headerContainerStyle}>
         {/* Mobile Menu Button */}
-        <button
-          onClick={onToggleMobileMenu}
-          className="header-mobile-menu-btn"
-          aria-label="Open Category Navigation"
-        >
-          <Menu size={24} />
-        </button>
+        {!isAuthPage && (
+          <button
+            onClick={onToggleMobileMenu}
+            className="header-mobile-menu-btn"
+            aria-label="Open Category Navigation"
+          >
+            <Menu size={24} />
+          </button>
+        )}
 
         {/* CASA Logo */}
         <Link to="/" className="header-logo-container" style={logoContainerStyle}>
@@ -541,29 +544,33 @@ const Header = ({ onToggleMobileMenu }) => {
 
         {/* Action Icons & Account */}
         <div className="header-action-group-responsive" style={actionGroupStyle}>
-          {/* Wishlist */}
-          <Link to="/wishlist" style={actionItemStyle} title="My Wishlist">
-            <div style={{ position: 'relative' }}>
-              <Heart size={22} />
-              {wishlistCount > 0 && <span style={badgeCountStyle}>{wishlistCount}</span>}
-            </div>
-            <span className="header-action-label" style={actionLabelStyle}>{t('wishlist')}</span>
-          </Link>
+          {!isAuthPage && (
+            <>
+              {/* Wishlist */}
+              <Link to="/wishlist" style={actionItemStyle} title="My Wishlist">
+                <div style={{ position: 'relative' }}>
+                  <Heart size={22} />
+                  {wishlistCount > 0 && <span style={badgeCountStyle}>{wishlistCount}</span>}
+                </div>
+                <span className="header-action-label" style={actionLabelStyle}>{t('wishlist')}</span>
+              </Link>
 
-          {/* Orders */}
-          <Link to="/orders" style={actionItemStyle} title="My Orders">
-            <Package size={22} />
-            <span className="header-action-label" style={actionLabelStyle}>{t('orders')}</span>
-          </Link>
+              {/* Orders */}
+              <Link to="/orders" style={actionItemStyle} title="My Orders">
+                <Package size={22} />
+                <span className="header-action-label" style={actionLabelStyle}>{t('orders')}</span>
+              </Link>
 
-          {/* Cart */}
-          <button onClick={openDrawer} style={actionItemStyle} title="Shopping Cart">
-            <div style={{ position: 'relative' }}>
-              <ShoppingCart size={22} />
-              {cartCount > 0 && <span style={badgeCountStyle}>{cartCount}</span>}
-            </div>
-            <span className="header-action-label" style={actionLabelStyle}>{t('cart')}</span>
-          </button>
+              {/* Cart */}
+              <button onClick={openDrawer} style={actionItemStyle} title="Shopping Cart">
+                <div style={{ position: 'relative' }}>
+                  <ShoppingCart size={22} />
+                  {cartCount > 0 && <span style={badgeCountStyle}>{cartCount}</span>}
+                </div>
+                <span className="header-action-label" style={actionLabelStyle}>{t('cart')}</span>
+              </button>
+            </>
+          )}
 
           {/* Real-Time Live Notification Alerts */}
           {user && (
