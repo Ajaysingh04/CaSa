@@ -375,7 +375,7 @@ const OrderDetailPage = () => {
 
         {/* Right: Address & Price Summary */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {/* Flipkart-Style Secure Doorstep Delivery OTP Card */}
+          {/* CaSa Secure Doorstep Delivery OTP Card */}
           {order.deliveryProofOtp && !['Delivered', 'Cancelled', 'Refunded'].includes(order.orderStatus) && (
             <div
               style={{

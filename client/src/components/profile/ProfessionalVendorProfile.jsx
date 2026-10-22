@@ -539,8 +539,8 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                 onClick={() => setActiveTab('settings')}
                 className={`myshop-nav-item ${activeTab === 'settings' ? 'active' : ''}`}
               >
-                <Settings size={18} />
-                <span>Vendor Settings</span>
+                <Sliders size={18} />
+                <span>CaSa Settings</span>
               </button>
 
               <button

@@ -708,8 +708,8 @@ const UserProfilePage = () => {
           }}
         >
           <Settings size={15} color={activeSection === 'settings' ? '#2563eb' : '#64748b'} />
-          <span className="tab-desktop-text">Settings & Language</span>
-          <span className="tab-mobile-text">Language</span>
+          <span className="tab-desktop-text">{isVendor ? 'CaSa Store Settings' : 'Settings & Language'}</span>
+          <span className="tab-mobile-text">{isVendor ? 'CaSa Settings' : 'Language'}</span>
         </button>
       </div>
 

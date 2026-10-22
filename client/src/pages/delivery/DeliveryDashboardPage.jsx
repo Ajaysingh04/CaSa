@@ -1074,7 +1074,7 @@ const DeliveryDashboardPage = () => {
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ padding: '4px 12px', borderRadius: '9999px', background: '#e0f2fe', color: '#0369a1', fontSize: '0.75rem', fontWeight: 800 }}>
-                Flipkart Express Logistics Verified
+                CaSa Express Logistics Verified
               </span>
             </div>
           </div>
