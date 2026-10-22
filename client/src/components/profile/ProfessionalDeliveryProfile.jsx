@@ -43,7 +43,12 @@ import {
   ThumbsUp,
   Radio,
   BadgeCheck,
-  Activity
+  Activity,
+  Map as MapIcon,
+  Eye,
+  FileUp,
+  Crosshair,
+  MessageSquare
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -59,11 +64,64 @@ const AVATAR_PRESETS = [
   'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80',
 ];
 
+const INITIAL_DOCUMENTS = [
+  {
+    id: 'doc_dl',
+    type: 'Driving License (DL)',
+    docNumber: 'MP09 20210088921',
+    validTill: '14 Aug 2035',
+    status: 'VERIFIED ✅',
+    preview: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=400&auto=format&fit=crop&q=80',
+    verifiedAt: '12 Jan 2026',
+    notes: 'Valid for Two Wheeler & Light Motor Vehicle (LMV)'
+  },
+  {
+    id: 'doc_rc',
+    type: 'Vehicle Registration Certificate (RC)',
+    docNumber: 'MP-09-EV-8821',
+    validTill: 'Lifetime (Green EV)',
+    status: 'VERIFIED ✅',
+    preview: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=400&auto=format&fit=crop&q=80',
+    verifiedAt: '14 Jan 2026',
+    notes: 'Hero Electric Optima CX - Zero Emission Commercial'
+  },
+  {
+    id: 'doc_ins',
+    type: 'Vehicle Insurance Policy',
+    docNumber: 'POL-ICICI-881920',
+    validTill: '28 Nov 2026',
+    status: 'ACTIVE ✅',
+    preview: 'https://images.unsplash.com/photo-1450133064473-71024230f91b?w=400&auto=format&fit=crop&q=80',
+    verifiedAt: '14 Jan 2026',
+    notes: 'ICICI Lombard Comprehensive 2-Wheeler Cover'
+  },
+  {
+    id: 'doc_aadhaar',
+    type: 'Aadhaar Card / National ID',
+    docNumber: 'XXXX-XXXX-4819',
+    validTill: 'Permanent',
+    status: 'VERIFIED ✅',
+    preview: 'https://images.unsplash.com/photo-1618042164219-62c820f10723?w=400&auto=format&fit=crop&q=80',
+    verifiedAt: '10 Jan 2026',
+    notes: 'Government UIDAI Bio-authenticated'
+  },
+  {
+    id: 'doc_bank',
+    type: 'Bank Passbook / Payout Proof',
+    docNumber: 'ICICI Bank (A/C: *******4421)',
+    validTill: 'Active',
+    status: 'VERIFIED FOR PAYOUTS ✅',
+    preview: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=400&auto=format&fit=crop&q=80',
+    verifiedAt: '11 Jan 2026',
+    notes: 'IFSC: ICIC0001048 • UPI: vikram.singh@okaxis'
+  }
+];
+
 const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) => {
   const { user, updateProfile, switchRole } = useAuth();
   const { success, error, info } = useToast();
 
-  const [activeTab, setActiveTab] = useState('active-runs'); // 'active-runs' | 'available-pool' | 'earnings' | 'fleet-kyc' | 'profile-settings' | 'support'
+  const [activeTab, setActiveTab] = useState('active-runs'); // 'active-runs' | 'available-pool' | 'earnings' | 'fleet-kyc' | 'documents' | 'profile-settings' | 'support'
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
   const [activeOrders, setActiveOrders] = useState([]);
@@ -88,6 +146,22 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
   const [payoutModalOpen, setPayoutModalOpen] = useState(false);
   const [requestingPayout, setRequestingPayout] = useState(false);
 
+  // Interactive Live Map Modal
+  const [mapModalOrder, setMapModalOrder] = useState(null);
+  const [simulatedDistance, setSimulatedDistance] = useState(2.8);
+  const [simulatedEta, setSimulatedEta] = useState(11);
+
+  // KYC Documents
+  const [documents, setDocuments] = useState(INITIAL_DOCUMENTS);
+  const [uploadDocModalOpen, setUploadDocModalOpen] = useState(false);
+  const [previewDocModal, setPreviewDocModal] = useState(null);
+  const [newDocType, setNewDocType] = useState('Driving License (DL)');
+  const [newDocNumber, setNewDocNumber] = useState('');
+  const [newDocValidTill, setNewDocValidTill] = useState('');
+  const [newDocNotes, setNewDocNotes] = useState('');
+  const [newDocPreview, setNewDocPreview] = useState('');
+  const [submittingDoc, setSubmittingDoc] = useState(false);
+
   // Profile Edit States
   const [name, setName] = useState(user?.name || 'Vikram Singh');
   const [phone, setPhone] = useState(user?.phone || '9876543210');
@@ -101,6 +175,7 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
   const [isEditingFleet, setIsEditingFleet] = useState(false);
 
   const fileInputRef = useRef(null);
+  const docFileInputRef = useRef(null);
 
   // Sync with auth user
   useEffect(() => {
@@ -143,6 +218,8 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
             paymentMethod: 'cod',
             totalPrice: 1850,
             deliveryOTP: '7412',
+            distanceKm: 2.8,
+            etaMins: 11,
             shippingAddress: {
               fullName: 'Ananya Sharma',
               phone: '9826123456',
@@ -151,11 +228,13 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
               city: 'Indore',
               state: 'Madhya Pradesh',
               pincode: '452010',
+              coordinates: { lat: 22.7533, lng: 75.8937 }
             },
             merchantInfo: {
               storeName: 'Royal Silk Weavers Indore',
               address: 'Shop 12, Sarafa Market, Indore',
-              phone: '9826099887'
+              phone: '9826099887',
+              coordinates: { lat: 22.7180, lng: 75.8540 }
             },
             orderItems: [
               {
@@ -174,6 +253,8 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
             paymentMethod: 'prepaid',
             totalPrice: 2499,
             deliveryOTP: '3698',
+            distanceKm: 4.1,
+            etaMins: 18,
             shippingAddress: {
               fullName: 'Rajesh Malviya',
               phone: '9425087654',
@@ -182,11 +263,13 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
               city: 'Indore',
               state: 'Madhya Pradesh',
               pincode: '452001',
+              coordinates: { lat: 22.7244, lng: 75.8839 }
             },
             merchantInfo: {
               storeName: 'Malwa Heritage Handicrafts',
               address: 'Block B, Bada Sarafa, Indore',
-              phone: '9425012399'
+              phone: '9425012399',
+              coordinates: { lat: 22.7180, lng: 75.8540 }
             },
             orderItems: [
               {
@@ -323,8 +406,11 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
       // Move from pool to active in local state
       const target = availableOrders.find((o) => o._id === orderId);
       if (target) {
+        const addedOrder = { ...target, orderStatus: 'Packed', distanceKm: 3.2, etaMins: 14 };
         setAvailableOrders(availableOrders.filter((o) => o._id !== orderId));
-        setActiveOrders([{ ...target, orderStatus: 'Packed' }, ...activeOrders]);
+        setActiveOrders([addedOrder, ...activeOrders]);
+        // Automatically prompt live map
+        setMapModalOrder(addedOrder);
       }
       setActiveTab('active-runs');
     } catch (err) {
@@ -356,9 +442,12 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
     try {
       await deliveryService.updateDeliveryStatus(orderId, 'Out for delivery', 'Rider on route to customer destination.').catch(() => null);
       success('Order is Out for Delivery! Customer live tracking notified.');
-      setActiveOrders(
-        activeOrders.map((o) => (o._id === orderId ? { ...o, orderStatus: 'Out for delivery' } : o))
-      );
+      const updatedList = activeOrders.map((o) => (o._id === orderId ? { ...o, orderStatus: 'Out for delivery' } : o));
+      setActiveOrders(updatedList);
+      const target = updatedList.find((o) => o._id === orderId);
+      if (target) {
+        setMapModalOrder(target);
+      }
     } catch (err) {
       error('Failed to mark out for delivery.');
     } finally {
@@ -381,6 +470,9 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
 
       success(`🎉 Delivery Completed for #${otpModalOrder.orderNumber}! Payout ₹65 credited.`);
       setActiveOrders(activeOrders.filter((o) => o._id !== otpModalOrder._id));
+      if (mapModalOrder?._id === otpModalOrder._id) {
+        setMapModalOrder(null);
+      }
       setOtpModalOrder(null);
       setEnteredOtp('');
 
@@ -476,15 +568,68 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
     reader.readAsDataURL(file);
   };
 
+  // Upload Document File
+  const handleDocFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 8 * 1024 * 1024) {
+      error('Document file size must be under 8MB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setNewDocPreview(event.target.result);
+      success('Document file selected successfully!');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Submit New Document
+  const handleSubmitNewDocument = (e) => {
+    e.preventDefault();
+    if (!newDocNumber.trim()) {
+      error('Please enter the document registration/policy number.');
+      return;
+    }
+    setSubmittingDoc(true);
+    setTimeout(() => {
+      const newEntry = {
+        id: `doc_${Date.now()}`,
+        type: newDocType,
+        docNumber: newDocNumber.trim(),
+        validTill: newDocValidTill.trim() || 'Valid (Under Verification)',
+        status: 'SUBMITTED (UNDER REVIEW) ⏳',
+        preview: newDocPreview || 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=400&auto=format&fit=crop&q=80',
+        verifiedAt: 'Just Now',
+        notes: newDocNotes.trim() || 'Awaiting compliance officer approval'
+      };
+      setDocuments([newEntry, ...documents]);
+      setSubmittingDoc(false);
+      setUploadDocModalOpen(false);
+      setNewDocNumber('');
+      setNewDocValidTill('');
+      setNewDocNotes('');
+      setNewDocPreview('');
+      success(`✅ ${newDocType} uploaded and submitted to CASA fleet compliance team!`);
+    }, 800);
+  };
+
   return (
     <div className="delivery-profile-container" style={{ width: '100%', maxWidth: '1240px', margin: '0 auto', padding: '20px 16px 80px', boxSizing: 'border-box' }}>
-      {/* Hidden File Input */}
+      {/* Hidden File Inputs */}
       <input
         ref={fileInputRef}
         type="file"
         accept="image/png, image/jpeg, image/webp"
         style={{ display: 'none' }}
         onChange={handleFileUpload}
+      />
+      <input
+        ref={docFileInputRef}
+        type="file"
+        accept="image/png, image/jpeg, image/webp, application/pdf"
+        style={{ display: 'none' }}
+        onChange={handleDocFileUpload}
       />
 
       {/* TOP HERO CARD: RIDER IDENTITY & LIVE SHIFT STATUS */}
@@ -961,6 +1106,33 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
 
         <button
           type="button"
+          onClick={() => setActiveTab('documents')}
+          style={{
+            flex: '1 1 auto',
+            minWidth: '160px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            padding: '10px 16px',
+            borderRadius: '12px',
+            border: 'none',
+            fontSize: '0.84rem',
+            fontWeight: 800,
+            cursor: 'pointer',
+            background: activeTab === 'documents' ? '#ffffff' : 'transparent',
+            color: activeTab === 'documents' ? '#0891b2' : '#64748b',
+            boxShadow: activeTab === 'documents' ? '0 2px 8px rgba(15, 23, 42, 0.08)' : 'none',
+            transition: 'all 0.15s ease',
+            whiteSpace: 'nowrap'
+          }}
+        >
+          <FileText size={16} color={activeTab === 'documents' ? '#0891b2' : '#64748b'} />
+          <span>KYC Documents ({documents.length})</span>
+        </button>
+
+        <button
+          type="button"
           onClick={() => setActiveTab('earnings')}
           style={{
             flex: '1 1 auto',
@@ -1010,7 +1182,7 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
           }}
         >
           <Bike size={16} color={activeTab === 'fleet-kyc' ? '#7e22ce' : '#64748b'} />
-          <span>Vehicle & KYC Fleet</span>
+          <span>Vehicle & Fleet Gear</span>
         </button>
 
         <button
@@ -1077,7 +1249,7 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
                 Live Delivery Runs Queue ({activeOrders.length})
               </h3>
               <p style={{ fontSize: '0.82rem', color: '#64748b', margin: '4px 0 0 0' }}>
-                Follow 3 steps: Collect from Merchant Hub → Start Out for Delivery → Verify OTP & Collect Payment at Doorstep.
+                Follow 3 steps: Collect from Merchant Hub ➔ Open Live GPS Route ➔ Verify OTP & Collect COD at Doorstep.
               </p>
             </div>
             <button
@@ -1196,8 +1368,29 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
                       )}
                     </div>
 
-                    <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
-                      Payout: <strong style={{ color: '#059669', fontSize: '0.9rem' }}>+₹65</strong> (Express Drop)
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <button
+                        type="button"
+                        onClick={() => setMapModalOrder(order)}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '6px 14px',
+                          borderRadius: '10px',
+                          background: '#eff6ff',
+                          border: '1.5px solid #2563eb',
+                          color: '#1d4ed8',
+                          fontSize: '0.78rem',
+                          fontWeight: 800,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <MapIcon size={14} /> Open Live Route Map
+                      </button>
+                      <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
+                        Payout: <strong style={{ color: '#059669', fontSize: '0.9rem' }}>+₹65</strong> (Express Drop)
+                      </div>
                     </div>
                   </div>
 
@@ -1261,10 +1454,9 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
                             <Phone size={12} /> Call Customer: +91 {order.shippingAddress.phone}
                           </a>
                         )}
-                        <a
-                          href={`https://maps.google.com/?q=${encodeURIComponent(`${order.shippingAddress?.street || ''} ${order.shippingAddress?.locality || ''} ${order.shippingAddress?.city || 'Indore'} ${order.shippingAddress?.pincode || ''}`)}`}
-                          target="_blank"
-                          rel="noreferrer"
+                        <button
+                          type="button"
+                          onClick={() => setMapModalOrder(order)}
                           style={{
                             display: 'inline-flex',
                             alignItems: 'center',
@@ -1272,11 +1464,14 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
                             fontSize: '0.78rem',
                             fontWeight: 700,
                             color: '#2563eb',
-                            textDecoration: 'none'
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            padding: 0
                           }}
                         >
-                          <Navigation size={12} /> Google Maps GPS
-                        </a>
+                          <Navigation size={12} /> View Turn-by-Turn GPS Map
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -1302,6 +1497,26 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
 
                   {/* Action Buttons Row */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      onClick={() => setMapModalOrder(order)}
+                      style={{
+                        padding: '9px 16px',
+                        borderRadius: '10px',
+                        background: '#f8fafc',
+                        border: '1px solid #cbd5e1',
+                        color: '#334155',
+                        fontSize: '0.84rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      <MapIcon size={15} color="#2563eb" /> Route Map
+                    </button>
+
                     {isPacked && (
                       <button
                         type="button"
@@ -1365,7 +1580,7 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
                             cursor: 'pointer'
                           }}
                         >
-                          Report Issue / Unreachable
+                          Report Issue
                         </button>
 
                         <button
@@ -1386,7 +1601,7 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
                             boxShadow: '0 4px 14px rgba(5, 150, 105, 0.35)'
                           }}
                         >
-                          <KeyRound size={16} /> Mark Delivered with Customer OTP
+                          <KeyRound size={16} /> Mark Delivered with OTP
                         </button>
                       </>
                     )}
@@ -1516,7 +1731,7 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
                       boxShadow: onDuty ? '0 4px 14px rgba(37, 99, 235, 0.3)' : 'none'
                     }}
                   >
-                    <Check size={16} /> Accept Shipment
+                    <Check size={16} /> Accept & Start Route
                   </button>
                 </div>
               </div>
@@ -1525,7 +1740,154 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
         </div>
       )}
 
-      {/* TAB 3: EARNINGS & SETTLEMENTS */}
+      {/* TAB 3: KYC DOCUMENTS MANAGER */}
+      {activeTab === 'documents' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div style={{ background: '#ffffff', borderRadius: '20px', border: '1px solid #e2e8f0', padding: '22px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px', flexWrap: 'wrap', gap: '12px' }}>
+              <div>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 900, color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <FileText size={20} color="#0891b2" />
+                  Rider Fleet KYC & Official Compliance Documents ({documents.length})
+                </h3>
+                <p style={{ fontSize: '0.82rem', color: '#64748b', margin: '4px 0 0 0' }}>
+                  Upload and manage your government ID, vehicle registration (RC), driving license (DL), and payout bank proofs.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setUploadDocModalOpen(true)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '10px 18px',
+                  borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)',
+                  color: '#ffffff',
+                  border: 'none',
+                  fontSize: '0.85rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 14px rgba(8, 145, 178, 0.3)'
+                }}
+              >
+                <FileUp size={16} /> ➕ Upload New Document
+              </button>
+            </div>
+
+            {/* Document Cards Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
+              {documents.map((doc) => (
+                <div
+                  key={doc.id}
+                  style={{
+                    background: '#f8fafc',
+                    borderRadius: '16px',
+                    border: '1.5px solid #e2e8f0',
+                    padding: '16px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    gap: '12px',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0891b2', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        {doc.type}
+                      </span>
+                      <span
+                        style={{
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                          fontSize: '0.72rem',
+                          fontWeight: 800,
+                          background: doc.status.includes('VERIFIED') || doc.status.includes('ACTIVE') ? '#ecfdf5' : '#fef3c7',
+                          color: doc.status.includes('VERIFIED') || doc.status.includes('ACTIVE') ? '#047857' : '#b45309'
+                        }}
+                      >
+                        {doc.status}
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
+                      <div
+                        style={{ position: 'relative', cursor: 'pointer', flexShrink: 0 }}
+                        onClick={() => setPreviewDocModal(doc)}
+                        title="Click to view full document"
+                      >
+                        <img
+                          src={doc.preview}
+                          alt={doc.type}
+                          style={{
+                            width: '68px',
+                            height: '68px',
+                            borderRadius: '12px',
+                            objectFit: 'cover',
+                            border: '1px solid #cbd5e1'
+                          }}
+                        />
+                        <span
+                          style={{
+                            position: 'absolute',
+                            inset: 0,
+                            borderRadius: '12px',
+                            background: 'rgba(0,0,0,0.3)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#ffffff'
+                          }}
+                        >
+                          <Eye size={16} />
+                        </span>
+                      </div>
+
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#0f172a' }}>
+                          {doc.docNumber}
+                        </div>
+                        <div style={{ fontSize: '0.76rem', color: '#64748b', marginTop: '2px' }}>
+                          Validity: <strong>{doc.validTill}</strong>
+                        </div>
+                        <div style={{ fontSize: '0.72rem', color: '#475569', marginTop: '4px', lineHeight: 1.3 }}>
+                          {doc.notes}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #e2e8f0', paddingTop: '10px' }}>
+                    <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+                      Verified on: {doc.verifiedAt}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewDocModal(doc)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#2563eb',
+                        fontSize: '0.76rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        padding: 0
+                      }}
+                    >
+                      View Document ↗
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: EARNINGS & SETTLEMENTS */}
       {activeTab === 'earnings' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {/* Earnings Overview Cards */}
@@ -1613,71 +1975,17 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
               </div>
             </div>
           </div>
-
-          {/* Recent Payout Settlements Ledger */}
-          <div style={{ background: '#ffffff', borderRadius: '20px', border: '1px solid #e2e8f0', padding: '20px' }}>
-            <h4 style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a', margin: '0 0 14px 0' }}>
-              Recent Payout Transfer History
-            </h4>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {[
-                { date: 'Yesterday, 8:30 PM', amount: 890, orders: 13, method: 'UPI (vikram.singh@okaxis)', ref: 'UPI-CASA-88192', status: 'SETTLED' },
-                { date: '20 Oct 2026, 9:15 PM', amount: 1040, orders: 16, method: 'IMPS Bank Transfer', ref: 'IMPS-992100882', status: 'SETTLED' },
-                { date: '19 Oct 2026, 8:45 PM', amount: 975, orders: 15, method: 'UPI (vikram.singh@okaxis)', ref: 'UPI-CASA-88104', status: 'SETTLED' },
-              ].map((p, idx) => (
-                <div
-                  key={idx}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '12px 14px',
-                    borderRadius: '12px',
-                    background: '#f8fafc',
-                    border: '1px solid #e2e8f0',
-                    flexWrap: 'wrap',
-                    gap: '10px'
-                  }}
-                >
-                  <div>
-                    <div style={{ fontSize: '0.86rem', fontWeight: 800, color: '#0f172a' }}>
-                      ₹{p.amount} <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>({p.orders} Drops)</span>
-                    </div>
-                    <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: '2px' }}>
-                      {p.date} • {p.method} • Ref: {p.ref}
-                    </div>
-                  </div>
-
-                  <span
-                    style={{
-                      padding: '4px 10px',
-                      borderRadius: '8px',
-                      background: '#ecfdf5',
-                      color: '#047857',
-                      fontSize: '0.74rem',
-                      fontWeight: 800,
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px'
-                    }}
-                  >
-                    <CheckCircle2 size={12} /> {p.status}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       )}
 
-      {/* TAB 4: VEHICLE & KYC FLEET */}
+      {/* TAB 5: VEHICLE & FLEET GEAR */}
       {activeTab === 'fleet-kyc' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div style={{ background: '#ffffff', borderRadius: '20px', border: '1px solid #e2e8f0', padding: '22px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px', flexWrap: 'wrap', gap: '10px' }}>
               <div>
                 <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>
-                  Assigned Vehicle & Driver License (KYC)
+                  Assigned Vehicle & Commercial Fleet Details
                 </h3>
                 <p style={{ fontSize: '0.82rem', color: '#64748b', margin: '4px 0 0 0' }}>
                   Keep your vehicle registration and license up-to-date to maintain express dispatch compliance.
@@ -1839,44 +2147,10 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
               )}
             </form>
           </div>
-
-          {/* Mandatory Safety Gear Checklist */}
-          <div style={{ background: '#ffffff', borderRadius: '20px', border: '1px solid #e2e8f0', padding: '22px' }}>
-            <h4 style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a', margin: '0 0 14px 0' }}>
-              CASA Delivery Partner Field Equipment Checklist
-            </h4>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px' }}>
-              {[
-                { title: 'CaSa Thermal Insulated Bag', desc: 'Maintains parcel safety and temperature', status: 'VERIFIED ✅' },
-                { title: 'ISI Certified Helmet', desc: 'Mandatory head protection on 2-wheelers', status: 'VERIFIED ✅' },
-                { title: 'High-Visibility Safety Vest', desc: 'Reflective stripes for night rides', status: 'VERIFIED ✅' },
-                { title: 'Mobile Mount & Rain Sleeve', desc: 'Secure phone holster on handlebars', status: 'VERIFIED ✅' },
-              ].map((item, idx) => (
-                <div
-                  key={idx}
-                  style={{
-                    padding: '14px',
-                    borderRadius: '12px',
-                    background: '#f0fdf4',
-                    border: '1px solid #bbf7d0',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '4px'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <strong style={{ fontSize: '0.85rem', color: '#0f172a' }}>{item.title}</strong>
-                    <span style={{ fontSize: '0.72rem', color: '#047857', fontWeight: 800 }}>{item.status}</span>
-                  </div>
-                  <span style={{ fontSize: '0.75rem', color: '#475569' }}>{item.desc}</span>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       )}
 
-      {/* TAB 5: RIDER PROFILE SETTINGS */}
+      {/* TAB 6: RIDER PROFILE SETTINGS */}
       {activeTab === 'profile-settings' && (
         <div style={{ background: '#ffffff', borderRadius: '20px', border: '1px solid #e2e8f0', padding: '24px' }}>
           <h3 style={{ fontSize: '1.2rem', fontWeight: 900, color: '#0f172a', margin: '0 0 6px 0' }}>
@@ -2043,7 +2317,7 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
         </div>
       )}
 
-      {/* TAB 6: EMERGENCY SOS & SUPPORT */}
+      {/* TAB 7: EMERGENCY SOS & SUPPORT */}
       {activeTab === 'support' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {/* Emergency SOS Banner */}
@@ -2109,32 +2383,548 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
               </div>
             </div>
           </div>
+        </div>
+      )}
 
-          {/* Insurance & Assistance Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
-            <div style={{ background: '#ffffff', borderRadius: '18px', border: '1px solid #e2e8f0', padding: '20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                <ShieldCheck size={20} color="#059669" />
-                <h4 style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                  ₹5,00,000 Accidental Cover
-                </h4>
+      {/* LIVE INTERACTIVE ROUTE MAP MODAL */}
+      {mapModalOrder && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.75)',
+            backdropFilter: 'blur(6px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+            zIndex: 9999
+          }}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: '24px',
+              width: '100%',
+              maxWidth: '780px',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.35)',
+              position: 'relative'
+            }}
+          >
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: '1px solid #e2e8f0' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: '#ecfdf5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Navigation size={22} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>
+                    Live GPS Route • Order #{mapModalOrder.orderNumber || mapModalOrder._id}
+                  </h3>
+                  <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
+                    Destination: <strong style={{ color: '#0f172a' }}>{mapModalOrder.shippingAddress?.fullName}</strong> ({mapModalOrder.shippingAddress?.locality}, {mapModalOrder.shippingAddress?.city})
+                  </div>
+                </div>
               </div>
-              <p style={{ fontSize: '0.82rem', color: '#64748b', lineHeight: 1.5, margin: 0 }}>
-                Every verified CASA delivery partner is protected with comprehensive health and accidental cover active throughout your on-duty shift.
-              </p>
+
+              <button
+                type="button"
+                onClick={() => setMapModalOrder(null)}
+                style={{
+                  background: '#f1f5f9',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '32px',
+                  height: '32px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer'
+                }}
+              >
+                <X size={16} />
+              </button>
             </div>
 
-            <div style={{ background: '#ffffff', borderRadius: '18px', border: '1px solid #e2e8f0', padding: '20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                <Bike size={20} color="#2563eb" />
-                <h4 style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                  Electric Scooter Battery Swap Hubs
-                </h4>
+            {/* Map Canvas / Visual Radar Section */}
+            <div style={{ position: 'relative', width: '100%', height: '320px', background: '#e2e8f0', overflow: 'hidden' }}>
+              {/* Interactive OpenStreetMap Embed */}
+              <iframe
+                title="Delivery Navigation Map"
+                width="100%"
+                height="100%"
+                frameBorder="0"
+                scrolling="no"
+                marginHeight="0"
+                marginWidth="0"
+                src={`https://www.openstreetmap.org/export/embed.html?bbox=75.8300%2C22.7000%2C75.9200%2C22.7700&layer=mapnik&marker=22.7533%2C75.8937`}
+                style={{ border: 'none', filter: 'contrast(1.05) saturate(1.1)' }}
+              />
+
+              {/* Floating Route Info Overlay */}
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '12px',
+                  left: '12px',
+                  background: 'rgba(15, 23, 42, 0.88)',
+                  backdropFilter: 'blur(8px)',
+                  color: '#ffffff',
+                  padding: '10px 16px',
+                  borderRadius: '14px',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '16px'
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: '0.68rem', color: '#34d399', fontWeight: 800, textTransform: 'uppercase' }}>
+                    LIVE GPS ROUTE
+                  </div>
+                  <div style={{ fontSize: '1.25rem', fontWeight: 900 }}>
+                    {simulatedEta} mins <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#94a3b8' }}>({simulatedDistance} km)</span>
+                  </div>
+                </div>
+
+                <div style={{ height: '30px', width: '1px', background: 'rgba(255,255,255,0.2)' }} />
+
+                <div>
+                  <div style={{ fontSize: '0.68rem', color: '#94a3b8', fontWeight: 800 }}>TRAFFIC</div>
+                  <div style={{ fontSize: '0.85rem', color: '#34d399', fontWeight: 800 }}>Smooth Traffic</div>
+                </div>
               </div>
-              <p style={{ fontSize: '0.82rem', color: '#64748b', lineHeight: 1.5, margin: 0 }}>
-                Partnered battery swap stations located at Palasia Square, Vijay Nagar Metro Station, and Rajwada Central. 2-minute battery replacement.
-              </p>
+
+              {/* Action: Open In Google Maps Button */}
+              <a
+                href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${mapModalOrder.shippingAddress?.street || ''} ${mapModalOrder.shippingAddress?.locality || ''} ${mapModalOrder.shippingAddress?.city || 'Indore'}`)}&travelmode=two_wheeler`}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  position: 'absolute',
+                  bottom: '12px',
+                  right: '12px',
+                  background: '#2563eb',
+                  color: '#ffffff',
+                  padding: '10px 18px',
+                  borderRadius: '12px',
+                  fontWeight: 800,
+                  fontSize: '0.84rem',
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  boxShadow: '0 8px 20px rgba(37, 99, 235, 0.4)'
+                }}
+              >
+                <Navigation size={15} /> Open in Google Maps App ↗
+              </a>
             </div>
+
+            {/* Turn-by-Turn Navigation Instructions */}
+            <div style={{ padding: '20px 24px' }}>
+              <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#0f172a', margin: '0 0 12px 0' }}>
+                Turn-by-Turn Express Route Guidance
+              </h4>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '10px 12px', borderRadius: '10px', background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                  <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.8rem', flexShrink: 0 }}>
+                    1
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '0.84rem', fontWeight: 800, color: '#0f172a' }}>
+                      Start at {mapModalOrder.merchantInfo?.storeName || 'Merchant Pickup Hub'}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                      Collect sealed parcel and head east towards MG Road (400 m)
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '10px 12px', borderRadius: '10px', background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                  <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.8rem', flexShrink: 0 }}>
+                    2
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '0.84rem', fontWeight: 800, color: '#0f172a' }}>
+                      Continue on AB Road toward Vijay Nagar Square
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                      Pass Palasia Square and industry house underpass (1.8 km)
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '10px 12px', borderRadius: '10px', background: '#ecfdf5', border: '1.5px solid #a7f3d0' }}>
+                  <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#10b981', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.8rem', flexShrink: 0 }}>
+                    3
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '0.84rem', fontWeight: 800, color: '#047857' }}>
+                      Arrive at {mapModalOrder.shippingAddress?.street}, {mapModalOrder.shippingAddress?.locality}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: '#065f46' }}>
+                      Recipient: <strong>{mapModalOrder.shippingAddress?.fullName}</strong> • Phone: +91 {mapModalOrder.shippingAddress?.phone}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Actions */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginTop: '20px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {mapModalOrder.shippingAddress?.phone && (
+                    <a
+                      href={`tel:${mapModalOrder.shippingAddress.phone}`}
+                      style={{
+                        padding: '9px 16px',
+                        borderRadius: '10px',
+                        background: '#eff6ff',
+                        border: '1px solid #bfdbfe',
+                        color: '#1d4ed8',
+                        fontSize: '0.82rem',
+                        fontWeight: 800,
+                        textDecoration: 'none',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      <Phone size={14} /> Call Customer
+                    </a>
+                  )}
+                  <a
+                    href={`sms:${mapModalOrder.shippingAddress?.phone}?body=Hello,%20your%20CASA%20express%20delivery%20is%20on%20the%20way%20and%20will%20arrive%20in%2010%20minutes.`}
+                    style={{
+                      padding: '9px 14px',
+                      borderRadius: '10px',
+                      background: '#f1f5f9',
+                      border: '1px solid #cbd5e1',
+                      color: '#475569',
+                      fontSize: '0.82rem',
+                      fontWeight: 700,
+                      textDecoration: 'none',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px'
+                    }}
+                  >
+                    <MessageSquare size={14} /> SMS ETA
+                  </a>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const orderToDeliver = mapModalOrder;
+                    setMapModalOrder(null);
+                    setOtpModalOrder(orderToDeliver);
+                  }}
+                  style={{
+                    padding: '11px 22px',
+                    borderRadius: '12px',
+                    background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                    color: '#ffffff',
+                    border: 'none',
+                    fontSize: '0.88rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    boxShadow: '0 4px 14px rgba(5, 150, 105, 0.3)'
+                  }}
+                >
+                  <KeyRound size={16} /> Arrived at Doorstep ➔ Verify OTP
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* UPLOAD DOCUMENT MODAL */}
+      {uploadDocModalOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.75)',
+            backdropFilter: 'blur(5px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+            zIndex: 9999
+          }}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: '24px',
+              padding: '28px',
+              width: '100%',
+              maxWidth: '520px',
+              boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.35)',
+              position: 'relative'
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setUploadDocModalOpen(false)}
+              style={{
+                position: 'absolute',
+                top: '18px',
+                right: '18px',
+                background: '#f1f5f9',
+                border: 'none',
+                borderRadius: '50%',
+                width: '32px',
+                height: '32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer'
+              }}
+            >
+              <X size={16} />
+            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '18px' }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: '#ecfeff', color: '#0891b2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <FileUp size={24} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>
+                  Upload KYC Fleet Document
+                </h3>
+                <span style={{ fontSize: '0.78rem', color: '#64748b' }}>
+                  Attach DL, RC, Insurance, or Aadhaar for official verification
+                </span>
+              </div>
+            </div>
+
+            <form onSubmit={handleSubmitNewDocument} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                  Document Type
+                </label>
+                <select
+                  value={newDocType}
+                  onChange={(e) => setNewDocType(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: '10px',
+                    border: '1.5px solid #cbd5e1',
+                    fontSize: '0.88rem',
+                    background: '#ffffff'
+                  }}
+                >
+                  <option value="Driving License (DL)">Driving License (DL)</option>
+                  <option value="Vehicle Registration Certificate (RC)">Vehicle Registration Certificate (RC)</option>
+                  <option value="Vehicle Insurance Policy">Vehicle Insurance Policy</option>
+                  <option value="Aadhaar Card / National ID">Aadhaar Card / National ID</option>
+                  <option value="Bank Passbook / Payout Proof">Bank Passbook / Payout Proof</option>
+                  <option value="Pollution Certificate (PUC)">Pollution Certificate (PUC)</option>
+                  <option value="Police Verification Clearance">Police Verification Clearance</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                  Document / Registration / Policy Number
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. MP09 20210088921"
+                  value={newDocNumber}
+                  onChange={(e) => setNewDocNumber(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: '10px',
+                    border: '1.5px solid #cbd5e1',
+                    fontSize: '0.88rem',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                  Validity / Expiry Date (Optional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. 14 Aug 2035 or Lifetime"
+                  value={newDocValidTill}
+                  onChange={(e) => setNewDocValidTill(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: '10px',
+                    border: '1.5px solid #cbd5e1',
+                    fontSize: '0.88rem',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              {/* File Attachment Box */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                  Attach Document Photo (JPG, PNG, PDF)
+                </label>
+                <div
+                  onClick={() => docFileInputRef.current?.click()}
+                  style={{
+                    border: '2px dashed #0891b2',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    textAlign: 'center',
+                    background: '#f0fdfa',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {newDocPreview ? (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+                      <img src={newDocPreview} alt="Preview" style={{ width: '50px', height: '50px', borderRadius: '8px', objectFit: 'cover' }} />
+                      <span style={{ fontSize: '0.82rem', color: '#047857', fontWeight: 700 }}>
+                        File Attached Successfully! Click to replace.
+                      </span>
+                    </div>
+                  ) : (
+                    <div>
+                      <Upload size={24} color="#0891b2" style={{ margin: '0 auto 6px' }} />
+                      <div style={{ fontSize: '0.84rem', fontWeight: 700, color: '#0891b2' }}>
+                        Click to browse file from device
+                      </div>
+                      <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                        Maximum file size: 8MB
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div style={{ marginTop: '8px' }}>
+                <button
+                  type="submit"
+                  disabled={submittingDoc}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    borderRadius: '12px',
+                    background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)',
+                    color: '#ffffff',
+                    border: 'none',
+                    fontSize: '0.92rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 14px rgba(8, 145, 178, 0.35)'
+                  }}
+                >
+                  {submittingDoc ? 'Submitting Document...' : 'Submit Document for Compliance Approval'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* DOCUMENT PREVIEW MODAL */}
+      {previewDocModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.85)',
+            backdropFilter: 'blur(6px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+            zIndex: 9999
+          }}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: '24px',
+              padding: '24px',
+              width: '100%',
+              maxWidth: '560px',
+              boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.35)',
+              position: 'relative'
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setPreviewDocModal(null)}
+              style={{
+                position: 'absolute',
+                top: '18px',
+                right: '18px',
+                background: '#f1f5f9',
+                border: 'none',
+                borderRadius: '50%',
+                width: '32px',
+                height: '32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer'
+              }}
+            >
+              <X size={16} />
+            </button>
+
+            <div style={{ marginBottom: '14px' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0891b2', textTransform: 'uppercase' }}>
+                {previewDocModal.type}
+              </div>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a', margin: '2px 0 0' }}>
+                {previewDocModal.docNumber}
+              </h3>
+              <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
+                Validity: <strong>{previewDocModal.validTill}</strong> • Status: <strong style={{ color: '#047857' }}>{previewDocModal.status}</strong>
+              </div>
+            </div>
+
+            <div style={{ width: '100%', height: '320px', borderRadius: '16px', overflow: 'hidden', border: '1px solid #cbd5e1', marginBottom: '16px' }}>
+              <img
+                src={previewDocModal.preview}
+                alt={previewDocModal.type}
+                style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#0f172a' }}
+              />
+            </div>
+
+            <div style={{ fontSize: '0.78rem', color: '#475569', background: '#f8fafc', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e2e8f0', marginBottom: '16px' }}>
+              <strong>Compliance Officer Note:</strong> {previewDocModal.notes} (Verified on {previewDocModal.verifiedAt})
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setPreviewDocModal(null)}
+              style={{
+                width: '100%',
+                padding: '11px',
+                borderRadius: '10px',
+                background: '#0f172a',
+                color: '#ffffff',
+                border: 'none',
+                fontSize: '0.86rem',
+                fontWeight: 800,
+                cursor: 'pointer'
+              }}
+            >
+              Close Document
+            </button>
           </div>
         </div>
       )}

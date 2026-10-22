@@ -58,7 +58,14 @@ const UserProfilePage = () => {
   const { success, error } = useToast();
   const { language, setLanguage, openLanguageModal, primaryColor } = useStore();
 
-  const isDelivery = user?.role === 'delivery' || user?.email === 'delivery@casa.in';
+  const isDelivery = Boolean(
+    user && (
+      user.role === 'delivery' ||
+      user.role === 'delivery_partner' ||
+      user.email === 'delivery@casa.in' ||
+      (user.name && user.name.toLowerCase().includes('express'))
+    )
+  );
   const isVendor = !isDelivery && (user?.role === 'vendor' || (user?.email === 'vendor@casa.in' && user?.role !== 'delivery'));
 
   // Auto-restore vendor role only if the account is vendor@casa.in and not delivery
