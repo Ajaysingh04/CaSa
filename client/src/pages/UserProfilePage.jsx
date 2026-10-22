@@ -67,6 +67,17 @@ const UserProfilePage = () => {
     }
   }, [user?.email, user?.role, switchRole]);
 
+  // Auto-redirect vendor users or ?role=vendor requests directly to /vendor URL so browser bar explicitly says /vendor
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const isVendorParam = params.get('role') === 'vendor' || params.get('vendor') === 'true' || params.get('tab') === 'vendor';
+    const isPersonalTab = params.get('personal') === 'true';
+
+    if ((isVendor || isVendorParam) && !isPersonalTab) {
+      navigate('/vendor', { replace: true });
+    }
+  }, [isVendor, navigate]);
+
   // Active section tab: 'profile' | 'addresses' | 'delivery-hub' | 'vendor-hub' | 'security' | 'settings'
   const [activeSection, setActiveSection] = useState('profile');
 

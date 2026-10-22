@@ -98,6 +98,7 @@ function App() {
                       }
                     />
                     <Route path="vendor" element={<VendorDashboardPage />} />
+                    <Route path="vendor/:tab" element={<VendorDashboardPage />} />
                     <Route path="delivery" element={<DeliveryDashboardPage />} />
                     <Route path="*" element={<NotFoundPage />} />
                   </Route>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation, useParams } from 'react-router-dom';
 import {
   LayoutDashboard,
   Package,
@@ -45,6 +45,7 @@ import {
   CheckCircle2,
   AlertCircle,
   RefreshCw,
+  Share2,
 } from 'lucide-react';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
@@ -56,11 +57,66 @@ import VendorStoreSettings from './VendorStoreSettings';
 const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
   const { switchRole, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { tab: routeTab } = useParams();
   const { success, error } = useToast();
 
+  // Helper to normalize and map route/search tabs cleanly
+  const getNormalizedTab = (raw) => {
+    if (!raw) return 'dashboard';
+    const clean = raw.toLowerCase().trim();
+    const map = {
+      dashboard: 'dashboard',
+      orders: 'orders',
+      shipping: 'orders',
+      shipments: 'orders',
+      products: 'products',
+      stock: 'products',
+      catalog: 'products',
+      transactions: 'transactions',
+      payouts: 'transactions',
+      finances: 'transactions',
+      settings: 'settings',
+      kyc: 'kyc',
+      store: 'kyc',
+    };
+    return map[clean] || 'dashboard';
+  };
+
   // Active Sidebar Tab: 'dashboard' | 'products' | 'orders' | 'transactions' | 'settings' | 'kyc'
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState(() => {
+    const qTab = new URLSearchParams(window.location.search).get('tab');
+    return getNormalizedTab(routeTab || qTab);
+  });
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
+  // Sync tab with URL updates or browser history navigation
+  useEffect(() => {
+    const qTab = new URLSearchParams(location.search).get('tab');
+    const matched = getNormalizedTab(routeTab || qTab);
+    if (matched && matched !== activeTab) {
+      setActiveTab(matched);
+    }
+  }, [routeTab, location.pathname, location.search]);
+
+  // Synchronize document.title so browser tabs and links shared to Sir/team clearly state the Vendor Hub & Tab
+  useEffect(() => {
+    const tabTitles = {
+      dashboard: 'CaSa Vendor Hub • Merchant Dashboard & Metrics',
+      orders: 'CaSa Vendor Hub • Customer Shipments & Orders',
+      products: 'CaSa Vendor Hub • Products & Stock Catalog',
+      transactions: 'CaSa Vendor Hub • Payouts & Finances Ledger',
+      settings: 'CaSa Vendor Hub • Store & Operations Settings',
+      kyc: 'CaSa Vendor Hub • Verified Merchant KYC & Hub Info',
+    };
+    document.title = tabTitles[activeTab] || 'CaSa Vendor Merchant Center';
+  }, [activeTab]);
+
+  const handleTabChange = (newTab) => {
+    setActiveTab(newTab);
+    setIsMobileSidebarOpen(false);
+    navigate(`/vendor/${newTab}`, { replace: true });
+  };
 
   // Backend Data
   const [stats, setStats] = useState(null);
@@ -719,10 +775,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
             <nav style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <button
                 type="button"
-                onClick={() => {
-                  setActiveTab('dashboard');
-                  setIsMobileSidebarOpen(false);
-                }}
+                onClick={() => handleTabChange('dashboard')}
                 className={`myshop-nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
               >
                 <LayoutDashboard size={18} />
@@ -731,10 +784,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
 
               <button
                 type="button"
-                onClick={() => {
-                  setActiveTab('products');
-                  setIsMobileSidebarOpen(false);
-                }}
+                onClick={() => handleTabChange('products')}
                 className={`myshop-nav-item ${activeTab === 'products' ? 'active' : ''}`}
               >
                 <Boxes size={18} />
@@ -743,10 +793,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
 
               <button
                 type="button"
-                onClick={() => {
-                  setActiveTab('orders');
-                  setIsMobileSidebarOpen(false);
-                }}
+                onClick={() => handleTabChange('orders')}
                 className={`myshop-nav-item ${activeTab === 'orders' ? 'active' : ''}`}
               >
                 <Package size={18} />
@@ -755,10 +802,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
 
               <button
                 type="button"
-                onClick={() => {
-                  setActiveTab('transactions');
-                  setIsMobileSidebarOpen(false);
-                }}
+                onClick={() => handleTabChange('transactions')}
                 className={`myshop-nav-item ${activeTab === 'transactions' ? 'active' : ''}`}
               >
                 <CreditCard size={18} />
@@ -767,10 +811,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
 
               <button
                 type="button"
-                onClick={() => {
-                  setActiveTab('settings');
-                  setIsMobileSidebarOpen(false);
-                }}
+                onClick={() => handleTabChange('settings')}
                 className={`myshop-nav-item ${activeTab === 'settings' ? 'active' : ''}`}
               >
                 <Sliders size={18} />
@@ -779,10 +820,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
 
               <button
                 type="button"
-                onClick={() => {
-                  setActiveTab('kyc');
-                  setIsMobileSidebarOpen(false);
-                }}
+                onClick={() => handleTabChange('kyc')}
                 className={`myshop-nav-item ${activeTab === 'kyc' ? 'active' : ''}`}
               >
                 <Building2 size={18} />
@@ -882,6 +920,36 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
 
         {/* ================= MAIN CONTENT AREA ================= */}
         <main className="myshop-main">
+          {/* Guest / Reviewer Mode Top Alert for external stakeholders / Sir */}
+          {!user && (
+            <div
+              style={{
+                background: 'linear-gradient(90deg, #0f172a 0%, #1e3a8a 100%)',
+                borderRadius: '12px',
+                padding: '10px 16px',
+                color: '#ffffff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '8px',
+                fontSize: '0.8rem',
+                border: '1px solid #1e293b',
+                boxShadow: '0 4px 12px rgba(15, 23, 42, 0.15)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '1rem' }}>🛡️</span>
+                <span>
+                  <strong>CaSa Vendor Portal (Reviewer Mode):</strong> Viewing verified merchant metrics for <strong>{savedData.storeName}</strong>.
+                </span>
+              </div>
+              <span style={{ fontSize: '0.72rem', background: '#10b981', color: '#ffffff', padding: '2px 8px', borderRadius: '6px', fontWeight: 800 }}>
+                Live Storefront Verified
+              </span>
+            </div>
+          )}
+
           {/* TOP HEADER: GREETING & ICONS */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
             <div>
@@ -892,14 +960,51 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                 <span style={{ background: '#ecfdf5', color: '#059669', fontSize: '0.72rem', fontWeight: 800, padding: '3px 9px', borderRadius: '9999px', border: '1px solid #a7f3d0' }}>
                   🟢 Live • 99.4% SLA
                 </span>
+                <span style={{ background: '#eff6ff', color: '#1d4ed8', fontSize: '0.72rem', fontWeight: 800, padding: '3px 9px', borderRadius: '9999px', border: '1px solid #bfdbfe' }}>
+                  CaSa Vendor Merchant
+                </span>
               </div>
-              <span style={{ fontSize: '0.82rem', color: '#94a3b8', fontWeight: 600 }}>
-                {savedData.storeName} • CaSa Verified Seller Center
-              </span>
+              <div style={{ fontSize: '0.82rem', color: '#64748b', fontWeight: 600, marginTop: '2px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                <span>{savedData.storeName} • CaSa Verified Seller Center</span>
+                <span>•</span>
+                <span style={{ color: '#0f172a' }}>Portal URL:</span>
+                <code style={{ color: '#2563eb', background: '#eff6ff', padding: '1px 6px', borderRadius: '4px', fontWeight: 700 }}>
+                  /vendor/{activeTab}
+                </code>
+              </div>
             </div>
 
             {/* Header Right Action Icons */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              {/* Share Vendor Portal Link */}
+              <button
+                type="button"
+                onClick={() => {
+                  const fullUrl = `${window.location.origin}/vendor/${activeTab}`;
+                  navigator.clipboard.writeText(fullUrl);
+                  success(`📋 Vendor Link Copied: ${fullUrl}`);
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+                  border: '1px solid #bfdbfe',
+                  padding: '7px 13px',
+                  borderRadius: '10px',
+                  fontSize: '0.78rem',
+                  fontWeight: 800,
+                  color: '#1d4ed8',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  boxShadow: '0 1px 3px rgba(37,99,235,0.08)',
+                }}
+                title="Copy official CaSa Vendor link to send to Sir/Team"
+              >
+                <Share2 size={14} color="#2563eb" />
+                <span>Share Vendor Link</span>
+              </button>
+
               {/* + Add New Product Button */}
               <button
                 type="button"
