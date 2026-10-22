@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   Package,
@@ -45,7 +45,8 @@ import { formatINR, formatDate, formatDateTime } from '../../utils/formatters';
 import VendorStoreSettings from './VendorStoreSettings';
 
 const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
-  const { switchRole } = useAuth();
+  const { switchRole, logout } = useAuth();
+  const navigate = useNavigate();
   const { success, error } = useToast();
 
   // Active Sidebar Tab: 'dashboard' | 'products' | 'orders' | 'transactions' | 'settings' | 'kyc'
@@ -745,8 +746,8 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
               <button
                 type="button"
                 onClick={() => {
-                  switchRole('user');
                   setIsMobileSidebarOpen(false);
+                  navigate('/');
                 }}
                 className="myshop-nav-item"
                 style={{ marginTop: '12px', color: '#6366f1' }}
@@ -758,11 +759,12 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
               <button
                 type="button"
                 onClick={() => {
-                  switchRole('user');
                   setIsMobileSidebarOpen(false);
+                  logout();
+                  navigate('/login');
                 }}
                 className="myshop-nav-item"
-                style={{ color: '#94a3b8' }}
+                style={{ color: '#ef4444' }}
               >
                 <LogOut size={18} />
                 <span>Sign out</span>

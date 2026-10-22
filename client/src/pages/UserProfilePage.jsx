@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   User,
   Phone,
@@ -52,12 +52,20 @@ const AVATAR_PRESETS = [
 ];
 
 const UserProfilePage = () => {
-  const { user, updateProfile, isAdmin, logout } = useAuth();
+  const { user, updateProfile, isAdmin, logout, switchRole } = useAuth();
+  const navigate = useNavigate();
   const { success, error } = useToast();
   const { language, setLanguage, openLanguageModal, primaryColor } = useStore();
 
   const isDelivery = user?.role === 'delivery';
-  const isVendor = user?.role === 'vendor';
+  const isVendor = user?.role === 'vendor' || user?.email === 'vendor@casa.in' || !!user?.vendorStoreName;
+
+  // Auto-restore vendor role if the account is vendor@casa.in
+  useEffect(() => {
+    if (user?.email === 'vendor@casa.in' && user?.role !== 'vendor' && switchRole) {
+      switchRole('vendor');
+    }
+  }, [user?.email, user?.role, switchRole]);
 
   // Active section tab: 'profile' | 'addresses' | 'delivery-hub' | 'vendor-hub' | 'security' | 'settings'
   const [activeSection, setActiveSection] = useState('profile');
@@ -418,6 +426,64 @@ const UserProfilePage = () => {
       {/* Breadcrumb Navigation & Title for Non-Vendor users */}
       {!isVendor && (
         <>
+          {/* Vendor Quick Launch Banner */}
+          <div
+            style={{
+              background: 'linear-gradient(135deg, #1e1e24 0%, #1e1b4b 50%, #2563eb 100%)',
+              borderRadius: '16px',
+              padding: '16px 20px',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '12px',
+              marginBottom: '20px',
+              boxShadow: '0 6px 20px -2px rgba(37, 99, 235, 0.25)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(255, 255, 255, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff', fontWeight: 900, fontSize: '1.2rem' }}>
+                ⚡
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <strong style={{ fontSize: '1.05rem', color: '#ffffff' }}>CaSa Vendor Merchant Center</strong>
+                  <span style={{ fontSize: '0.7rem', background: '#10b981', color: '#ffffff', padding: '2px 8px', borderRadius: '9999px', fontWeight: 800 }}>PRO ACTIVE</span>
+                </div>
+                <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: '#cbd5e1' }}>
+                  Manage your products, live customer orders, courier dispatch, and payouts.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={async () => {
+                if (user?.role !== 'vendor') {
+                  await switchRole('vendor');
+                }
+                navigate('/vendor');
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '10px 20px',
+                borderRadius: '10px',
+                background: '#ffffff',
+                color: '#1e1e24',
+                fontWeight: 800,
+                fontSize: '0.85rem',
+                border: 'none',
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              }}
+            >
+              <Store size={16} color="#2563eb" />
+              <span>Open CaSa Vendor Dashboard</span>
+            </button>
+          </div>
+
           <div style={breadcrumbRow}>
             <Link to="/" style={breadcrumbLink}>Home</Link>
             <span style={{ color: '#cbd5e1' }}>/</span>

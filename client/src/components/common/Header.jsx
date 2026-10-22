@@ -700,6 +700,30 @@ const Header = ({ onToggleMobileMenu }) => {
             </div>
           )}
 
+          {/* Direct Vendor Portal Shortcut */}
+          {user && (user.role === 'vendor' || user.email === 'vendor@casa.in' || !!user.vendorStoreName) && (
+            <Link
+              to="/vendor"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '7px 12px',
+                borderRadius: '10px',
+                background: 'linear-gradient(135deg, #1e1e24 0%, #2563eb 100%)',
+                color: '#ffffff',
+                textDecoration: 'none',
+                fontWeight: 800,
+                fontSize: '0.78rem',
+                boxShadow: '0 2px 8px rgba(37, 99, 235, 0.25)',
+              }}
+              title="Open CaSa Vendor Dashboard"
+            >
+              <Store size={15} color="#f59e0b" />
+              <span className="header-action-label">Vendor Hub</span>
+            </Link>
+          )}
+
           {/* Account Dropdown */}
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '8px' }} ref={userMenuRef}>
             <button onClick={() => setShowUserMenu(!showUserMenu)} style={accountBtnStyle}>
@@ -807,6 +831,28 @@ const Header = ({ onToggleMobileMenu }) => {
 
                     {/* Navigation Menu Links */}
                     <div style={{ padding: '8px' }}>
+                      {/* CaSa Vendor Dashboard Shortcut */}
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          setShowUserMenu(false);
+                          if (user.role !== 'vendor') {
+                            await switchRole('vendor');
+                          }
+                          navigate('/vendor');
+                        }}
+                        className="dropdown-menu-item"
+                        style={{ ...dropdownMenuItemStyle, width: '100%', border: 'none', background: '#eff6ff', borderRadius: '12px', marginBottom: '6px' }}
+                      >
+                        <div style={{ ...menuIconBox, background: '#2563eb', color: '#ffffff' }}>
+                          <Store size={16} />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                          <div style={{ ...menuItemTitleStyle, color: '#1d4ed8' }}>CaSa Vendor Dashboard</div>
+                          <div style={menuItemSubStyle}>Orders, catalog & merchant center</div>
+                        </div>
+                        <ChevronRight size={14} color="#2563eb" className="dropdown-menu-arrow" />
+                      </button>
                       {isAdmin && (
                         <Link
                           to="/admin"
