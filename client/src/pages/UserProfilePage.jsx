@@ -42,6 +42,7 @@ import { authService } from '../services/authService';
 import { LANGUAGE_OPTIONS } from '../components/common/LanguageModal';
 import ProfessionalVendorProfile from '../components/profile/ProfessionalVendorProfile';
 import VendorStoreSettings from '../components/profile/VendorStoreSettings';
+import ProfessionalDeliveryProfile from '../components/profile/ProfessionalDeliveryProfile';
 
 const AVATAR_PRESETS = [
   'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80',
@@ -57,12 +58,12 @@ const UserProfilePage = () => {
   const { success, error } = useToast();
   const { language, setLanguage, openLanguageModal, primaryColor } = useStore();
 
-  const isDelivery = user?.role === 'delivery';
-  const isVendor = user?.role === 'vendor' || user?.email === 'vendor@casa.in' || !!user?.vendorStoreName;
+  const isDelivery = user?.role === 'delivery' || user?.email === 'delivery@casa.in';
+  const isVendor = !isDelivery && (user?.role === 'vendor' || (user?.email === 'vendor@casa.in' && user?.role !== 'delivery'));
 
-  // Auto-restore vendor role if the account is vendor@casa.in
+  // Auto-restore vendor role only if the account is vendor@casa.in and not delivery
   useEffect(() => {
-    if (user?.email === 'vendor@casa.in' && user?.role !== 'vendor' && switchRole) {
+    if (user?.email === 'vendor@casa.in' && user?.role !== 'vendor' && user?.role !== 'delivery' && switchRole) {
       switchRole('vendor');
     }
   }, [user?.email, user?.role, switchRole]);
@@ -73,10 +74,10 @@ const UserProfilePage = () => {
     const isVendorParam = params.get('role') === 'vendor' || params.get('vendor') === 'true' || params.get('tab') === 'vendor';
     const isPersonalTab = params.get('personal') === 'true';
 
-    if ((isVendor || isVendorParam) && !isPersonalTab) {
+    if (!isDelivery && (isVendor || isVendorParam) && !isPersonalTab) {
       navigate('/vendor', { replace: true });
     }
-  }, [isVendor, navigate]);
+  }, [isDelivery, isVendor, navigate]);
 
   // Active section tab: 'profile' | 'addresses' | 'delivery-hub' | 'vendor-hub' | 'security' | 'settings'
   const [activeSection, setActiveSection] = useState('profile');
@@ -236,6 +237,25 @@ const UserProfilePage = () => {
       error('Failed to remove address.');
     }
   };
+
+  // If logged-in user is a Delivery Partner, render the dedicated full-screen Professional Delivery Partner Portal & Profile directly
+  if (isDelivery) {
+    return (
+      <div style={{ width: '100%', minHeight: '100vh', margin: 0, padding: 0, background: '#f4f6fa' }}>
+        <ProfessionalDeliveryProfile
+          user={user}
+          onProfileUpdated={(updatedUser) => {
+            if (updatedUser) {
+              if (updatedUser.name) setName(updatedUser.name);
+              if (updatedUser.phone) setPhone(updatedUser.phone);
+              if (updatedUser.avatar) setAvatar(updatedUser.avatar);
+              if (updatedUser.vehicleType) setVehicleType(updatedUser.vehicleType);
+            }
+          }}
+        />
+      </div>
+    );
+  }
 
   // If logged-in user is a Vendor, render the dedicated full-screen Professional Vendor Portal directly
   if (isVendor) {

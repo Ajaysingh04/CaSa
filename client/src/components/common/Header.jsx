@@ -831,44 +831,98 @@ const Header = ({ onToggleMobileMenu }) => {
 
                     {/* Navigation Menu Links */}
                     <div style={{ padding: '8px' }}>
-                      {/* CaSa Vendor Dashboard Shortcut */}
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          setShowUserMenu(false);
-                          if (user.role !== 'vendor') {
-                            await switchRole('vendor');
-                          }
-                          navigate('/vendor');
-                        }}
-                        className="dropdown-menu-item"
-                        style={{ ...dropdownMenuItemStyle, width: '100%', border: 'none', background: '#eff6ff', borderRadius: '12px', marginBottom: '6px' }}
-                      >
-                        <div style={{ ...menuIconBox, background: '#2563eb', color: '#ffffff' }}>
-                          <Store size={16} />
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
-                          <div style={{ ...menuItemTitleStyle, color: '#1d4ed8' }}>CaSa Vendor Dashboard</div>
-                          <div style={menuItemSubStyle}>Orders, catalog & merchant center</div>
-                        </div>
-                        <ChevronRight size={14} color="#2563eb" className="dropdown-menu-arrow" />
-                      </button>
-                      {isAdmin && (
+                      {/* Role-Specific Dashboard Shortcut */}
+                      {user.role === 'delivery' ? (
+                        <Link
+                          to="/delivery"
+                          onClick={() => setShowUserMenu(false)}
+                          className="dropdown-menu-item"
+                          style={{
+                            ...dropdownMenuItemStyle,
+                            width: '100%',
+                            border: 'none',
+                            background: '#ecfdf5',
+                            borderRadius: '12px',
+                            marginBottom: '6px',
+                          }}
+                        >
+                          <div style={{ ...menuIconBox, background: '#059669', color: '#ffffff' }}>
+                            <Truck size={16} />
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                            <div style={{ ...menuItemTitleStyle, color: '#047857', fontWeight: 800 }}>CaSa Delivery Dashboard</div>
+                            <div style={{ ...menuItemSubStyle, color: '#065f46' }}>Active runs, shipments & earnings</div>
+                          </div>
+                          <ChevronRight size={14} color="#059669" className="dropdown-menu-arrow" />
+                        </Link>
+                      ) : user.role === 'vendor' ? (
+                        <Link
+                          to="/vendor"
+                          onClick={() => setShowUserMenu(false)}
+                          className="dropdown-menu-item"
+                          style={{
+                            ...dropdownMenuItemStyle,
+                            width: '100%',
+                            border: 'none',
+                            background: '#eff6ff',
+                            borderRadius: '12px',
+                            marginBottom: '6px',
+                          }}
+                        >
+                          <div style={{ ...menuIconBox, background: '#2563eb', color: '#ffffff' }}>
+                            <Store size={16} />
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                            <div style={{ ...menuItemTitleStyle, color: '#1d4ed8', fontWeight: 800 }}>CaSa Vendor Dashboard</div>
+                            <div style={{ ...menuItemSubStyle, color: '#1e40af' }}>Orders, catalog & merchant center</div>
+                          </div>
+                          <ChevronRight size={14} color="#2563eb" className="dropdown-menu-arrow" />
+                        </Link>
+                      ) : isAdmin ? (
                         <Link
                           to="/admin"
                           onClick={() => setShowUserMenu(false)}
                           className="dropdown-menu-item"
-                          style={dropdownMenuItemStyle}
+                          style={{
+                            ...dropdownMenuItemStyle,
+                            width: '100%',
+                            border: 'none',
+                            background: '#f8fafc',
+                            borderRadius: '12px',
+                            marginBottom: '6px',
+                          }}
                         >
-                          <div style={{ ...menuIconBox, background: '#eff6ff', color: '#1d4ed8' }}>
+                          <div style={{ ...menuIconBox, background: '#1e293b', color: '#ffffff' }}>
                             <Shield size={16} />
                           </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={menuItemTitleStyle}>Admin Dashboard</div>
-                            <div style={menuItemSubStyle}>Platform management & settings</div>
+                          <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                            <div style={{ ...menuItemTitleStyle, color: '#0f172a', fontWeight: 800 }}>CaSa Admin Console</div>
+                            <div style={{ ...menuItemSubStyle, color: '#475569' }}>Platform operations & settings</div>
                           </div>
-                          <ChevronRight size={14} className="dropdown-menu-arrow" />
+                          <ChevronRight size={14} color="#1e293b" className="dropdown-menu-arrow" />
                         </Link>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            setShowUserMenu(false);
+                            if (user.role !== 'vendor') {
+                              await switchRole('vendor');
+                            }
+                            navigate('/vendor');
+                          }}
+                          className="dropdown-menu-item"
+                          style={{ ...dropdownMenuItemStyle, width: '100%', border: 'none', background: '#eff6ff', borderRadius: '12px', marginBottom: '6px' }}
+                        >
+                          <div style={{ ...menuIconBox, background: '#2563eb', color: '#ffffff' }}>
+                            <Store size={16} />
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                            <div style={{ ...menuItemTitleStyle, color: '#1d4ed8' }}>CaSa Vendor Dashboard</div>
+                            <div style={menuItemSubStyle}>Orders, catalog & merchant center</div>
+                          </div>
+                          <ChevronRight size={14} color="#2563eb" className="dropdown-menu-arrow" />
+                        </button>
                       )}
 
                       <Link
@@ -893,12 +947,20 @@ const Header = ({ onToggleMobileMenu }) => {
                         className="dropdown-menu-item"
                         style={dropdownMenuItemStyle}
                       >
-                        <div style={{ ...menuIconBox, background: '#f5f3ff', color: '#7c3aed' }}>
-                          <UserIcon size={16} />
+                        <div style={{
+                          ...menuIconBox,
+                          background: user.role === 'delivery' ? '#ecfdf5' : user.role === 'vendor' ? '#eff6ff' : '#f5f3ff',
+                          color: user.role === 'delivery' ? '#059669' : user.role === 'vendor' ? '#2563eb' : '#7c3aed'
+                        }}>
+                          {user.role === 'delivery' ? <Truck size={16} /> : user.role === 'vendor' ? <Store size={16} /> : <UserIcon size={16} />}
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={menuItemTitleStyle}>My Profile & Addresses</div>
-                          <div style={menuItemSubStyle}>Personal details & delivery addresses</div>
+                          <div style={menuItemTitleStyle}>
+                            {user.role === 'delivery' ? 'Rider Profile & Fleet KYC' : user.role === 'vendor' ? 'CaSa Merchant Profile' : 'My Profile & Addresses'}
+                          </div>
+                          <div style={menuItemSubStyle}>
+                            {user.role === 'delivery' ? 'Vehicle, driver license & fleet KYC' : user.role === 'vendor' ? 'Store credentials & merchant settings' : 'Personal details & delivery addresses'}
+                          </div>
                         </div>
                         <ChevronRight size={14} className="dropdown-menu-arrow" />
                       </Link>
