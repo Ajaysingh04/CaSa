@@ -9,82 +9,60 @@ const DeliveryDashboardPage = () => {
   const { user, switchRole, login } = useAuth();
   const { success, error } = useToast();
 
-  if (!user) {
-    return (
-      <div className="container" style={{ padding: '60px 16px', maxWidth: '520px', margin: '0 auto', textAlign: 'center' }}>
-        <div
-          className="card"
-          style={{
-            padding: '40px 32px',
-            borderRadius: '24px',
-            background: '#ffffff',
-            boxShadow: '0 20px 40px -15px rgba(12, 74, 110, 0.15)',
-            border: '1px solid #e0f2fe',
-          }}
-        >
-          <div
-            style={{
-              width: '72px',
-              height: '72px',
-              borderRadius: '20px',
-              background: '#ecfdf5',
-              color: '#059669',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 20px',
-            }}
-          >
-            <Truck size={38} />
-          </div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0f172a' }}>Delivery Partner Portal</h2>
-          <p style={{ color: '#64748b', fontSize: '0.92rem', marginTop: '10px', lineHeight: 1.55 }}>
-            Access real-time package dispatches, accept route deliveries, GPS route directions, and COD collection metrics.
-          </p>
-          <div style={{ marginTop: '28px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <button
-              onClick={async () => {
-                const res = await login({ email: 'delivery@casa.in', password: 'Delivery@Casa2026' });
-                if (res.success) {
-                  success('Welcome to CASA Delivery! Live demo rider session started.');
-                }
-              }}
-              className="btn btn-primary"
-              style={{
-                padding: '13px',
-                borderRadius: '12px',
-                background: 'linear-gradient(135deg, #059669, #047857)',
-                border: 'none',
-                fontWeight: 800,
-                fontSize: '0.95rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                boxShadow: '0 8px 20px -4px rgba(5, 150, 105, 0.4)',
-                color: '#ffffff',
-                cursor: 'pointer'
-              }}
-            >
-              <Sparkles size={17} /> ⚡ 1-Click Launch Delivery Demo
-            </button>
-            <Link
-              to="/login?redirect=/delivery"
-              className="btn btn-outline"
-              style={{ padding: '12px', borderRadius: '12px', fontWeight: 700 }}
-            >
-              Sign In with Other Account
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const effectiveUser = user || {
+    name: 'Vikram Singh Express',
+    email: 'delivery@casa.in',
+    role: 'delivery',
+    phone: '+91 9826012345',
+    assignedZone: 'Central Indore Hub - Zone 1',
+    vehicleType: 'TVS Apache 160 (MP-09-XX-4412)',
+    rating: 4.94
+  };
 
   return (
     <div style={{ width: '100%', minHeight: '100vh', background: '#f8fafc', padding: '16px 0 60px' }}>
+      {/* Demo viewer banner when not signed in */}
+      {!user && (
+        <div style={{ maxWidth: '1240px', margin: '0 auto 16px', padding: '0 16px', boxSizing: 'border-box' }}>
+          <div
+            style={{
+              background: '#eff6ff',
+              border: '1.5px solid #bfdbfe',
+              borderRadius: '14px',
+              padding: '12px 20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '12px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Truck size={18} color="#2563eb" />
+              <div style={{ fontSize: '0.85rem', color: '#1e40af' }}>
+                <strong>Viewing CaSa Delivery Workstation:</strong> Live active runs, GPS navigation, OTP verify and hub queues are active in demo mode.
+              </div>
+            </div>
+            <Link
+              to="/login?redirect=/delivery"
+              style={{
+                background: '#2563eb',
+                color: '#ffffff',
+                textDecoration: 'none',
+                padding: '6px 14px',
+                borderRadius: '8px',
+                fontWeight: 700,
+                fontSize: '0.78rem',
+              }}
+            >
+              Sign In to Save
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* Non-delivery role warning banner with 1-click switch */}
-      {user.role !== 'delivery' && user.role !== 'admin' && (
+      {user && user.role !== 'delivery' && user.role !== 'admin' && (
         <div style={{ maxWidth: '1240px', margin: '0 auto 16px', padding: '0 16px', boxSizing: 'border-box' }}>
           <div
             style={{
@@ -133,7 +111,7 @@ const DeliveryDashboardPage = () => {
       )}
 
       {/* Full-featured Professional Delivery Partner Workstation */}
-      <ProfessionalDeliveryProfile user={user} />
+      <ProfessionalDeliveryProfile user={effectiveUser} />
     </div>
   );
 };

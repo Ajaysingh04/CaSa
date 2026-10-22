@@ -701,7 +701,7 @@ const Header = ({ onToggleMobileMenu }) => {
           )}
 
           {/* Direct Vendor Portal Shortcut */}
-          {user && (user.role === 'vendor' || user.email === 'vendor@casa.in' || !!user.vendorStoreName) && (
+          {user && (user.role === 'vendor' || user.email === 'vendor@casa.in') && (
             <Link
               to="/vendor"
               style={{
@@ -914,29 +914,7 @@ const Header = ({ onToggleMobileMenu }) => {
                             </div>
                             <ChevronRight size={14} color="#1e293b" className="dropdown-menu-arrow" />
                           </Link>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={async () => {
-                              setShowUserMenu(false);
-                              if (user.role !== 'vendor') {
-                                await switchRole('vendor');
-                              }
-                              navigate('/vendor');
-                            }}
-                            className="dropdown-menu-item"
-                            style={{ ...dropdownMenuItemStyle, width: '100%', border: 'none', background: '#eff6ff', borderRadius: '12px', marginBottom: '6px' }}
-                          >
-                            <div style={{ ...menuIconBox, background: '#2563eb', color: '#ffffff' }}>
-                              <Store size={16} />
-                            </div>
-                            <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
-                              <div style={{ ...menuItemTitleStyle, color: '#1d4ed8' }}>CaSa Vendor Dashboard</div>
-                              <div style={menuItemSubStyle}>Orders, catalog & merchant center</div>
-                            </div>
-                            <ChevronRight size={14} color="#2563eb" className="dropdown-menu-arrow" />
-                          </button>
-                        )}
+                        ) : null}
 
                       <Link
                         to="/orders"
