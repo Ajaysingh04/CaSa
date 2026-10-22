@@ -162,6 +162,28 @@ const ProductDetailPage = () => {
   };
 
   const handleBuyNow = async () => {
+    if (!user) {
+      info('Please sign in to place an order.');
+      await addItem(product, quantity, selectedVariants);
+      navigate('/login?redirect=/checkout');
+      return;
+    }
+
+    const isNonCustomer =
+      user.role === 'vendor' ||
+      user.role === 'delivery' ||
+      user.role === 'delivery_partner' ||
+      user.role === 'admin' ||
+      user.role === 'super_admin' ||
+      user.email === 'vendor@casa.in' ||
+      user.email === 'delivery@casa.in' ||
+      user.email === 'admin@casa.in';
+
+    if (isNonCustomer) {
+      error(`Orders can only be placed from a Customer account. You are currently logged in with a ${user.role || 'partner'} account.`);
+      return;
+    }
+
     await addItem(product, quantity, selectedVariants);
     navigate('/checkout');
   };

@@ -56,6 +56,22 @@ const GuestRoute = ({ children }) => {
   return children;
 };
 
+// Route guard: Checkout requires user authentication. Directs guest users to /login?redirect=/checkout.
+const CustomerCheckoutRoute = ({ children }) => {
+  const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="skeleton" style={{ width: '400px', height: '300px', borderRadius: '16px' }} />
+      </div>
+    );
+  }
+  if (!user) {
+    return <Navigate to="/login?redirect=/checkout" replace />;
+  }
+  return children;
+};
+
 function App() {
   return (
     <BrowserRouter>
@@ -75,7 +91,14 @@ function App() {
                     <Route path="search" element={<ProductsPage />} />
                     <Route path="product/:slug" element={<ProductDetailPage />} />
                     <Route path="cart" element={<CartPage />} />
-                    <Route path="checkout" element={<CheckoutPage />} />
+                    <Route
+                      path="checkout"
+                      element={
+                        <CustomerCheckoutRoute>
+                          <CheckoutPage />
+                        </CustomerCheckoutRoute>
+                      }
+                    />
                     <Route path="order-success/:orderId" element={<OrderConfirmationPage />} />
                     <Route path="orders" element={<OrderHistoryPage />} />
                     <Route path="orders/:id" element={<OrderDetailPage />} />

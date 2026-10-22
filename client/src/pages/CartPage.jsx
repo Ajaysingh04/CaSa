@@ -14,11 +14,13 @@ import {
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { formatINR } from '../utils/formatters';
 
 const CartPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { info, error } = useToast();
   const {
     items,
     totals,
@@ -317,8 +319,58 @@ const CartPage = () => {
               </div>
             </div>
 
+            {/* Non-customer account alert */}
+            {user && (
+              user.role === 'vendor' ||
+              user.role === 'delivery' ||
+              user.role === 'delivery_partner' ||
+              user.role === 'admin' ||
+              user.role === 'super_admin' ||
+              user.email === 'vendor@casa.in' ||
+              user.email === 'delivery@casa.in' ||
+              user.email === 'admin@casa.in'
+            ) && (
+              <div
+                style={{
+                  background: '#fff1f2',
+                  border: '1px solid #fecdd3',
+                  borderRadius: '10px',
+                  padding: '12px',
+                  marginTop: '16px',
+                  fontSize: '0.82rem',
+                  color: '#9f1239',
+                  lineHeight: 1.4
+                }}
+              >
+                <strong>⚠️ Customer Login Required:</strong> You are currently signed in with a {user.role || 'partner'} account ({user.email}). Orders can only be placed from Customer accounts.
+              </div>
+            )}
+
             <button
-              onClick={() => navigate('/checkout')}
+              onClick={() => {
+                if (!user) {
+                  info('Please sign in to proceed with checkout.');
+                  navigate('/login?redirect=/checkout');
+                  return;
+                }
+
+                const isNonCustomer =
+                  user.role === 'vendor' ||
+                  user.role === 'delivery' ||
+                  user.role === 'delivery_partner' ||
+                  user.role === 'admin' ||
+                  user.role === 'super_admin' ||
+                  user.email === 'vendor@casa.in' ||
+                  user.email === 'delivery@casa.in' ||
+                  user.email === 'admin@casa.in';
+
+                if (isNonCustomer) {
+                  error(`Orders can only be placed from a Customer account. You are currently signed in as ${user.role || 'partner'}.`);
+                  return;
+                }
+
+                navigate('/checkout');
+              }}
               className="btn btn-primary btn-lg"
               style={{ width: '100%', marginTop: '20px' }}
             >

@@ -32,9 +32,21 @@ import { formatINR } from '../utils/formatters';
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { items, totals, coupon, applyCoupon, removeCoupon, refreshCart } = useCart();
   const { success, error, info } = useToast();
+
+  const isNonCustomer =
+    user && (
+      user.role === 'vendor' ||
+      user.role === 'delivery' ||
+      user.role === 'delivery_partner' ||
+      user.role === 'admin' ||
+      user.role === 'super_admin' ||
+      user.email === 'vendor@casa.in' ||
+      user.email === 'delivery@casa.in' ||
+      user.email === 'admin@casa.in'
+    );
 
   const [addresses, setAddresses] = useState([]);
   const [selectedAddressId, setSelectedAddressId] = useState(null);
@@ -94,6 +106,14 @@ const CheckoutPage = () => {
       });
     }
   }, [user]);
+
+  // Auto-redirect unauthenticated users directly to login
+  useEffect(() => {
+    if (!user) {
+      info('Please sign in as a customer to proceed with checkout.');
+      navigate('/login?redirect=/checkout', { replace: true });
+    }
+  }, [user, navigate, info]);
 
   // Redirect if cart is empty
   useEffect(() => {
@@ -209,6 +229,11 @@ const CheckoutPage = () => {
       return;
     }
 
+    if (isNonCustomer) {
+      error('Orders can only be placed from a Customer account. Partner and administrative accounts cannot place orders.');
+      return;
+    }
+
     const selectedAddr = addresses.find((a) => a._id === selectedAddressId);
     if (!selectedAddr && !isAddingNewAddress) {
       error('Please select or add a delivery address.');
@@ -284,6 +309,80 @@ const CheckoutPage = () => {
       setLoading(false);
     }
   };
+
+  if (isNonCustomer) {
+    const roleLabel =
+      user.role === 'vendor' || user.email === 'vendor@casa.in'
+        ? 'Vendor / Merchant'
+        : user.role === 'delivery' || user.role === 'delivery_partner' || user.email === 'delivery@casa.in'
+        ? 'Delivery Partner'
+        : 'Administrator';
+
+    const portalLink =
+      user.role === 'vendor' || user.email === 'vendor@casa.in'
+        ? '/vendor'
+        : user.role === 'delivery' || user.role === 'delivery_partner' || user.email === 'delivery@casa.in'
+        ? '/delivery'
+        : '/admin';
+
+    return (
+      <div className="container" style={{ padding: '80px 16px', maxWidth: '580px', margin: '0 auto', textAlign: 'center' }}>
+        <div
+          style={{
+            background: '#ffffff',
+            borderRadius: '24px',
+            border: '1px solid #fee2e2',
+            padding: '42px 24px',
+            boxShadow: '0 16px 40px -10px rgba(225, 29, 72, 0.12)'
+          }}
+        >
+          <div
+            style={{
+              width: '72px',
+              height: '72px',
+              borderRadius: '50%',
+              background: '#fff1f2',
+              color: '#e11d48',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 20px'
+            }}
+          >
+            <AlertCircle size={40} />
+          </div>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0f172a', margin: '0 0 10px' }}>
+            Customer Account Required
+          </h2>
+          <p style={{ color: '#475569', fontSize: '0.92rem', lineHeight: 1.6, margin: '0 0 24px' }}>
+            CASA Marketplace purchases are only allowed for <strong>Customer (User)</strong> accounts.<br />
+            You are currently signed in as a <strong>{roleLabel}</strong> ({user.email}). Partner and administrative accounts cannot place orders.
+          </p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxWidth: '360px', margin: '0 auto' }}>
+            <button
+              type="button"
+              onClick={async () => {
+                if (logout) await logout();
+                navigate('/login?redirect=/checkout');
+              }}
+              className="btn btn-primary btn-lg"
+              style={{ width: '100%', justifyContent: 'center' }}
+            >
+              Sign In with Customer Account
+            </button>
+            <Link
+              to={portalLink}
+              className="btn btn-outline btn-lg"
+              style={{ width: '100%', justifyContent: 'center' }}
+            >
+              Go to {roleLabel} Dashboard
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={pageWrapperStyle}>

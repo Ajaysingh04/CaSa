@@ -15,10 +15,14 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import { formatINR } from '../../utils/formatters';
 
 const CartDrawer = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { info, error } = useToast();
   const { items, totals, isDrawerOpen, closeDrawer, updateQuantity, removeItem } = useCart();
 
   // Close on ESC key and prevent body scroll when open
@@ -39,6 +43,29 @@ const CartDrawer = () => {
   if (!isDrawerOpen) return null;
 
   const handleCheckoutClick = () => {
+    if (!user) {
+      closeDrawer();
+      info('Please sign in to proceed with checkout.');
+      navigate('/login?redirect=/checkout');
+      return;
+    }
+
+    const isNonCustomer =
+      user.role === 'vendor' ||
+      user.role === 'delivery' ||
+      user.role === 'delivery_partner' ||
+      user.role === 'admin' ||
+      user.role === 'super_admin' ||
+      user.email === 'vendor@casa.in' ||
+      user.email === 'delivery@casa.in' ||
+      user.email === 'admin@casa.in';
+
+    if (isNonCustomer) {
+      closeDrawer();
+      error(`Orders can only be placed from a Customer account. You are currently signed in as ${user.role || 'partner'}.`);
+      return;
+    }
+
     closeDrawer();
     navigate('/checkout');
   };

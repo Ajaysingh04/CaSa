@@ -94,11 +94,11 @@ const LoginPage = () => {
         sessionStorage.setItem('casa_prompt_language_modal', 'true');
       }
       success(`Welcome back, ${res.user.name}!`);
-      if (res.user.role === 'admin' && (redirect === '/' || redirect === '/login')) {
+      if (res.user.role === 'admin') {
         navigate('/admin');
-      } else if (res.user.role === 'vendor' && (redirect === '/' || redirect === '/login')) {
+      } else if (res.user.role === 'vendor') {
         navigate('/vendor');
-      } else if (res.user.role === 'delivery' && (redirect === '/' || redirect === '/login')) {
+      } else if (res.user.role === 'delivery' || res.user.role === 'delivery_partner') {
         navigate('/delivery');
       } else {
         navigate(redirect);
