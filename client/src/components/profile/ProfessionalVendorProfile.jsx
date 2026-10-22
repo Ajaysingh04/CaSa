@@ -46,6 +46,13 @@ import {
   AlertCircle,
   RefreshCw,
   Share2,
+  ChevronLeft,
+  Grid,
+  List,
+  ArrowUpDown,
+  Filter,
+  Trash2,
+  AlertTriangle,
 } from 'lucide-react';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
@@ -133,6 +140,19 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
   const [orderFilter, setOrderFilter] = useState('ALL');
   const [productSearch, setProductSearch] = useState('');
   const [regionFilter, setRegionFilter] = useState('Weekly');
+
+  // Product & Inventory Tab States (Pagination, Filters, View Mode)
+  const [productPage, setProductPage] = useState(1);
+  const [productsPerPage, setProductsPerPage] = useState(8);
+  const [productStatusFilter, setProductStatusFilter] = useState('ALL'); // 'ALL' | 'IN_STOCK' | 'LOW_STOCK' | 'OUT_OF_STOCK'
+  const [productCategoryFilter, setProductCategoryFilter] = useState('ALL');
+  const [productSortBy, setProductSortBy] = useState('NEWEST');
+  const [productViewMode, setProductViewMode] = useState('grid'); // 'grid' | 'table'
+
+  // Reset to page 1 when filtering or search changes
+  useEffect(() => {
+    setProductPage(1);
+  }, [productSearch, productStatusFilter, productCategoryFilter, productSortBy, productsPerPage]);
 
   // Add Product Modal & Form State
   const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
@@ -391,6 +411,229 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
   const filteredOrdersList = orders.filter((o) =>
     orderFilter === 'ALL' ? true : o.orderStatus === orderFilter
   );
+
+  const defaultCatalog = [
+    {
+      _id: 'prod-demo-1',
+      name: 'Chanderi Pure Silk Handloom Saree with Zari Pallu',
+      category: 'Sarees & Handlooms',
+      price: 6499,
+      discountPrice: 4899,
+      stock: 45,
+      sku: 'CS-CHN-001',
+      image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400&auto=format&fit=crop&q=80',
+      createdAt: '2026-10-18T10:00:00Z',
+    },
+    {
+      _id: 'prod-demo-2',
+      name: 'Maheshwari Handcrafted Zari Border Cotton Dupatta',
+      category: 'Dupattas & Shawls',
+      price: 2499,
+      discountPrice: 1899,
+      stock: 32,
+      sku: 'CS-MSH-002',
+      image: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=400&auto=format&fit=crop&q=80',
+      createdAt: '2026-10-19T11:00:00Z',
+    },
+    {
+      _id: 'prod-demo-3',
+      name: 'Traditional Royal Banarasi Katan Silk Saree',
+      category: 'Sarees & Handlooms',
+      price: 12999,
+      discountPrice: 9999,
+      stock: 8,
+      sku: 'CS-BNR-003',
+      image: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?w=400&auto=format&fit=crop&q=80',
+      createdAt: '2026-10-19T14:00:00Z',
+    },
+    {
+      _id: 'prod-demo-4',
+      name: 'Handcrafted Indigo Block Print Pure Cotton Kurta',
+      category: 'Mens Ethnic',
+      price: 2999,
+      discountPrice: 2199,
+      stock: 64,
+      sku: 'CS-KRT-004',
+      image: 'https://images.unsplash.com/photo-1598033129183-c4f50c736f10?w=400&auto=format&fit=crop&q=80',
+      createdAt: '2026-10-20T09:00:00Z',
+    },
+    {
+      _id: 'prod-demo-5',
+      name: 'Pure Tussar Silk Hand-Embroidered Stole',
+      category: 'Dupattas & Shawls',
+      price: 3499,
+      discountPrice: 2699,
+      stock: 4,
+      sku: 'CS-TSR-005',
+      image: 'https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?w=400&auto=format&fit=crop&q=80',
+      createdAt: '2026-10-20T12:00:00Z',
+    },
+    {
+      _id: 'prod-demo-6',
+      name: 'Kashmiri Hand-Woven Pashmina Woolen Shawl',
+      category: 'Dupattas & Shawls',
+      price: 15499,
+      discountPrice: 11999,
+      stock: 12,
+      sku: 'CS-KSH-006',
+      image: 'https://images.unsplash.com/photo-1520903920243-00d872a2d1c9?w=400&auto=format&fit=crop&q=80',
+      createdAt: '2026-10-21T08:00:00Z',
+    },
+    {
+      _id: 'prod-demo-7',
+      name: 'Handcrafted Mojari Leather Jutti with Brass Inlay',
+      category: 'Footwear',
+      price: 3299,
+      discountPrice: 2499,
+      stock: 0,
+      sku: 'CS-MJR-007',
+      image: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&auto=format&fit=crop&q=80',
+      createdAt: '2026-10-21T10:00:00Z',
+    },
+    {
+      _id: 'prod-demo-8',
+      name: 'Bandhani Georgette Saree with Gota Patti Work',
+      category: 'Sarees & Handlooms',
+      price: 5999,
+      discountPrice: 4299,
+      stock: 22,
+      sku: 'CS-BND-008',
+      image: 'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?w=400&auto=format&fit=crop&q=80',
+      createdAt: '2026-10-21T14:00:00Z',
+    },
+    {
+      _id: 'prod-demo-9',
+      name: 'Artisan Embroidered Silk Nehru Jacket / Waistcoat',
+      category: 'Mens Ethnic',
+      price: 4999,
+      discountPrice: 3599,
+      stock: 18,
+      sku: 'CS-WST-009',
+      image: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=400&auto=format&fit=crop&q=80',
+      createdAt: '2026-10-21T16:00:00Z',
+    },
+    {
+      _id: 'prod-demo-10',
+      name: 'Kanjeevaram Gold Temple Border Silk Saree',
+      category: 'Sarees & Handlooms',
+      price: 18999,
+      discountPrice: 14499,
+      stock: 3,
+      sku: 'CS-KNJ-010',
+      image: 'https://images.unsplash.com/photo-1610030469668-935cb101f301?w=400&auto=format&fit=crop&q=80',
+      createdAt: '2026-10-22T08:00:00Z',
+    },
+    {
+      _id: 'prod-demo-11',
+      name: 'Organic Khadi Cotton Short Kurta - Off White',
+      category: 'Mens Ethnic',
+      price: 1899,
+      discountPrice: 1499,
+      stock: 50,
+      sku: 'CS-KHD-011',
+      image: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=400&auto=format&fit=crop&q=80',
+      createdAt: '2026-10-22T09:00:00Z',
+    },
+    {
+      _id: 'prod-demo-12',
+      name: 'Phulkari Hand-Embroidered Georgette Dupatta',
+      category: 'Dupattas & Shawls',
+      price: 3199,
+      discountPrice: 2399,
+      stock: 28,
+      sku: 'CS-PHL-012',
+      image: 'https://images.unsplash.com/photo-1585487000160-6ebcfceb0d03?w=400&auto=format&fit=crop&q=80',
+      createdAt: '2026-10-22T10:00:00Z',
+    },
+    {
+      _id: 'prod-demo-13',
+      name: 'Handcrafted Kolhapuri Leather Chappal - Tan Brown',
+      category: 'Footwear',
+      price: 2499,
+      discountPrice: 1799,
+      stock: 0,
+      sku: 'CS-KLP-013',
+      image: 'https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=400&auto=format&fit=crop&q=80',
+      createdAt: '2026-10-22T11:00:00Z',
+    },
+    {
+      _id: 'prod-demo-14',
+      name: 'Kota Doria Pure Zari Handloom Saree',
+      category: 'Sarees & Handlooms',
+      price: 4599,
+      discountPrice: 3499,
+      stock: 19,
+      sku: 'CS-KTA-014',
+      image: 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?w=400&auto=format&fit=crop&q=80',
+      createdAt: '2026-10-22T12:00:00Z',
+    },
+  ];
+
+  const allCatalogProducts = products.length > 0 ? products : defaultCatalog;
+
+  // Extract unique categories
+  const availableProductCategories = ['ALL', ...Array.from(new Set(allCatalogProducts.map((p) => p.category).filter(Boolean)))];
+
+  // Filtering
+  const filteredProducts = allCatalogProducts.filter((p) => {
+    const q = productSearch.toLowerCase().trim();
+    const matchesSearch = q
+      ? (p.name && p.name.toLowerCase().includes(q)) ||
+        (p.category && p.category.toLowerCase().includes(q)) ||
+        (p.sku && p.sku.toLowerCase().includes(q))
+      : true;
+
+    const stock = Number(p.stock || 0);
+    let matchesStatus = true;
+    if (productStatusFilter === 'IN_STOCK') matchesStatus = stock >= 10;
+    else if (productStatusFilter === 'LOW_STOCK') matchesStatus = stock > 0 && stock < 10;
+    else if (productStatusFilter === 'OUT_OF_STOCK') matchesStatus = stock === 0;
+
+    let matchesCategory = true;
+    if (productCategoryFilter !== 'ALL') {
+      matchesCategory = p.category === productCategoryFilter;
+    }
+
+    return matchesSearch && matchesStatus && matchesCategory;
+  });
+
+  // Sorting
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    if (productSortBy === 'PRICE_LOW_HIGH') {
+      return (a.discountPrice || a.price) - (b.discountPrice || b.price);
+    }
+    if (productSortBy === 'PRICE_HIGH_LOW') {
+      return (b.discountPrice || b.price) - (a.discountPrice || a.price);
+    }
+    if (productSortBy === 'STOCK_LOW_HIGH') {
+      return (a.stock || 0) - (b.stock || 0);
+    }
+    if (productSortBy === 'STOCK_HIGH_LOW') {
+      return (b.stock || 0) - (a.stock || 0);
+    }
+    if (productSortBy === 'NAME_AZ') {
+      return (a.name || '').localeCompare(b.name || '');
+    }
+    return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+  });
+
+  // Pagination calculation
+  const totalProductsCount = sortedProducts.length;
+  const totalProductPages = Math.ceil(totalProductsCount / productsPerPage) || 1;
+  const safeCurrentProductPage = Math.min(Math.max(productPage, 1), totalProductPages);
+  const startProductIndex = (safeCurrentProductPage - 1) * productsPerPage;
+  const endProductIndex = Math.min(startProductIndex + productsPerPage, totalProductsCount);
+  const paginatedProducts = sortedProducts.slice(startProductIndex, endProductIndex);
+
+  const handleProductPageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalProductPages) {
+      setProductPage(newPage);
+      const targetHeader = document.getElementById('catalog-top-anchor');
+      if (targetHeader) {
+        targetHeader.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  };
 
   return (
     <div style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif", color: '#1e1e24' }}>
@@ -1775,91 +2018,491 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
             </div>
           )}
 
-          {/* ================= TAB 2: PRODUCTS VIEW ================= */}
+          {/* ================= TAB 2: ENTERPRISE PRODUCTS & STOCK MANAGEMENT ================= */}
           {activeTab === 'products' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+            <div id="catalog-top-anchor" style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
+              {/* TOP HEADER & ADD PRODUCT ACTION */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
                 <div>
-                  <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#1e1e24', margin: 0 }}>
-                    My Products & Catalog
-                  </h2>
-                  <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
-                    Boost inventory units or edit pricing for active marketplace listings.
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <h2 style={{ fontSize: '1.45rem', fontWeight: 900, color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>
+                      Products & Inventory Management
+                    </h2>
+                    <span style={{ fontSize: '0.72rem', background: '#eff6ff', color: '#2563eb', padding: '3px 9px', borderRadius: '6px', fontWeight: 800 }}>
+                      {totalProductsCount} Listed
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '0.82rem', color: '#64748b', margin: '4px 0 0 0' }}>
+                    Manage marketplace pricing, monitor warehouse stock levels, and execute instant inventory boosts.
+                  </p>
                 </div>
-                <input
-                  type="text"
-                  placeholder="Search products..."
-                  value={productSearch}
-                  onChange={(e) => setProductSearch(e.target.value)}
-                  style={{
-                    padding: '8px 14px',
-                    borderRadius: '10px',
-                    border: '1px solid #e2e8f0',
-                    fontSize: '0.85rem',
-                    background: '#f8fafc',
-                  }}
-                />
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setIsAddProductModalOpen(true)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      background: 'linear-gradient(135deg, #0f172a 0%, #2563eb 100%)',
+                      color: '#ffffff',
+                      border: 'none',
+                      padding: '9px 18px',
+                      borderRadius: '10px',
+                      fontSize: '0.82rem',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 14px rgba(37, 99, 235, 0.25)',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    <Plus size={16} />
+                    <span>Add New Product</span>
+                  </button>
+                </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
-                {products
-                  .filter((p) => p.name?.toLowerCase().includes(productSearch.toLowerCase()))
-                  .map((prod) => {
-                    const isLow = (prod.stock || 0) < 5;
+              {/* INVENTORY METRIC KPI STRIP (4 METRIC PILLS) */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
+                <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div>
+                    <div style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 700 }}>Total Catalog SKUs</div>
+                    <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#0f172a', marginTop: '2px' }}>{allCatalogProducts.length}</div>
+                  </div>
+                  <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Boxes size={18} />
+                  </div>
+                </div>
+
+                <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div>
+                    <div style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 700 }}>In-Stock Healthy</div>
+                    <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#059669', marginTop: '2px' }}>
+                      {allCatalogProducts.filter((p) => (p.stock || 0) >= 10).length}
+                    </div>
+                  </div>
+                  <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: '#ecfdf5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <CheckCircle2 size={18} />
+                  </div>
+                </div>
+
+                <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div>
+                    <div style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 700 }}>Low Stock Alert (&lt;10)</div>
+                    <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#d97706', marginTop: '2px' }}>
+                      {allCatalogProducts.filter((p) => (p.stock || 0) > 0 && (p.stock || 0) < 10).length}
+                    </div>
+                  </div>
+                  <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: '#fffbeb', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <AlertTriangle size={18} />
+                  </div>
+                </div>
+
+                <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div>
+                    <div style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 700 }}>Out of Stock</div>
+                    <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#dc2626', marginTop: '2px' }}>
+                      {allCatalogProducts.filter((p) => (p.stock || 0) === 0).length}
+                    </div>
+                  </div>
+                  <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: '#fef2f2', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <AlertCircle size={18} />
+                  </div>
+                </div>
+              </div>
+
+              {/* FILTERS & SEARCH CONTROL PANEL */}
+              <div className="pro-card" style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {/* Row 1: Stock Status Tabs & View Mode Toggles */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                  {/* Status Pills */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    {[
+                      { key: 'ALL', label: 'All Products', count: allCatalogProducts.length },
+                      { key: 'IN_STOCK', label: 'In Stock', count: allCatalogProducts.filter((p) => (p.stock || 0) >= 10).length },
+                      { key: 'LOW_STOCK', label: 'Low Stock (<10)', count: allCatalogProducts.filter((p) => (p.stock || 0) > 0 && (p.stock || 0) < 10).length },
+                      { key: 'OUT_OF_STOCK', label: 'Out of Stock', count: allCatalogProducts.filter((p) => (p.stock || 0) === 0).length },
+                    ].map((tab) => {
+                      const isActive = productStatusFilter === tab.key;
+                      return (
+                        <button
+                          key={tab.key}
+                          type="button"
+                          onClick={() => setProductStatusFilter(tab.key)}
+                          style={{
+                            padding: '6px 14px',
+                            borderRadius: '8px',
+                            border: isActive ? '1px solid #0f172a' : '1px solid #e2e8f0',
+                            background: isActive ? '#0f172a' : '#f8fafc',
+                            color: isActive ? '#ffffff' : '#475569',
+                            fontSize: '0.78rem',
+                            fontWeight: isActive ? 800 : 600,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            transition: 'all 0.15s ease',
+                          }}
+                        >
+                          <span>{tab.label}</span>
+                          <span
+                            style={{
+                              fontSize: '0.7rem',
+                              padding: '1px 6px',
+                              borderRadius: '9999px',
+                              background: isActive ? 'rgba(255,255,255,0.2)' : '#e2e8f0',
+                              color: isActive ? '#ffffff' : '#64748b',
+                              fontWeight: 800,
+                            }}
+                          >
+                            {tab.count}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* View Mode Toggle (Grid vs Table) */}
+                  <div style={{ display: 'flex', alignItems: 'center', background: '#f1f5f9', padding: '3px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                    <button
+                      type="button"
+                      onClick={() => setProductViewMode('grid')}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '5px 10px',
+                        borderRadius: '6px',
+                        border: 'none',
+                        background: productViewMode === 'grid' ? '#ffffff' : 'transparent',
+                        color: productViewMode === 'grid' ? '#0f172a' : '#64748b',
+                        fontWeight: productViewMode === 'grid' ? 800 : 600,
+                        fontSize: '0.74rem',
+                        cursor: 'pointer',
+                        boxShadow: productViewMode === 'grid' ? '0 1px 3px rgba(15,23,42,0.1)' : 'none',
+                      }}
+                      title="Grid Cards View"
+                    >
+                      <Grid size={14} />
+                      <span className="hidden sm:inline">Grid</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setProductViewMode('table')}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '5px 10px',
+                        borderRadius: '6px',
+                        border: 'none',
+                        background: productViewMode === 'table' ? '#ffffff' : 'transparent',
+                        color: productViewMode === 'table' ? '#0f172a' : '#64748b',
+                        fontWeight: productViewMode === 'table' ? 800 : 600,
+                        fontSize: '0.74rem',
+                        cursor: 'pointer',
+                        boxShadow: productViewMode === 'table' ? '0 1px 3px rgba(15,23,42,0.1)' : 'none',
+                      }}
+                      title="Spreadsheet Table View"
+                    >
+                      <List size={14} />
+                      <span className="hidden sm:inline">Table</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Row 2: Search, Category Selector, Sorting Dropdown */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+                  {/* Search Input with Clear Button */}
+                  <div style={{ position: 'relative', flex: 1, minWidth: '220px' }}>
+                    <Search size={15} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                    <input
+                      type="text"
+                      placeholder="Search by title, SKU, or category..."
+                      value={productSearch}
+                      onChange={(e) => setProductSearch(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '8px 36px 8px 34px',
+                        borderRadius: '10px',
+                        border: '1px solid #e2e8f0',
+                        fontSize: '0.82rem',
+                        background: '#f8fafc',
+                        color: '#0f172a',
+                        outline: 'none',
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                    {productSearch && (
+                      <button
+                        type="button"
+                        onClick={() => setProductSearch('')}
+                        style={{
+                          position: 'absolute',
+                          right: '10px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          background: 'none',
+                          border: 'none',
+                          color: '#94a3b8',
+                          cursor: 'pointer',
+                          padding: '2px',
+                        }}
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Dropdowns */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                    {/* Category Filter */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 600 }}>Category:</span>
+                      <select
+                        value={productCategoryFilter}
+                        onChange={(e) => setProductCategoryFilter(e.target.value)}
+                        style={{
+                          background: '#f8fafc',
+                          border: '1px solid #e2e8f0',
+                          borderRadius: '8px',
+                          padding: '6px 10px',
+                          fontSize: '0.76rem',
+                          fontWeight: 700,
+                          color: '#0f172a',
+                          cursor: 'pointer',
+                          outline: 'none',
+                        }}
+                      >
+                        {availableProductCategories.map((cat) => (
+                          <option key={cat} value={cat}>
+                            {cat === 'ALL' ? 'All Categories' : cat}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Sort Selector */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 600 }}>Sort:</span>
+                      <select
+                        value={productSortBy}
+                        onChange={(e) => setProductSortBy(e.target.value)}
+                        style={{
+                          background: '#f8fafc',
+                          border: '1px solid #e2e8f0',
+                          borderRadius: '8px',
+                          padding: '6px 10px',
+                          fontSize: '0.76rem',
+                          fontWeight: 700,
+                          color: '#0f172a',
+                          cursor: 'pointer',
+                          outline: 'none',
+                        }}
+                      >
+                        <option value="NEWEST">Latest Added</option>
+                        <option value="PRICE_LOW_HIGH">Price: Low to High</option>
+                        <option value="PRICE_HIGH_LOW">Price: High to Low</option>
+                        <option value="STOCK_LOW_HIGH">Stock: Low to High</option>
+                        <option value="STOCK_HIGH_LOW">Stock: High to Low</option>
+                        <option value="NAME_AZ">Product Name (A-Z)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* PRODUCT LISTINGS: GRID OR TABLE */}
+              {paginatedProducts.length === 0 ? (
+                <div className="pro-card" style={{ padding: '60px 20px', textAlign: 'center' }}>
+                  <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: '#64748b' }}>
+                    <Boxes size={28} />
+                  </div>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                    No matching products found
+                  </h3>
+                  <p style={{ fontSize: '0.82rem', color: '#64748b', maxWidth: '380px', margin: '6px auto 18px' }}>
+                    Try clearing your search query or switching your status filter to "All Products".
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProductSearch('');
+                      setProductStatusFilter('ALL');
+                      setProductCategoryFilter('ALL');
+                    }}
+                    style={{
+                      background: '#0f172a',
+                      color: '#ffffff',
+                      border: 'none',
+                      padding: '8px 18px',
+                      borderRadius: '8px',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Reset All Filters
+                  </button>
+                </div>
+              ) : productViewMode === 'grid' ? (
+                /* GRID CARDS VIEW */
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '18px' }}>
+                  {paginatedProducts.map((prod) => {
+                    const stockNum = Number(prod.stock || 0);
+                    const isOutOfStock = stockNum === 0;
+                    const isLow = stockNum > 0 && stockNum < 10;
+                    const sellingPrice = prod.discountPrice || prod.price;
+                    const mrp = prod.price;
+                    const hasDiscount = prod.discountPrice && prod.discountPrice < prod.price;
+                    const discountPercent = hasDiscount ? Math.round(((mrp - sellingPrice) / mrp) * 100) : 0;
+
                     return (
                       <div
                         key={prod._id}
+                        className="pro-card"
                         style={{
-                          border: '1px solid #eef2f6',
-                          borderRadius: '18px',
                           padding: '16px',
                           display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'space-between',
                           gap: '14px',
-                          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.03)',
+                          position: 'relative',
                         }}
                       >
-                        <img
-                          src={prod.image || prod.images?.[0]}
-                          alt={prod.name}
-                          style={{ width: '68px', height: '68px', borderRadius: '12px', objectFit: 'cover' }}
-                        />
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#1e1e24', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {prod.name}
-                          </div>
-                          <div style={{ fontSize: '0.82rem', fontWeight: 900, color: '#6366f1', marginTop: '2px' }}>
-                            {formatINR(prod.discountPrice || prod.price)}
-                          </div>
-
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '10px' }}>
+                        {/* Top: Image + Category Tag */}
+                        <div>
+                          <div style={{ position: 'relative', width: '100%', height: '170px', borderRadius: '12px', overflow: 'hidden', background: '#f1f5f9' }}>
+                            <img
+                              src={prod.image || prod.images?.[0] || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400'}
+                              alt={prod.name}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.3s ease' }}
+                              onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.05)')}
+                              onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+                            />
+                            {/* Category Badge */}
                             <span
                               style={{
-                                padding: '2px 8px',
-                                borderRadius: '6px',
-                                fontSize: '0.72rem',
+                                position: 'absolute',
+                                top: '10px',
+                                left: '10px',
+                                background: 'rgba(15, 23, 42, 0.85)',
+                                backdropFilter: 'blur(4px)',
+                                color: '#ffffff',
+                                fontSize: '0.68rem',
                                 fontWeight: 800,
-                                background: isLow ? '#fee2e2' : '#ecfdf5',
-                                color: isLow ? '#dc2626' : '#10b981',
+                                padding: '3px 8px',
+                                borderRadius: '6px',
                               }}
                             >
-                              {isLow ? `Low: ${prod.stock}` : `Stock: ${prod.stock}`}
+                              {prod.category || 'Apparel'}
                             </span>
 
+                            {/* SKU Chip */}
+                            <span
+                              style={{
+                                position: 'absolute',
+                                bottom: '10px',
+                                left: '10px',
+                                background: 'rgba(255, 255, 255, 0.92)',
+                                color: '#0f172a',
+                                fontSize: '0.65rem',
+                                fontWeight: 800,
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                                letterSpacing: '0.02em',
+                              }}
+                            >
+                              {prod.sku || `SKU-${prod._id.slice(-6).toUpperCase()}`}
+                            </span>
+                          </div>
+
+                          {/* Product Title */}
+                          <div style={{ marginTop: '12px' }}>
+                            <h3
+                              title={prod.name}
+                              style={{
+                                margin: 0,
+                                fontSize: '0.92rem',
+                                fontWeight: 800,
+                                color: '#0f172a',
+                                lineHeight: 1.35,
+                                display: '-webkit-box',
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden',
+                                height: '2.5em',
+                              }}
+                            >
+                              {prod.name}
+                            </h3>
+
+                            {/* Price Strip */}
+                            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '8px' }}>
+                              <span style={{ fontSize: '1.15rem', fontWeight: 900, color: '#0f172a' }}>
+                                {formatINR(sellingPrice)}
+                              </span>
+                              {hasDiscount && (
+                                <>
+                                  <span style={{ fontSize: '0.78rem', color: '#94a3b8', textDecoration: 'line-through' }}>
+                                    {formatINR(mrp)}
+                                  </span>
+                                  <span style={{ fontSize: '0.7rem', color: '#059669', fontWeight: 800, background: '#ecfdf5', padding: '1px 5px', borderRadius: '4px' }}>
+                                    {discountPercent}% OFF
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Bottom: Stock Status Meter & Quick Boost Actions */}
+                        <div style={{ paddingTop: '12px', borderTop: '1px solid #f1f5f9' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                            <span
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                fontSize: '0.72rem',
+                                fontWeight: 800,
+                                color: isOutOfStock ? '#dc2626' : isLow ? '#d97706' : '#059669',
+                                background: isOutOfStock ? '#fef2f2' : isLow ? '#fffbeb' : '#ecfdf5',
+                                padding: '3px 8px',
+                                borderRadius: '6px',
+                              }}
+                            >
+                              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: isOutOfStock ? '#dc2626' : isLow ? '#d97706' : '#059669' }} />
+                              {isOutOfStock ? 'Out of Stock (0)' : isLow ? `Low Stock (${stockNum})` : `In Stock: ${stockNum} units`}
+                            </span>
+
+                            <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 600 }}>
+                              Warehouse #14
+                            </span>
+                          </div>
+
+                          {/* Quick Inventory Boost Buttons */}
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
+                            <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>Quick Restock:</span>
                             <div style={{ display: 'flex', gap: '6px' }}>
                               <button
                                 type="button"
                                 onClick={() => handleQuickBoostStock(prod, 10)}
                                 style={{
-                                  background: '#f4f6fa',
-                                  border: 'none',
-                                  padding: '4px 8px',
+                                  background: '#f8fafc',
+                                  border: '1px solid #e2e8f0',
+                                  padding: '5px 9px',
                                   borderRadius: '6px',
-                                  fontSize: '0.72rem',
+                                  fontSize: '0.74rem',
                                   fontWeight: 800,
                                   cursor: 'pointer',
-                                  color: '#1e1e24',
+                                  color: '#0f172a',
+                                  transition: 'all 0.15s ease',
                                 }}
+                                onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#2563eb')}
+                                onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#e2e8f0')}
+                                title="Add +10 inventory units"
                               >
                                 +10
                               </button>
@@ -1867,17 +2510,20 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                                 type="button"
                                 onClick={() => handleQuickBoostStock(prod, 25)}
                                 style={{
-                                  background: '#10b981',
+                                  background: '#059669',
+                                  color: '#ffffff',
                                   border: 'none',
-                                  padding: '4px 8px',
+                                  padding: '5px 10px',
                                   borderRadius: '6px',
-                                  fontSize: '0.72rem',
+                                  fontSize: '0.74rem',
                                   fontWeight: 800,
                                   cursor: 'pointer',
-                                  color: '#ffffff',
+                                  boxShadow: '0 2px 6px rgba(5, 150, 105, 0.25)',
+                                  transition: 'all 0.15s ease',
                                 }}
+                                title="Add +25 bulk units"
                               >
-                                +25
+                                +25 Units
                               </button>
                             </div>
                           </div>
@@ -1885,6 +2531,263 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                       </div>
                     );
                   })}
+                </div>
+              ) : (
+                /* SPREADSHEET TABLE VIEW */
+                <div className="pro-card" style={{ padding: 0, overflow: 'hidden' }}>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '700px' }}>
+                      <thead>
+                        <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                          <th style={{ padding: '12px 18px', fontSize: '0.75rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase' }}>Product Details</th>
+                          <th style={{ padding: '12px 16px', fontSize: '0.75rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase' }}>SKU & Category</th>
+                          <th style={{ padding: '12px 16px', fontSize: '0.75rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase' }}>Selling Price</th>
+                          <th style={{ padding: '12px 16px', fontSize: '0.75rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase' }}>Stock Status</th>
+                          <th style={{ padding: '12px 18px', fontSize: '0.75rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', textAlign: 'right' }}>Inventory Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {paginatedProducts.map((prod) => {
+                          const stockNum = Number(prod.stock || 0);
+                          const isOutOfStock = stockNum === 0;
+                          const isLow = stockNum > 0 && stockNum < 10;
+                          return (
+                            <tr key={prod._id} style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 0.15s ease' }} onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')} onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}>
+                              <td style={{ padding: '12px 18px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                  <img
+                                    src={prod.image || prod.images?.[0] || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=120'}
+                                    alt={prod.name}
+                                    style={{ width: '44px', height: '44px', borderRadius: '8px', objectFit: 'cover', border: '1px solid #e2e8f0' }}
+                                  />
+                                  <div style={{ maxWidth: '260px' }}>
+                                    <div style={{ fontSize: '0.86rem', fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                      {prod.name}
+                                    </div>
+                                    <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Added {formatDate(prod.createdAt || new Date())}</span>
+                                  </div>
+                                </div>
+                              </td>
+
+                              <td style={{ padding: '12px 16px' }}>
+                                <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#0f172a' }}>{prod.category || 'General'}</div>
+                                <code style={{ fontSize: '0.68rem', color: '#2563eb', background: '#eff6ff', padding: '1px 5px', borderRadius: '4px' }}>
+                                  {prod.sku || `SKU-${prod._id.slice(-6).toUpperCase()}`}
+                                </code>
+                              </td>
+
+                              <td style={{ padding: '12px 16px' }}>
+                                <div style={{ fontSize: '0.9rem', fontWeight: 900, color: '#0f172a' }}>
+                                  {formatINR(prod.discountPrice || prod.price)}
+                                </div>
+                                {prod.discountPrice && prod.discountPrice < prod.price && (
+                                  <span style={{ fontSize: '0.72rem', color: '#94a3b8', textDecoration: 'line-through' }}>
+                                    {formatINR(prod.price)}
+                                  </span>
+                                )}
+                              </td>
+
+                              <td style={{ padding: '12px 16px' }}>
+                                <span
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '5px',
+                                    fontSize: '0.74rem',
+                                    fontWeight: 800,
+                                    color: isOutOfStock ? '#dc2626' : isLow ? '#d97706' : '#059669',
+                                    background: isOutOfStock ? '#fef2f2' : isLow ? '#fffbeb' : '#ecfdf5',
+                                    padding: '3px 8px',
+                                    borderRadius: '6px',
+                                  }}
+                                >
+                                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: isOutOfStock ? '#dc2626' : isLow ? '#d97706' : '#059669' }} />
+                                  {isOutOfStock ? '0 (Out)' : `${stockNum} Available`}
+                                </span>
+                              </td>
+
+                              <td style={{ padding: '12px 18px', textAlign: 'right' }}>
+                                <div style={{ display: 'inline-flex', gap: '6px' }}>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleQuickBoostStock(prod, 10)}
+                                    style={{
+                                      background: '#f1f5f9',
+                                      border: '1px solid #cbd5e1',
+                                      padding: '5px 9px',
+                                      borderRadius: '6px',
+                                      fontSize: '0.72rem',
+                                      fontWeight: 800,
+                                      cursor: 'pointer',
+                                      color: '#0f172a',
+                                    }}
+                                  >
+                                    +10
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleQuickBoostStock(prod, 25)}
+                                    style={{
+                                      background: '#059669',
+                                      color: '#ffffff',
+                                      border: 'none',
+                                      padding: '5px 10px',
+                                      borderRadius: '6px',
+                                      fontSize: '0.72rem',
+                                      fontWeight: 800,
+                                      cursor: 'pointer',
+                                    }}
+                                  >
+                                    +25 Units
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* ENTERPRISE PAGINATION CONTROL BAR (PREV / NEXT / PAGE PILLS) */}
+              <div
+                className="pro-card"
+                style={{
+                  padding: '14px 20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '14px',
+                }}
+              >
+                {/* Left: Summary Info */}
+                <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>
+                  Showing <strong style={{ color: '#0f172a' }}>{totalProductsCount > 0 ? startProductIndex + 1 : 0}</strong> to{' '}
+                  <strong style={{ color: '#0f172a' }}>{endProductIndex}</strong> of{' '}
+                  <strong style={{ color: '#0f172a' }}>{totalProductsCount}</strong> Products
+                </div>
+
+                {/* Middle: Items per page selector */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '0.76rem', color: '#64748b', fontWeight: 600 }}>Rows:</span>
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    {[8, 16, 24].map((cnt) => (
+                      <button
+                        key={cnt}
+                        type="button"
+                        onClick={() => {
+                          setProductsPerPage(cnt);
+                          setProductPage(1);
+                        }}
+                        style={{
+                          padding: '4px 8px',
+                          borderRadius: '6px',
+                          border: productsPerPage === cnt ? '1px solid #0f172a' : '1px solid #e2e8f0',
+                          background: productsPerPage === cnt ? '#0f172a' : '#ffffff',
+                          color: productsPerPage === cnt ? '#ffffff' : '#64748b',
+                          fontSize: '0.74rem',
+                          fontWeight: productsPerPage === cnt ? 800 : 600,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {cnt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Right: Pagination Navigation Buttons */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {/* Previous Button */}
+                  <button
+                    type="button"
+                    onClick={() => handleProductPageChange(safeCurrentProductPage - 1)}
+                    disabled={safeCurrentProductPage <= 1}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '6px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #e2e8f0',
+                      background: safeCurrentProductPage <= 1 ? '#f8fafc' : '#ffffff',
+                      color: safeCurrentProductPage <= 1 ? '#cbd5e1' : '#0f172a',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      cursor: safeCurrentProductPage <= 1 ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    <ChevronLeft size={15} />
+                    <span>Previous</span>
+                  </button>
+
+                  {/* Page Numbers */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    {Array.from({ length: totalProductPages }, (_, i) => i + 1).map((pNum) => {
+                      const isCurrent = safeCurrentProductPage === pNum;
+                      // Display window for page pills if large page count
+                      if (totalProductPages > 6 && Math.abs(safeCurrentProductPage - pNum) > 2 && pNum !== 1 && pNum !== totalProductPages) {
+                        if (pNum === 2 || pNum === totalProductPages - 1) {
+                          return <span key={pNum} style={{ color: '#94a3b8', fontSize: '0.75rem', padding: '0 2px' }}>...</span>;
+                        }
+                        return null;
+                      }
+
+                      return (
+                        <button
+                          key={pNum}
+                          type="button"
+                          onClick={() => handleProductPageChange(pNum)}
+                          style={{
+                            width: '32px',
+                            height: '32px',
+                            borderRadius: '8px',
+                            border: isCurrent ? '1px solid #0f172a' : '1px solid #e2e8f0',
+                            background: isCurrent ? '#0f172a' : '#ffffff',
+                            color: isCurrent ? '#ffffff' : '#475569',
+                            fontSize: '0.78rem',
+                            fontWeight: isCurrent ? 800 : 600,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.15s ease',
+                          }}
+                        >
+                          {pNum}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Next Button */}
+                  <button
+                    type="button"
+                    onClick={() => handleProductPageChange(safeCurrentProductPage + 1)}
+                    disabled={safeCurrentProductPage >= totalProductPages}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '6px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #e2e8f0',
+                      background: safeCurrentProductPage >= totalProductPages ? '#f8fafc' : '#ffffff',
+                      color: safeCurrentProductPage >= totalProductPages ? '#cbd5e1' : '#0f172a',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      cursor: safeCurrentProductPage >= totalProductPages ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    <span>Next</span>
+                    <ChevronRight size={15} />
+                  </button>
+                </div>
               </div>
             </div>
           )}
