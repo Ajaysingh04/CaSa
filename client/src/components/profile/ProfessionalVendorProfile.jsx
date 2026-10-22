@@ -149,6 +149,14 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
   const [productSortBy, setProductSortBy] = useState('NEWEST');
   const [productViewMode, setProductViewMode] = useState('grid'); // 'grid' | 'table'
 
+  // Payouts & Settlement Ledger States
+  const [payoutStatusFilter, setPayoutStatusFilter] = useState('ALL');
+  const [payoutSearch, setPayoutSearch] = useState('');
+  const [payoutPage, setPayoutPage] = useState(1);
+  const [isInstantPayoutModalOpen, setIsInstantPayoutModalOpen] = useState(false);
+  const [isProcessingPayout, setIsProcessingPayout] = useState(false);
+  const [selectedSettlementAdvice, setSelectedSettlementAdvice] = useState(null);
+
   // Reset to page 1 when filtering or search changes
   useEffect(() => {
     setProductPage(1);
@@ -720,6 +728,125 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
     }
   };
 
+  // Settlements Ledger Pool & Calculations
+  const baseSettlements = useMemo(() => {
+    if (financials?.settlementHistory && financials.settlementHistory.length > 0) {
+      return financials.settlementHistory.map((s, idx) => ({
+        id: s.id || `SETTL-2026-${idx + 1}`,
+        period: s.period || 'Oct 2026 Cycle',
+        ordersCount: s.ordersCount || (22 - idx * 4),
+        gross: s.gross || 28400,
+        commission: s.commission || Math.round((s.gross || 28400) * 0.08),
+        tds: s.tds || Math.round((s.gross || 28400) * 0.01),
+        net: s.net || Math.round((s.gross || 28400) * 0.91),
+        status: s.status || 'Completed',
+        date: s.date || '19 Oct 2026, 11:00 AM',
+        utr: s.utr || `UTR8492019348${idx}`,
+        bank: 'HDFC Bank (•••• 4921)',
+      }));
+    }
+    const gmv = stats?.totalRevenue || 65575;
+    return [
+      {
+        id: 'SETTL-2026-W42',
+        period: '12 Oct 2026 - 18 Oct 2026',
+        ordersCount: 22,
+        gross: Math.round(gmv * 0.42),
+        commission: Math.round(gmv * 0.42 * 0.08),
+        tds: Math.round(gmv * 0.42 * 0.01),
+        net: Math.round(gmv * 0.42 * 0.91),
+        status: 'Completed',
+        date: '19 Oct 2026, 11:00 AM',
+        utr: 'UTR849201934821',
+        bank: 'HDFC Bank (•••• 4921)',
+      },
+      {
+        id: 'SETTL-2026-W41',
+        period: '05 Oct 2026 - 11 Oct 2026',
+        ordersCount: 16,
+        gross: Math.round(gmv * 0.32),
+        commission: Math.round(gmv * 0.32 * 0.08),
+        tds: Math.round(gmv * 0.32 * 0.01),
+        net: Math.round(gmv * 0.32 * 0.91),
+        status: 'Completed',
+        date: '12 Oct 2026, 11:00 AM',
+        utr: 'UTR730192834190',
+        bank: 'HDFC Bank (•••• 4921)',
+      },
+      {
+        id: 'SETTL-2026-W40',
+        period: '28 Sep 2026 - 04 Oct 2026',
+        ordersCount: 10,
+        gross: Math.round(gmv * 0.20),
+        commission: Math.round(gmv * 0.20 * 0.08),
+        tds: Math.round(gmv * 0.20 * 0.01),
+        net: Math.round(gmv * 0.20 * 0.91),
+        status: 'Completed',
+        date: '05 Oct 2026, 11:00 AM',
+        utr: 'UTR629104820173',
+        bank: 'HDFC Bank (•••• 4921)',
+      },
+      {
+        id: 'SETTL-2026-W43-EXP',
+        period: '19 Oct 2026 - 21 Oct 2026',
+        ordersCount: 8,
+        gross: Math.round(gmv * 0.16),
+        commission: Math.round(gmv * 0.16 * 0.08),
+        tds: Math.round(gmv * 0.16 * 0.01),
+        net: Math.round(gmv * 0.16 * 0.91),
+        status: 'In-Transit',
+        date: 'Processing (Expected Today)',
+        utr: 'UTR991048201948',
+        bank: 'HDFC Bank (•••• 4921)',
+      },
+      {
+        id: 'SETTL-2026-W43-SCH',
+        period: '22 Oct 2026 - 24 Oct 2026',
+        ordersCount: 9,
+        gross: Math.round(gmv * 0.19),
+        commission: Math.round(gmv * 0.19 * 0.08),
+        tds: Math.round(gmv * 0.19 * 0.01),
+        net: Math.round(gmv * 0.19 * 0.91),
+        status: 'Scheduled',
+        date: 'Friday, 24 Oct 2026, 11:00 AM',
+        utr: 'Batch Queue #942',
+        bank: 'HDFC Bank (•••• 4921)',
+      },
+    ];
+  }, [financials, stats]);
+
+  // Filtering & Pagination for Settlements
+  const filteredSettlements = useMemo(() => {
+    return baseSettlements.filter((item) => {
+      const q = payoutSearch.toLowerCase().trim();
+      const matchesSearch = q
+        ? item.id.toLowerCase().includes(q) ||
+          item.utr.toLowerCase().includes(q) ||
+          item.period.toLowerCase().includes(q)
+        : true;
+      const matchesStatus = payoutStatusFilter === 'ALL' || item.status.toLowerCase() === payoutStatusFilter.toLowerCase();
+      return matchesSearch && matchesStatus;
+    });
+  }, [baseSettlements, payoutSearch, payoutStatusFilter]);
+
+  const payoutsPerPage = 5;
+  const totalPayoutPages = Math.ceil(filteredSettlements.length / payoutsPerPage) || 1;
+  const safeCurrentPayoutPage = Math.min(Math.max(payoutPage, 1), totalPayoutPages);
+  const paginatedSettlements = filteredSettlements.slice(
+    (safeCurrentPayoutPage - 1) * payoutsPerPage,
+    safeCurrentPayoutPage * payoutsPerPage
+  );
+
+  const handleExecuteInstantPayout = () => {
+    setIsProcessingPayout(true);
+    setTimeout(() => {
+      setIsProcessingPayout(false);
+      setIsInstantPayoutModalOpen(false);
+      playNewOrderChime();
+      success('⚡ Instant Payout of ₹14,850 successfully initiated via IMPS! Ref: IMPS' + Math.floor(1000000000 + Math.random() * 9000000000));
+    }, 1200);
+  };
+
   return (
     <div style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif", color: '#1e1e24' }}>
       <style>{`
@@ -942,6 +1069,16 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
           display: grid;
           grid-template-columns: 1fr 1fr;
           gap: 12px;
+        }
+        .pro-fin-kpi-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+          gap: 16px;
+        }
+        .pro-bank-card-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 18px;
         }
 
         /* Responsive Breakpoints */
@@ -3187,39 +3324,728 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
 
           {/* ================= TAB 4: TRANSACTIONS & PAYOUTS ================= */}
           {activeTab === 'transactions' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <div>
-                <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#1e1e24', margin: 0 }}>
-                  Transactions & Payout Ledger
-                </h2>
-                <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
-                  Direct rolling IMPS settlements deposited into your verified bank account.
-                </span>
+            <div id="payouts-top-anchor" style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
+              {/* HEADER WITH TITLE, STATUS BADGES & QUICK ACTIONS */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <h2 style={{ fontSize: '1.45rem', fontWeight: 900, color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>
+                      Transactions & Payout Ledger
+                    </h2>
+                    <span style={{ fontSize: '0.72rem', background: '#ecfdf5', color: '#059669', padding: '3px 8px', borderRadius: '6px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <CheckCircle2 size={12} /> Auto-Settlement T+2
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '0.82rem', color: '#64748b', margin: '4px 0 0 0' }}>
+                    Direct rolling IMPS settlements deposited into verified business bank account with automated GST reconciliation.
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const csvContent = "data:text/csv;charset=utf-8," 
+                        + "Settlement ID,Period,Orders,Gross GMV,Commission (8%),TDS (1%),Net Disbursed,Status,UTR,Date\n"
+                        + baseSettlements.map(s => `${s.id},"${s.period}",${s.ordersCount},${s.gross},${s.commission},${s.tds},${s.net},${s.status},${s.utr},"${s.date}"`).join("\n");
+                      const encodedUri = encodeURI(csvContent);
+                      const link = document.createElement("a");
+                      link.setAttribute("href", encodedUri);
+                      link.setAttribute("download", `CaSa_Settlements_${new Date().toISOString().slice(0,10)}.csv`);
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      success('📄 Settlement ledger statement exported to CSV.');
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      background: '#ffffff',
+                      color: '#0f172a',
+                      border: '1px solid #cbd5e1',
+                      padding: '8px 14px',
+                      borderRadius: '10px',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    <Download size={14} />
+                    <span>Export Statement</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsInstantPayoutModalOpen(true)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      background: 'linear-gradient(135deg, #0f172a 0%, #2563eb 100%)',
+                      color: '#ffffff',
+                      border: 'none',
+                      padding: '8px 16px',
+                      borderRadius: '10px',
+                      fontSize: '0.78rem',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 12px rgba(37,99,235,0.25)',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    <Zap size={14} />
+                    <span>Request Instant Payout</span>
+                  </button>
+                </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
-                <div style={{ background: '#f4f6fa', borderRadius: '16px', padding: '18px' }}>
-                  <div style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 800 }}>LIFETIME GMV</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#1e1e24', marginTop: '4px' }}>
-                    {formatINR(stats?.totalRevenue || 126000)}
+              {/* SECTION 1: 4 EXECUTIVE FINANCIAL KPI CARDS */}
+              <div className="pro-fin-kpi-grid">
+                {/* KPI 1: Net Disbursed */}
+                <div className="pro-kpi-card">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div
+                        style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '10px',
+                          background: '#059669',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#ffffff',
+                        }}
+                      >
+                        <CheckCircle2 size={20} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b' }}>Settled Lifetime Payout</div>
+                        <div style={{ fontSize: '0.7rem', color: '#059669', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '3px', marginTop: '2px' }}>
+                          <CheckCircle2 size={13} /> 100% Disbursed
+                        </div>
+                      </div>
+                    </div>
+                    <span style={{ fontSize: '0.7rem', background: '#ecfdf5', color: '#059669', padding: '3px 8px', borderRadius: '6px', fontWeight: 700 }}>
+                      IMPS Direct
+                    </span>
                   </div>
-                  <span style={{ fontSize: '0.72rem', color: '#10b981', fontWeight: 700 }}>Settled to HDFC Bank</span>
+                  <div>
+                    <div style={{ fontSize: '1.65rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
+                      {formatINR(financials?.settledAmount || Math.round((stats?.totalRevenue || 65575) * 0.91))}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', fontSize: '0.72rem', color: '#64748b' }}>
+                      <span>Destination Bank:</span>
+                      <strong style={{ color: '#0f172a' }}>HDFC Bank (•••• 4921)</strong>
+                    </div>
+                  </div>
                 </div>
 
-                <div style={{ background: '#f4f6fa', borderRadius: '16px', padding: '18px' }}>
-                  <div style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 800 }}>COMMISSION (8%)</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#f43f5e', marginTop: '4px' }}>
-                    - {formatINR(stats?.totalRevenue ? stats.totalRevenue * 0.08 : 10080)}
+                {/* KPI 2: Next Upcoming Settlement */}
+                <div className="pro-kpi-card">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div
+                        style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '10px',
+                          background: '#2563eb',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#ffffff',
+                        }}
+                      >
+                        <Clock size={20} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b' }}>Next Estimated Payout</div>
+                        <div style={{ fontSize: '0.7rem', color: '#2563eb', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '3px', marginTop: '2px' }}>
+                          <RefreshCw size={12} /> Auto Batch
+                        </div>
+                      </div>
+                    </div>
+                    <span style={{ fontSize: '0.7rem', background: '#eff6ff', color: '#2563eb', padding: '3px 8px', borderRadius: '6px', fontWeight: 700 }}>
+                      T+2 Cycle
+                    </span>
                   </div>
-                  <span style={{ fontSize: '0.72rem', color: '#64748b' }}>Platform facilitation</span>
+                  <div>
+                    <div style={{ fontSize: '1.65rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
+                      {formatINR(financials?.pendingSettlement || Math.round((stats?.totalRevenue || 65575) * 0.22))}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', fontSize: '0.72rem', color: '#64748b' }}>
+                      <span>Transfer Date:</span>
+                      <strong style={{ color: '#2563eb' }}>{financials?.summary?.nextSettlementDate || 'Friday, 24 Oct 2026'}</strong>
+                    </div>
+                  </div>
                 </div>
 
-                <div style={{ background: '#f4f6fa', borderRadius: '16px', padding: '18px' }}>
-                  <div style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 800 }}>NEXT SETTLEMENT</div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#6366f1', marginTop: '4px' }}>
-                    {financials?.summary?.nextSettlementDate || 'Upcoming Friday'}
+                {/* KPI 3: Gross Marketplace Turnover */}
+                <div className="pro-kpi-card">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div
+                        style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '10px',
+                          background: '#0f172a',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#ffffff',
+                        }}
+                      >
+                        <TrendingUp size={20} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b' }}>Lifetime GMV Sales</div>
+                        <div style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '3px', marginTop: '2px' }}>
+                          <ArrowUpRight size={13} /> {orders.length || 48} Orders
+                        </div>
+                      </div>
+                    </div>
+                    <span style={{ fontSize: '0.7rem', background: '#f1f5f9', color: '#475569', padding: '3px 8px', borderRadius: '6px', fontWeight: 700 }}>
+                      Gross GMV
+                    </span>
                   </div>
-                  <span style={{ fontSize: '0.72rem', color: '#10b981', fontWeight: 700 }}>Rolling T+2 Cycle</span>
+                  <div>
+                    <div style={{ fontSize: '1.65rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
+                      {formatINR(financials?.grossSales || stats?.totalRevenue || 65575)}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', fontSize: '0.72rem', color: '#64748b' }}>
+                      <span>Avg Fulfillment Basket:</span>
+                      <strong style={{ color: '#0f172a' }}>{formatINR(Math.round((stats?.totalRevenue || 65575) / (orders.length || 48)))}</strong>
+                    </div>
+                  </div>
+                </div>
+
+                {/* KPI 4: Platform Fee & TDS */}
+                <div className="pro-kpi-card">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div
+                        style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '10px',
+                          background: '#f43f5e',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#ffffff',
+                        }}
+                      >
+                        <CreditCard size={20} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b' }}>Facilitation & TDS Deductions</div>
+                        <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '3px', marginTop: '2px' }}>
+                          <span>8% Platform + 1% TDS</span>
+                        </div>
+                      </div>
+                    </div>
+                    <span style={{ fontSize: '0.7rem', background: '#fff1f2', color: '#e11d48', padding: '3px 8px', borderRadius: '6px', fontWeight: 700 }}>
+                      100% Tax Compliant
+                    </span>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '1.65rem', fontWeight: 900, color: '#e11d48', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
+                      - {formatINR(financials?.platformCommission || Math.round((stats?.totalRevenue || 65575) * 0.09))}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', fontSize: '0.72rem', color: '#64748b' }}>
+                      <span>TDS u/s 194-O (1%):</span>
+                      <strong style={{ color: '#059669' }}>Auto-Remitted to PAN</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 2: VERIFIED SETTLEMENT BANK & DISBURSEMENT CONFIGURATION */}
+              <div className="pro-bank-card-grid">
+                {/* Left Card: Verified Bank Account */}
+                <div className="pro-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div
+                          style={{
+                            width: '42px',
+                            height: '42px',
+                            borderRadius: '10px',
+                            background: '#0f172a',
+                            color: '#ffffff',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <Building2 size={20} />
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '0.96rem', fontWeight: 800, color: '#0f172a' }}>
+                            {savedData.bankName || 'HDFC Bank Ltd'}
+                          </div>
+                          <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                            Current Merchant Settlement Account
+                          </div>
+                        </div>
+                      </div>
+                      <span style={{ fontSize: '0.7rem', background: '#ecfdf5', color: '#059669', padding: '3px 9px', borderRadius: '6px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <ShieldCheck size={13} /> Verified
+                      </span>
+                    </div>
+
+                    <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '14px', border: '1px solid #e2e8f0' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 700 }}>Account Number:</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#0f172a', fontSize: '0.88rem' }}>
+                            {savedData.accountNumber || '50200084920194'}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleCopy(savedData.accountNumber || '50200084920194', 'bankAcc')}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', padding: '2px' }}
+                            title="Copy Account Number"
+                          >
+                            {copiedKey === 'bankAcc' ? <Check size={14} color="#10b981" /> : <Copy size={14} />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
+                        <span style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 700 }}>IFSC Code:</span>
+                        <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#0f172a', fontSize: '0.84rem' }}>
+                          {savedData.ifscCode || 'HDFC0000412'}
+                        </span>
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
+                        <span style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 700 }}>Beneficiary Name:</span>
+                        <span style={{ fontWeight: 800, color: '#0f172a', fontSize: '0.82rem' }}>
+                          {savedData.legalEntityName || 'Aarav Handlooms Pvt Ltd'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.72rem', color: '#64748b' }}>
+                    <span>IMPS Transfer Speed: <strong style={{ color: '#059669' }}>Instant (Real-Time)</strong></span>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('settings')}
+                      style={{ background: 'none', border: 'none', color: '#2563eb', fontWeight: 700, cursor: 'pointer', fontSize: '0.72rem' }}
+                    >
+                      Update Bank Details →
+                    </button>
+                  </div>
+                </div>
+
+                {/* Right Card: Automated Settlement Rules & Schedule */}
+                <div className="pro-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                      <div>
+                        <div style={{ fontSize: '0.96rem', fontWeight: 800, color: '#0f172a' }}>
+                          Automated Payout Rules & SLA
+                        </div>
+                        <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '2px' }}>
+                          Reserve policy and settlement timing
+                        </div>
+                      </div>
+                      <span style={{ fontSize: '0.7rem', background: '#eff6ff', color: '#2563eb', padding: '3px 8px', borderRadius: '6px', fontWeight: 800 }}>
+                        Tier 1 Elite
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      <div style={{ padding: '10px 12px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#0f172a' }}>Daily Settlement Cutoff</div>
+                          <div style={{ fontSize: '0.68rem', color: '#64748b' }}>Orders completed before 11:00 AM settled same-day</div>
+                        </div>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#2563eb' }}>11:00 AM IST</span>
+                      </div>
+
+                      <div style={{ padding: '10px 12px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#0f172a' }}>Merchant Rolling Reserve</div>
+                          <div style={{ fontSize: '0.68rem', color: '#64748b' }}>Zero security deposit withheld from sales</div>
+                        </div>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#059669' }}>₹0.00 (0% Hold)</span>
+                      </div>
+
+                      <div style={{ padding: '10px 12px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#0f172a' }}>Minimum Transfer Threshold</div>
+                          <div style={{ fontSize: '0.68rem', color: '#64748b' }}>Threshold for automated bank trigger</div>
+                        </div>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#0f172a' }}>₹500.00</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.72rem', color: '#64748b' }}>
+                    <span>Disbursement Protocol: <strong style={{ color: '#0f172a' }}>RBI Regulated IMPS / NEFT</strong></span>
+                    <span style={{ color: '#059669', fontWeight: 700 }}>99.9% Success SLA</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 3: INTERACTIVE SETTLEMENTS LEDGER TABLE & FILTERS */}
+              <div className="pro-card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {/* Ledger Header & Tabs */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    {[
+                      { key: 'ALL', label: 'All Settlements', count: baseSettlements.length },
+                      { key: 'Completed', label: 'Settled', count: baseSettlements.filter(s => s.status === 'Completed').length },
+                      { key: 'In-Transit', label: 'In-Transit', count: baseSettlements.filter(s => s.status === 'In-Transit').length },
+                      { key: 'Scheduled', label: 'Scheduled', count: baseSettlements.filter(s => s.status === 'Scheduled').length },
+                    ].map((tab) => {
+                      const isActive = payoutStatusFilter === tab.key;
+                      return (
+                        <button
+                          key={tab.key}
+                          type="button"
+                          onClick={() => {
+                            setPayoutStatusFilter(tab.key);
+                            setPayoutPage(1);
+                          }}
+                          style={{
+                            padding: '6px 14px',
+                            borderRadius: '8px',
+                            border: isActive ? '1px solid #0f172a' : '1px solid #e2e8f0',
+                            background: isActive ? '#0f172a' : '#f8fafc',
+                            color: isActive ? '#ffffff' : '#475569',
+                            fontSize: '0.78rem',
+                            fontWeight: isActive ? 800 : 600,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            transition: 'all 0.15s ease',
+                          }}
+                        >
+                          <span>{tab.label}</span>
+                          <span
+                            style={{
+                              fontSize: '0.7rem',
+                              padding: '1px 6px',
+                              borderRadius: '9999px',
+                              background: isActive ? 'rgba(255,255,255,0.2)' : '#e2e8f0',
+                              color: isActive ? '#ffffff' : '#64748b',
+                              fontWeight: 800,
+                            }}
+                          >
+                            {tab.count}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Search Input with Clear Button */}
+                  <div style={{ position: 'relative', minWidth: '220px', flex: '1', maxWidth: '320px' }}>
+                    <Search size={14} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                    <input
+                      type="text"
+                      placeholder="Search UTR, Batch ID..."
+                      value={payoutSearch}
+                      onChange={(e) => {
+                        setPayoutSearch(e.target.value);
+                        setPayoutPage(1);
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: '7px 32px 7px 32px',
+                        borderRadius: '8px',
+                        border: '1px solid #cbd5e1',
+                        fontSize: '0.78rem',
+                        boxSizing: 'border-box',
+                        background: '#ffffff',
+                      }}
+                    />
+                    {payoutSearch && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPayoutSearch('');
+                          setPayoutPage(1);
+                        }}
+                        style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: '4px' }}
+                      >
+                        <X size={13} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Settlements Table Container */}
+                <div style={{ overflowX: 'auto', width: '100%', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '750px', textAlign: 'left', fontSize: '0.8rem' }}>
+                    <thead>
+                      <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                        <th style={{ padding: '12px 14px', fontSize: '0.72rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                          Settlement ID & UTR
+                        </th>
+                        <th style={{ padding: '12px 14px', fontSize: '0.72rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                          Fulfillment Period
+                        </th>
+                        <th style={{ padding: '12px 14px', fontSize: '0.72rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                          Gross GMV
+                        </th>
+                        <th style={{ padding: '12px 14px', fontSize: '0.72rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                          Commission & TDS
+                        </th>
+                        <th style={{ padding: '12px 14px', fontSize: '0.72rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                          Net Disbursed
+                        </th>
+                        <th style={{ padding: '12px 14px', fontSize: '0.72rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                          Status
+                        </th>
+                        <th style={{ padding: '12px 14px', fontSize: '0.72rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.03em', textAlign: 'right' }}>
+                          Statement Slip
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedSettlements.length === 0 ? (
+                        <tr>
+                          <td colSpan="7" style={{ padding: '36px 20px', textAlign: 'center', color: '#64748b' }}>
+                            <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a' }}>No settlement records found</div>
+                            <div style={{ fontSize: '0.76rem', marginTop: '4px' }}>Try clearing your search query or filter</div>
+                          </td>
+                        </tr>
+                      ) : (
+                        paginatedSettlements.map((item, idx) => (
+                          <tr key={item.id || idx} style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 0.15s ease' }}>
+                            <td style={{ padding: '12px 14px' }}>
+                              <div style={{ fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <CreditCard size={14} color="#2563eb" />
+                                <span>{item.id}</span>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.7rem', color: '#64748b', marginTop: '2px', fontFamily: 'monospace' }}>
+                                <span>UTR: {item.utr}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopy(item.utr, item.id)}
+                                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: '1px' }}
+                                  title="Copy UTR"
+                                >
+                                  {copiedKey === item.id ? <Check size={11} color="#10b981" /> : <Copy size={11} />}
+                                </button>
+                              </div>
+                            </td>
+                            <td style={{ padding: '12px 14px' }}>
+                              <div style={{ fontWeight: 700, color: '#0f172a' }}>{item.period}</div>
+                              <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '2px' }}>
+                                <span>{item.ordersCount} Customer Orders Fulfilled</span>
+                              </div>
+                            </td>
+                            <td style={{ padding: '12px 14px', fontWeight: 800, color: '#0f172a' }}>
+                              {formatINR(item.gross)}
+                            </td>
+                            <td style={{ padding: '12px 14px' }}>
+                              <div style={{ color: '#e11d48', fontWeight: 800 }}>- {formatINR(item.commission)}</div>
+                              <div style={{ fontSize: '0.68rem', color: '#64748b', marginTop: '1px' }}>TDS: - {formatINR(item.tds)}</div>
+                            </td>
+                            <td style={{ padding: '12px 14px' }}>
+                              <div style={{ fontSize: '0.96rem', fontWeight: 900, color: '#059669', letterSpacing: '-0.01em' }}>
+                                {formatINR(item.net)}
+                              </div>
+                              <div style={{ fontSize: '0.68rem', color: '#64748b', marginTop: '1px' }}>{item.bank}</div>
+                            </td>
+                            <td style={{ padding: '12px 14px' }}>
+                              <span
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  fontSize: '0.72rem',
+                                  fontWeight: 800,
+                                  padding: '3px 8px',
+                                  borderRadius: '6px',
+                                  background: item.status === 'Completed' ? '#ecfdf5' : item.status === 'In-Transit' ? '#eff6ff' : '#fffbeb',
+                                  color: item.status === 'Completed' ? '#059669' : item.status === 'In-Transit' ? '#2563eb' : '#d97706',
+                                }}
+                              >
+                                {item.status === 'Completed' && <CheckCircle2 size={12} />}
+                                {item.status === 'In-Transit' && <RefreshCw size={12} />}
+                                {item.status === 'Scheduled' && <Clock size={12} />}
+                                <span>{item.status}</span>
+                              </span>
+                              <div style={{ fontSize: '0.68rem', color: '#94a3b8', marginTop: '3px' }}>{item.date}</div>
+                            </td>
+                            <td style={{ padding: '12px 14px', textAlign: 'right' }}>
+                              <button
+                                type="button"
+                                onClick={() => setSelectedSettlementAdvice(item)}
+                                style={{
+                                  background: '#ffffff',
+                                  border: '1px solid #cbd5e1',
+                                  color: '#0f172a',
+                                  padding: '5px 10px',
+                                  borderRadius: '6px',
+                                  fontSize: '0.74rem',
+                                  fontWeight: 700,
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  transition: 'all 0.15s ease',
+                                }}
+                                onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#0f172a')}
+                                onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#cbd5e1')}
+                              >
+                                <FileText size={12} />
+                                <span>Advice Slip</span>
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination Controls */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginTop: '4px' }}>
+                  <div style={{ fontSize: '0.76rem', color: '#64748b' }}>
+                    Showing <strong style={{ color: '#0f172a' }}>{filteredSettlements.length === 0 ? 0 : (safeCurrentPayoutPage - 1) * payoutsPerPage + 1}</strong> to <strong style={{ color: '#0f172a' }}>{Math.min(safeCurrentPayoutPage * payoutsPerPage, filteredSettlements.length)}</strong> of <strong style={{ color: '#0f172a' }}>{filteredSettlements.length}</strong> Settlements
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setPayoutPage((prev) => Math.max(prev - 1, 1))}
+                      disabled={safeCurrentPayoutPage <= 1}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '5px 10px',
+                        borderRadius: '6px',
+                        border: '1px solid #e2e8f0',
+                        background: safeCurrentPayoutPage <= 1 ? '#f8fafc' : '#ffffff',
+                        color: safeCurrentPayoutPage <= 1 ? '#cbd5e1' : '#0f172a',
+                        fontSize: '0.76rem',
+                        fontWeight: 700,
+                        cursor: safeCurrentPayoutPage <= 1 ? 'not-allowed' : 'pointer',
+                      }}
+                    >
+                      <ChevronLeft size={14} /> Previous
+                    </button>
+
+                    {Array.from({ length: totalPayoutPages }, (_, i) => i + 1).map((pNum) => (
+                      <button
+                        key={pNum}
+                        type="button"
+                        onClick={() => setPayoutPage(pNum)}
+                        style={{
+                          width: '28px',
+                          height: '28px',
+                          borderRadius: '6px',
+                          border: safeCurrentPayoutPage === pNum ? '1px solid #0f172a' : '1px solid #e2e8f0',
+                          background: safeCurrentPayoutPage === pNum ? '#0f172a' : '#ffffff',
+                          color: safeCurrentPayoutPage === pNum ? '#ffffff' : '#475569',
+                          fontSize: '0.76rem',
+                          fontWeight: safeCurrentPayoutPage === pNum ? 800 : 600,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {pNum}
+                      </button>
+                    ))}
+
+                    <button
+                      type="button"
+                      onClick={() => setPayoutPage((prev) => Math.min(prev + 1, totalPayoutPages))}
+                      disabled={safeCurrentPayoutPage >= totalPayoutPages}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '5px 10px',
+                        borderRadius: '6px',
+                        border: '1px solid #e2e8f0',
+                        background: safeCurrentPayoutPage >= totalPayoutPages ? '#f8fafc' : '#ffffff',
+                        color: safeCurrentPayoutPage >= totalPayoutPages ? '#cbd5e1' : '#0f172a',
+                        fontSize: '0.76rem',
+                        fontWeight: 700,
+                        cursor: safeCurrentPayoutPage >= totalPayoutPages ? 'not-allowed' : 'pointer',
+                      }}
+                    >
+                      Next <ChevronRight size={14} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 4: TAX COMPLIANCE & GST STATEMENTS DOWNLOAD STRIP */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
+                <div
+                  className="pro-card"
+                  style={{ cursor: 'pointer', transition: 'all 0.15s ease' }}
+                  onClick={() => success('📥 Downloading GSTR-8 E-Commerce Turnover Reconciliation Sheet (Oct 2026)...')}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <FileText size={18} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.86rem', fontWeight: 800, color: '#0f172a' }}>GSTR-8 Monthly Return</div>
+                      <div style={{ fontSize: '0.72rem', color: '#64748b' }}>E-Commerce TCS matching sheet</div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '14px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', fontSize: '0.74rem', color: '#2563eb', fontWeight: 700 }}>
+                    <span>Download Excel / CSV</span>
+                    <Download size={13} />
+                  </div>
+                </div>
+
+                <div
+                  className="pro-card"
+                  style={{ cursor: 'pointer', transition: 'all 0.15s ease' }}
+                  onClick={() => success('📥 Downloading Form 16A TDS Certificate (Section 194-O)...')}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: '#ecfdf5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <ShieldCheck size={18} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.86rem', fontWeight: 800, color: '#0f172a' }}>Form 16A TDS Certificate</div>
+                      <div style={{ fontSize: '0.72rem', color: '#64748b' }}>Income Tax Sec 194-O credit</div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '14px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', fontSize: '0.74rem', color: '#059669', fontWeight: 700 }}>
+                    <span>Download PDF</span>
+                    <Download size={13} />
+                  </div>
+                </div>
+
+                <div
+                  className="pro-card"
+                  style={{ cursor: 'pointer', transition: 'all 0.15s ease' }}
+                  onClick={() => success('📥 Downloading CaSa Platform Commission Tax Invoice (Oct 2026)...')}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: '#faf5ff', color: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Building2 size={18} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.86rem', fontWeight: 800, color: '#0f172a' }}>Platform Commission Slip</div>
+                      <div style={{ fontSize: '0.72rem', color: '#64748b' }}>GST input tax credit invoice</div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '14px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', fontSize: '0.74rem', color: '#7c3aed', fontWeight: 700 }}>
+                    <span>Download Tax Invoice</span>
+                    <Download size={13} />
+                  </div>
                 </div>
               </div>
             </div>
@@ -3699,6 +4525,230 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* INSTANT PAYOUT MODAL */}
+      {isInstantPayoutModalOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: '16px',
+          }}
+        >
+          <div
+            style={{
+              maxWidth: '480px',
+              width: '100%',
+              background: '#ffffff',
+              borderRadius: '20px',
+              padding: '24px',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Zap size={18} />
+                </div>
+                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 900, color: '#0f172a' }}>
+                  Instant IMPS Payout
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsInstantPayoutModalOpen(false)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '16px', border: '1px solid #e2e8f0', textAlign: 'center', marginBottom: '16px' }}>
+              <div style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 700 }}>AVAILABLE UNSETTLED BALANCE</div>
+              <div style={{ fontSize: '1.9rem', fontWeight: 900, color: '#059669', letterSpacing: '-0.02em', marginTop: '4px' }}>
+                ₹14,850.00
+              </div>
+              <div style={{ fontSize: '0.7rem', color: '#059669', fontWeight: 700, marginTop: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                <CheckCircle2 size={12} /> Ready for Instant Disbursement
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.78rem', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 10px', borderRadius: '8px', background: '#f8fafc' }}>
+                <span style={{ color: '#64748b' }}>Destination Account:</span>
+                <strong style={{ color: '#0f172a' }}>HDFC Bank (•••• 4921)</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 10px', borderRadius: '8px', background: '#f8fafc' }}>
+                <span style={{ color: '#64748b' }}>Transfer Speed:</span>
+                <strong style={{ color: '#2563eb' }}>Under 60 seconds (IMPS 24x7)</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 10px', borderRadius: '8px', background: '#f8fafc' }}>
+                <span style={{ color: '#64748b' }}>Instant Processing Fee:</span>
+                <strong style={{ color: '#059669' }}>₹0.00 (Free for Tier 1 Pro)</strong>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                type="button"
+                onClick={() => setIsInstantPayoutModalOpen(false)}
+                style={{
+                  flex: 1,
+                  padding: '10px',
+                  borderRadius: '10px',
+                  background: '#f1f5f9',
+                  border: 'none',
+                  fontSize: '0.82rem',
+                  fontWeight: 700,
+                  color: '#475569',
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleExecuteInstantPayout}
+                disabled={isProcessingPayout}
+                style={{
+                  flex: 2,
+                  padding: '10px',
+                  borderRadius: '10px',
+                  background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                  border: 'none',
+                  fontSize: '0.84rem',
+                  fontWeight: 800,
+                  color: '#ffffff',
+                  cursor: isProcessingPayout ? 'wait' : 'pointer',
+                  boxShadow: '0 4px 12px rgba(5,150,105,0.3)',
+                }}
+              >
+                {isProcessingPayout ? 'Disbursing via IMPS...' : 'Confirm Transfer ₹14,850'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SETTLEMENT ADVICE SLIP MODAL */}
+      {selectedSettlementAdvice && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: '16px',
+          }}
+        >
+          <div
+            style={{
+              maxWidth: '560px',
+              width: '100%',
+              background: '#ffffff',
+              borderRadius: '20px',
+              padding: '26px',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #eef2f6', paddingBottom: '14px', marginBottom: '16px' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 900, color: '#0f172a' }}>
+                  Settlement Advice Statement
+                </h3>
+                <span style={{ fontSize: '0.74rem', color: '#64748b' }}>
+                  Official CaSa Verified Banking Remittance
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedSettlementAdvice(null)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ border: '2px dashed #e2e8f0', borderRadius: '16px', padding: '18px', background: '#fafbfc' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #eef2f6', paddingBottom: '10px' }}>
+                <div>
+                  <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 800 }}>SETTLEMENT BATCH:</div>
+                  <div style={{ fontSize: '0.96rem', fontWeight: 900, color: '#2563eb' }}>{selectedSettlementAdvice.id}</div>
+                  <div style={{ fontSize: '0.72rem', color: '#64748b', fontFamily: 'monospace' }}>UTR: {selectedSettlementAdvice.utr}</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 800 }}>STATUS:</div>
+                  <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#059669', background: '#ecfdf5', padding: '2px 8px', borderRadius: '5px' }}>
+                    {selectedSettlementAdvice.status}
+                  </span>
+                  <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '3px' }}>{selectedSettlementAdvice.date}</div>
+                </div>
+              </div>
+
+              <div style={{ padding: '12px 0', borderBottom: '1px solid #eef2f6', display: 'flex', justifyContent: 'space-between', fontSize: '0.76rem' }}>
+                <div>
+                  <span style={{ color: '#64748b' }}>Beneficiary: </span>
+                  <strong style={{ color: '#0f172a' }}>{savedData.legalEntityName}</strong>
+                </div>
+                <div>
+                  <span style={{ color: '#64748b' }}>Bank: </span>
+                  <strong style={{ color: '#0f172a' }}>{selectedSettlementAdvice.bank}</strong>
+                </div>
+              </div>
+
+              <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.8rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#64748b' }}>Gross Sales Volume ({selectedSettlementAdvice.ordersCount} Orders):</span>
+                  <span style={{ fontWeight: 800, color: '#0f172a' }}>{formatINR(selectedSettlementAdvice.gross)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#64748b' }}>Platform Facilitation Fee (8%):</span>
+                  <span style={{ fontWeight: 800, color: '#e11d48' }}>- {formatINR(selectedSettlementAdvice.commission)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#64748b' }}>TDS u/s 194-O (1% Income Tax):</span>
+                  <span style={{ fontWeight: 800, color: '#e11d48' }}>- {formatINR(selectedSettlementAdvice.tds)}</span>
+                </div>
+                <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '2px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontWeight: 900, color: '#0f172a', fontSize: '0.9rem' }}>Net Disbursed to Bank:</span>
+                  <span style={{ fontSize: '1.25rem', fontWeight: 900, color: '#059669' }}>
+                    {formatINR(selectedSettlementAdvice.net)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '18px' }}>
+              <button
+                type="button"
+                onClick={() => setSelectedSettlementAdvice(null)}
+                style={{ padding: '8px 16px', borderRadius: '10px', background: '#f1f5f9', border: 'none', cursor: 'pointer', fontWeight: 700, color: '#64748b', fontSize: '0.8rem' }}
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                onClick={() => window.print()}
+                style={{ padding: '8px 18px', borderRadius: '10px', background: '#0f172a', border: 'none', color: '#ffffff', cursor: 'pointer', fontWeight: 800, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                <Printer size={14} />
+                <span>Print Advice Slip</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
