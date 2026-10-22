@@ -404,19 +404,39 @@ const UserProfilePage = () => {
       </div>
 
       {/* Main Title Section */}
-      <div style={{ marginBottom: '20px' }}>
-        <h1 className="profile-title" style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.025em', margin: 0 }}>
-          {isDelivery
-            ? 'Delivery Partner Profile & Fleet Details'
-            : isVendor
-            ? 'Merchant Store Profile & Operations'
-            : 'Account Settings & Addresses'}
-        </h1>
+      <div style={{ marginBottom: isVendor ? '16px' : '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          <h1 className="profile-title" style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.025em', margin: 0 }}>
+            {isDelivery
+              ? 'Delivery Partner Profile & Fleet Details'
+              : isVendor
+              ? 'Flipkart Seller Hub • Executive Merchant Dashboard'
+              : 'Account Settings & Addresses'}
+          </h1>
+          {isVendor && (
+            <span
+              style={{
+                background: '#e8f0fe',
+                color: '#1a73e8',
+                padding: '3px 10px',
+                borderRadius: '9999px',
+                fontSize: '0.74rem',
+                fontWeight: 800,
+                letterSpacing: '0.04em',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+              }}
+            >
+              ● LIVE OPERATIONS
+            </span>
+          )}
+        </div>
         <p style={{ color: '#64748b', fontSize: '0.85rem', marginTop: '4px', margin: '4px 0 0 0' }}>
           {isDelivery
             ? 'Manage your courier rider credentials, assigned vehicle, and express delivery performance.'
             : isVendor
-            ? 'Manage your merchant credentials, seller branding, and marketplace fulfillment.'
+            ? 'Real-time order fulfillment pipeline, fast catalog stock replenishment, daily sales metrics, and dispatch SLA compliance.'
             : 'Manage your personal credentials, contact details, and saved delivery destinations.'}
         </p>
       </div>
