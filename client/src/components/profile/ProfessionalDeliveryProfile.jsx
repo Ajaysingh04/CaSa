@@ -616,6 +616,112 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
 
   return (
     <div className="delivery-profile-container" style={{ width: '100%', maxWidth: '1240px', margin: '0 auto', padding: '20px 16px 80px', boxSizing: 'border-box' }}>
+      <style>{`
+        @keyframes deliveryCardIn {
+          0% { opacity: 0; transform: translateY(12px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes livePulseDot {
+          0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+          70% { transform: scale(1.1); box-shadow: 0 0 0 7px rgba(16, 185, 129, 0); }
+          100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+        @keyframes activeOrderGlow {
+          0%, 100% { border-color: #10b981; box-shadow: 0 4px 16px -2px rgba(16, 185, 129, 0.18); }
+          50% { border-color: #059669; box-shadow: 0 8px 24px -2px rgba(16, 185, 129, 0.32); }
+        }
+        .delivery-compact-card {
+          position: relative;
+          background: #ffffff;
+          border-radius: 16px;
+          border: 1px solid #e2e8f0;
+          padding: 13px 16px;
+          transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+          box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+          animation: deliveryCardIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+        .delivery-compact-card:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 10px 22px -4px rgba(15, 23, 42, 0.08);
+          border-color: #cbd5e1;
+        }
+        .delivery-compact-card.active-run {
+          border-width: 1.5px;
+          animation: deliveryCardIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both, activeOrderGlow 3s ease-in-out infinite;
+        }
+        .live-pulse-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background-color: #10b981;
+          display: inline-block;
+          animation: livePulseDot 1.8s infinite;
+        }
+        .delivery-route-track {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+          align-items: center;
+          gap: 12px;
+          background: #f8fafc;
+          border: 1px solid #f1f5f9;
+          border-radius: 12px;
+          padding: 9px 13px;
+          margin: 10px 0;
+        }
+        .delivery-connector-line {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 2px;
+          min-width: 90px;
+          padding: 0 4px;
+        }
+        .delivery-connector-bar {
+          width: 100%;
+          height: 2px;
+          background: linear-gradient(90deg, #ea580c 0%, #059669 100%);
+          border-radius: 999px;
+        }
+        .delivery-action-btn {
+          transition: all 0.18s ease;
+        }
+        .delivery-action-btn:hover {
+          transform: translateY(-1px);
+          filter: brightness(1.04);
+        }
+        .delivery-action-btn:active {
+          transform: translateY(0);
+        }
+        @media (max-width: 768px) {
+          .delivery-route-track {
+            grid-template-columns: 1fr;
+            gap: 8px;
+            padding: 9px 11px;
+          }
+          .delivery-connector-line {
+            display: none;
+          }
+          .delivery-compact-card {
+            padding: 12px 14px;
+          }
+          .delivery-actions-bar {
+            flex-direction: column;
+            align-items: stretch !important;
+            gap: 10px !important;
+          }
+          .delivery-action-btn-group {
+            width: 100%;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+          }
+          .delivery-action-btn-group > button {
+            flex: 1 1 140px;
+            justify-content: center;
+          }
+        }
+      `}</style>
       {/* Hidden File Inputs */}
       <input
         ref={fileInputRef}
@@ -1322,289 +1428,381 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
               </button>
             </div>
           ) : (
-            activeOrders.map((order) => {
+            activeOrders.map((order, idx) => {
               const isCod = order.paymentMethod === 'cod';
               const isOutForDelivery = order.orderStatus === 'Out for delivery';
               const isPacked = order.orderStatus === 'Packed';
               const isShipped = order.orderStatus === 'Shipped';
+              const itemsCount = order.orderItems?.length || 1;
+              const firstItem = order.orderItems?.[0];
 
               return (
                 <div
                   key={order._id}
+                  className={`delivery-compact-card ${isOutForDelivery ? 'active-run' : ''}`}
                   style={{
-                    background: '#ffffff',
-                    borderRadius: '20px',
-                    border: isOutForDelivery ? '2px solid #059669' : '1px solid #e2e8f0',
-                    padding: '20px',
-                    boxShadow: '0 4px 16px rgba(15, 23, 42, 0.05)'
+                    animationDelay: `${idx * 0.05}s`
                   }}
                 >
-                  {/* Order Top Ribbon */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', borderBottom: '1px solid #f1f5f9', paddingBottom: '14px', marginBottom: '16px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: '1rem', fontWeight: 900, color: '#0f172a' }}>
-                        Order #{order.orderNumber || order._id}
+                  {/* Top Bar: Order ID, Status, COD/Prepaid & Quick Payout */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      flexWrap: 'wrap',
+                      gap: '8px',
+                      paddingBottom: '8px',
+                      borderBottom: '1px solid #f1f5f9'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '0.92rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.2px' }}>
+                        #{order.orderNumber || (order._id ? order._id.slice(-8).toUpperCase() : 'ORDER')}
                       </span>
+
+                      {/* Status Tag */}
                       <span
                         style={{
-                          padding: '3px 10px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                          padding: '3px 9px',
                           borderRadius: '8px',
-                          fontSize: '0.74rem',
+                          fontSize: '0.72rem',
                           fontWeight: 800,
-                          background: isOutForDelivery ? '#dcfce7' : isShipped ? '#e0f2fe' : '#fef3c7',
-                          color: isOutForDelivery ? '#15803d' : isShipped ? '#0369a1' : '#b45309'
+                          background: isOutForDelivery ? '#ecfdf5' : isShipped ? '#eff6ff' : isPacked ? '#fef3c7' : '#fff1f2',
+                          color: isOutForDelivery ? '#047857' : isShipped ? '#1d4ed8' : isPacked ? '#b45309' : '#e11d48',
+                          border: `1px solid ${isOutForDelivery ? '#a7f3d0' : isShipped ? '#bfdbfe' : isPacked ? '#fde68a' : '#fecdd3'}`
                         }}
                       >
-                        ● {order.orderStatus}
+                        {isOutForDelivery && <span className="live-pulse-dot" />}
+                        {!isOutForDelivery && '●'} {order.orderStatus}
                       </span>
+
+                      {/* Payment Pill */}
                       {isCod ? (
-                        <span style={{ padding: '3px 10px', borderRadius: '8px', background: '#ffedd5', color: '#c2410c', fontSize: '0.74rem', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <span
+                          style={{
+                            padding: '3px 8px',
+                            borderRadius: '8px',
+                            background: '#fff7ed',
+                            color: '#c2410c',
+                            border: '1px solid #fed7aa',
+                            fontSize: '0.72rem',
+                            fontWeight: 800,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                        >
                           <Banknote size={12} /> Collect COD: ₹{order.totalPrice}
                         </span>
                       ) : (
-                        <span style={{ padding: '3px 10px', borderRadius: '8px', background: '#ecfdf5', color: '#047857', fontSize: '0.74rem', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                          <CheckCircle2 size={12} /> Prepaid Order (₹0 to collect)
+                        <span
+                          style={{
+                            padding: '3px 8px',
+                            borderRadius: '8px',
+                            background: '#f0fdf4',
+                            color: '#166534',
+                            border: '1px solid #bbf7d0',
+                            fontSize: '0.72rem',
+                            fontWeight: 800,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                        >
+                          <CheckCircle2 size={12} /> Prepaid (₹0)
                         </span>
                       )}
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <button
-                        type="button"
-                        onClick={() => setMapModalOrder(order)}
+                    {/* Right side: ETA & Payout Chip */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span
+                        style={{
+                          fontSize: '0.72rem',
+                          fontWeight: 700,
+                          color: '#64748b',
+                          background: '#f8fafc',
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                          border: '1px solid #e2e8f0'
+                        }}
+                      >
+                        ~2.8 km • 11m
+                      </span>
+                      <span
+                        style={{
+                          fontSize: '0.74rem',
+                          fontWeight: 900,
+                          color: '#047857',
+                          background: '#ecfdf5',
+                          padding: '3px 9px',
+                          borderRadius: '8px',
+                          border: '1px solid #a7f3d0'
+                        }}
+                      >
+                        +₹65 Payout
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Route Stepper: Connected Horizontal Track */}
+                  <div className="delivery-route-track">
+                    {/* Pickup Point */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                      <div
+                        style={{
+                          width: '26px',
+                          height: '26px',
+                          borderRadius: '8px',
+                          background: '#ffedd5',
+                          color: '#ea580c',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0
+                        }}
+                      >
+                        <Boxes size={13} />
+                      </div>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ fontSize: '0.66rem', fontWeight: 800, color: '#ea580c', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                            Pickup
+                          </span>
+                          <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {order.merchantInfo?.storeName || 'CASA Indore Hub'}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '0.72rem', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {order.merchantInfo?.address || 'Bada Sarafa Market, Indore'}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Connector Arrow */}
+                    <div className="delivery-connector-line">
+                      <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#475569' }}>
+                        2.8 km
+                      </span>
+                      <div className="delivery-connector-bar" />
+                      <span style={{ fontSize: '0.62rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                        transit
+                      </span>
+                    </div>
+
+                    {/* Dropoff Point */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                      <div
+                        style={{
+                          width: '26px',
+                          height: '26px',
+                          borderRadius: '8px',
+                          background: '#dcfce7',
+                          color: '#059669',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0
+                        }}
+                      >
+                        <MapPin size={13} />
+                      </div>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'space-between' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', minWidth: 0 }}>
+                            <span style={{ fontSize: '0.66rem', fontWeight: 800, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                              Drop
+                            </span>
+                            <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {order.shippingAddress?.fullName || 'Customer'}
+                            </span>
+                          </div>
+                          {order.shippingAddress?.phone && (
+                            <a
+                              href={`tel:${order.shippingAddress.phone}`}
+                              className="delivery-action-btn"
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '3px',
+                                fontSize: '0.7rem',
+                                color: '#047857',
+                                background: '#ecfdf5',
+                                padding: '2px 7px',
+                                borderRadius: '6px',
+                                textDecoration: 'none',
+                                fontWeight: 800,
+                                flexShrink: 0
+                              }}
+                            >
+                              <Phone size={10} /> Call
+                            </a>
+                          )}
+                        </div>
+                        <div style={{ fontSize: '0.72rem', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {order.shippingAddress?.street ? `${order.shippingAddress.street}, ${order.shippingAddress.locality || order.shippingAddress.city}` : (order.shippingAddress?.city || 'Indore')}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Bottom Action & Parcel Bar */}
+                  <div
+                    className="delivery-actions-bar"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      flexWrap: 'wrap',
+                      gap: '8px',
+                      paddingTop: '4px'
+                    }}
+                  >
+                    {/* Item info preview tag */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                      <span
                         style={{
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: '6px',
-                          padding: '6px 14px',
-                          borderRadius: '10px',
+                          gap: '5px',
+                          fontSize: '0.72rem',
+                          color: '#475569',
+                          background: '#f8fafc',
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                          border: '1px solid #e2e8f0',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          maxWidth: '260px'
+                        }}
+                      >
+                        <Package size={11} color="#64748b" />
+                        <span style={{ fontWeight: 700 }}>{itemsCount} item{itemsCount > 1 ? 's' : ''}:</span>
+                        <span>{firstItem?.name || 'Silk Sarees / Ethnic Wear'}</span>
+                      </span>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="delivery-action-btn-group" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <button
+                        type="button"
+                        onClick={() => setMapModalOrder(order)}
+                        className="delivery-action-btn"
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                          padding: '6px 12px',
+                          borderRadius: '8px',
                           background: '#eff6ff',
-                          border: '1.5px solid #2563eb',
+                          border: '1px solid #bfdbfe',
                           color: '#1d4ed8',
-                          fontSize: '0.78rem',
+                          fontSize: '0.76rem',
                           fontWeight: 800,
                           cursor: 'pointer'
                         }}
                       >
-                        <MapIcon size={14} /> Open Live Route Map
+                        <MapIcon size={13} /> Live Route GPS
                       </button>
-                      <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
-                        Payout: <strong style={{ color: '#059669', fontSize: '0.9rem' }}>+₹65</strong> (Express Drop)
-                      </div>
-                    </div>
-                  </div>
 
-                  {/* Merchant Pickup & Customer Drop Details Grid */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '16px' }}>
-                    {/* Merchant Pickup */}
-                    <div style={{ background: '#f8fafc', borderRadius: '14px', padding: '14px', border: '1px solid #e2e8f0' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: '6px' }}>
-                        <Boxes size={14} color="#ea580c" /> 1. Merchant Pickup Hub
-                      </div>
-                      <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '0.9rem' }}>
-                        {order.merchantInfo?.storeName || 'CASA Indore Fulfillment Hub'}
-                      </div>
-                      <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '2px', lineHeight: 1.4 }}>
-                        {order.merchantInfo?.address || 'Bada Sarafa Market, Rajwada Zone, Indore - 452002'}
-                      </div>
-                      {order.merchantInfo?.phone && (
-                        <a
-                          href={`tel:${order.merchantInfo.phone}`}
+                      {isPacked && (
+                        <button
+                          type="button"
+                          disabled={updatingId === order._id}
+                          onClick={() => handleConfirmPickup(order._id)}
+                          className="delivery-action-btn"
                           style={{
                             display: 'inline-flex',
                             alignItems: 'center',
                             gap: '5px',
-                            marginTop: '8px',
-                            fontSize: '0.78rem',
-                            fontWeight: 700,
-                            color: '#ea580c',
-                            textDecoration: 'none'
-                          }}
-                        >
-                          <Phone size={12} /> Call Merchant: {order.merchantInfo.phone}
-                        </a>
-                      )}
-                    </div>
-
-                    {/* Customer Drop */}
-                    <div style={{ background: '#f0fdf4', borderRadius: '14px', padding: '14px', border: '1px solid #bbf7d0' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', fontWeight: 800, color: '#166534', textTransform: 'uppercase', marginBottom: '6px' }}>
-                        <MapPin size={14} color="#059669" /> 2. Customer Delivery Destination
-                      </div>
-                      <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '0.9rem' }}>
-                        {order.shippingAddress?.fullName || 'Customer'}
-                      </div>
-                      <div style={{ fontSize: '0.8rem', color: '#334155', marginTop: '2px', lineHeight: 1.4 }}>
-                        {order.shippingAddress?.street}, {order.shippingAddress?.locality}, {order.shippingAddress?.city} - {order.shippingAddress?.pincode}
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '8px', flexWrap: 'wrap' }}>
-                        {order.shippingAddress?.phone && (
-                          <a
-                            href={`tel:${order.shippingAddress.phone}`}
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '5px',
-                              fontSize: '0.78rem',
-                              fontWeight: 700,
-                              color: '#047857',
-                              textDecoration: 'none'
-                            }}
-                          >
-                            <Phone size={12} /> Call Customer: +91 {order.shippingAddress.phone}
-                          </a>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => setMapModalOrder(order)}
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '5px',
-                            fontSize: '0.78rem',
-                            fontWeight: 700,
-                            color: '#2563eb',
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                            padding: 0
-                          }}
-                        >
-                          <Navigation size={12} /> View Turn-by-Turn GPS Map
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Ordered Items Preview */}
-                  {order.orderItems && order.orderItems.length > 0 && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: '#fafafa', borderRadius: '12px', marginBottom: '16px', overflowX: 'auto' }}>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>
-                        Parcel Contents:
-                      </span>
-                      {order.orderItems.map((item, idx) => (
-                        <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-                          {item.image && (
-                            <img src={item.image} alt="" style={{ width: '32px', height: '32px', borderRadius: '6px', objectFit: 'cover' }} />
-                          )}
-                          <span style={{ fontSize: '0.8rem', color: '#0f172a', fontWeight: 600 }}>
-                            {item.name} <strong style={{ color: '#64748b' }}>× {item.quantity}</strong>
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Action Buttons Row */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px', flexWrap: 'wrap' }}>
-                    <button
-                      type="button"
-                      onClick={() => setMapModalOrder(order)}
-                      style={{
-                        padding: '9px 16px',
-                        borderRadius: '10px',
-                        background: '#f8fafc',
-                        border: '1px solid #cbd5e1',
-                        color: '#334155',
-                        fontSize: '0.84rem',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                      }}
-                    >
-                      <MapIcon size={15} color="#2563eb" /> Route Map
-                    </button>
-
-                    {isPacked && (
-                      <button
-                        type="button"
-                        disabled={updatingId === order._id}
-                        onClick={() => handleConfirmPickup(order._id)}
-                        style={{
-                          padding: '9px 18px',
-                          borderRadius: '10px',
-                          background: '#eff6ff',
-                          border: '1.5px solid #2563eb',
-                          color: '#1d4ed8',
-                          fontSize: '0.84rem',
-                          fontWeight: 800,
-                          cursor: 'pointer',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '6px'
-                        }}
-                      >
-                        <Boxes size={15} /> Confirm Merchant Pickup
-                      </button>
-                    )}
-
-                    {isShipped && (
-                      <button
-                        type="button"
-                        disabled={updatingId === order._id}
-                        onClick={() => handleStartDeliveryRun(order._id)}
-                        style={{
-                          padding: '9px 18px',
-                          borderRadius: '10px',
-                          background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
-                          border: 'none',
-                          color: '#ffffff',
-                          fontSize: '0.84rem',
-                          fontWeight: 800,
-                          cursor: 'pointer',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          boxShadow: '0 4px 12px rgba(5, 150, 105, 0.25)'
-                        }}
-                      >
-                        <Truck size={15} /> Start Out For Delivery Run
-                      </button>
-                    )}
-
-                    {isOutForDelivery && (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => setFailedModalOrder(order)}
-                          style={{
-                            padding: '9px 14px',
-                            borderRadius: '10px',
-                            background: '#fff1f2',
-                            border: '1px solid #fecdd3',
-                            color: '#e11d48',
-                            fontSize: '0.82rem',
-                            fontWeight: 700,
+                            padding: '6px 14px',
+                            borderRadius: '8px',
+                            background: '#eff6ff',
+                            border: '1.5px solid #2563eb',
+                            color: '#1d4ed8',
+                            fontSize: '0.76rem',
+                            fontWeight: 800,
                             cursor: 'pointer'
                           }}
                         >
-                          Report Issue
+                          <Boxes size={13} /> Confirm Hub Pickup
                         </button>
+                      )}
 
+                      {isShipped && (
                         <button
                           type="button"
-                          onClick={() => setOtpModalOrder(order)}
+                          disabled={updatingId === order._id}
+                          onClick={() => handleStartDeliveryRun(order._id)}
+                          className="delivery-action-btn"
                           style={{
-                            padding: '10px 22px',
-                            borderRadius: '10px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            padding: '6px 14px',
+                            borderRadius: '8px',
                             background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
                             border: 'none',
                             color: '#ffffff',
-                            fontSize: '0.86rem',
+                            fontSize: '0.76rem',
                             fontWeight: 800,
                             cursor: 'pointer',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '7px',
-                            boxShadow: '0 4px 14px rgba(5, 150, 105, 0.35)'
+                            boxShadow: '0 2px 8px rgba(5, 150, 105, 0.25)'
                           }}
                         >
-                          <KeyRound size={16} /> Mark Delivered with OTP
+                          <Truck size={13} /> Start Delivery Run
                         </button>
-                      </>
-                    )}
+                      )}
+
+                      {isOutForDelivery && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setFailedModalOrder(order)}
+                            className="delivery-action-btn"
+                            style={{
+                              padding: '6px 10px',
+                              borderRadius: '8px',
+                              background: '#fff1f2',
+                              border: '1px solid #fecdd3',
+                              color: '#e11d48',
+                              fontSize: '0.74rem',
+                              fontWeight: 700,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Issue
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setOtpModalOrder(order)}
+                            className="delivery-action-btn"
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              padding: '6px 16px',
+                              borderRadius: '8px',
+                              background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                              border: 'none',
+                              color: '#ffffff',
+                              fontSize: '0.78rem',
+                              fontWeight: 800,
+                              cursor: 'pointer',
+                              boxShadow: '0 3px 10px rgba(5, 150, 105, 0.35)'
+                            }}
+                          >
+                            <KeyRound size={14} /> Deliver with OTP
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
@@ -1665,73 +1863,142 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
               </p>
             </div>
           ) : (
-            availableOrders.map((order) => (
+            availableOrders.map((order, idx) => (
               <div
                 key={order._id}
+                className="delivery-compact-card"
                 style={{
-                  background: '#ffffff',
-                  borderRadius: '20px',
-                  border: '1px solid #e2e8f0',
-                  padding: '20px',
-                  boxShadow: '0 4px 16px rgba(15, 23, 42, 0.04)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  flexWrap: 'wrap',
-                  gap: '16px'
+                  animationDelay: `${idx * 0.05}s`
                 }}
               >
-                <div style={{ flex: '1 1 320px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a' }}>
-                      Order #{order.orderNumber || order._id}
+                {/* Header */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '8px',
+                    paddingBottom: '8px',
+                    borderBottom: '1px solid #f1f5f9'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '0.92rem', fontWeight: 900, color: '#0f172a' }}>
+                      #{order.orderNumber || (order._id ? order._id.slice(-8).toUpperCase() : 'ORDER')}
                     </span>
-                    <span style={{ padding: '3px 8px', borderRadius: '6px', background: '#eff6ff', color: '#1d4ed8', fontSize: '0.72rem', fontWeight: 800 }}>
-                      Ready at Hub
+                    <span
+                      style={{
+                        padding: '3px 8px',
+                        borderRadius: '6px',
+                        background: '#eff6ff',
+                        color: '#1d4ed8',
+                        border: '1px solid #bfdbfe',
+                        fontSize: '0.72rem',
+                        fontWeight: 800
+                      }}
+                    >
+                      ● Ready at Hub
                     </span>
-                    <span style={{ padding: '3px 8px', borderRadius: '6px', background: '#ecfdf5', color: '#047857', fontSize: '0.72rem', fontWeight: 800 }}>
-                      Distance: ~{order.distanceEstimate || '2.4 km'}
+                    <span
+                      style={{
+                        padding: '3px 8px',
+                        borderRadius: '6px',
+                        background: '#ecfdf5',
+                        color: '#047857',
+                        border: '1px solid #a7f3d0',
+                        fontSize: '0.72rem',
+                        fontWeight: 800
+                      }}
+                    >
+                      ~{order.distanceEstimate || '2.4 km'}
                     </span>
                   </div>
 
-                  <div style={{ fontSize: '0.84rem', color: '#334155', lineHeight: 1.4 }}>
-                    <strong>Pickup:</strong> {order.merchantInfo?.storeName || 'CASA Merchant'} ({order.merchantInfo?.address || 'Indore Hub'})
-                  </div>
-                  <div style={{ fontSize: '0.84rem', color: '#334155', marginTop: '3px', lineHeight: 1.4 }}>
-                    <strong>Deliver to:</strong> {order.shippingAddress?.fullName}, {order.shippingAddress?.locality}, {order.shippingAddress?.city}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 700 }}>
+                      Payout:
+                    </span>
+                    <span
+                      style={{
+                        fontSize: '0.92rem',
+                        fontWeight: 900,
+                        color: '#047857',
+                        background: '#ecfdf5',
+                        padding: '2px 8px',
+                        borderRadius: '6px',
+                        border: '1px solid #a7f3d0'
+                      }}
+                    >
+                      ₹{order.payoutEstimate || 85}
+                    </span>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>
-                      Estimated Payout
+                {/* Route Track */}
+                <div className="delivery-route-track">
+                  {/* Pickup */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                    <div style={{ width: 24, height: 24, borderRadius: '6px', background: '#ffedd5', color: '#ea580c', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Boxes size={12} />
                     </div>
-                    <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#059669' }}>
-                      ₹{order.payoutEstimate || 85}
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {order.merchantInfo?.storeName || 'CASA Merchant'}
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {order.merchantInfo?.address || 'Indore Hub'}
+                      </div>
                     </div>
                   </div>
 
+                  {/* Connector */}
+                  <div className="delivery-connector-line">
+                    <span style={{ fontSize: '0.66rem', fontWeight: 800, color: '#64748b' }}>
+                      {order.distanceEstimate || '2.4 km'}
+                    </span>
+                    <div className="delivery-connector-bar" />
+                  </div>
+
+                  {/* Drop */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                    <div style={{ width: 24, height: 24, borderRadius: '6px', background: '#dcfce7', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <MapPin size={12} />
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {order.shippingAddress?.fullName || 'Customer'}
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {order.shippingAddress?.locality || order.shippingAddress?.city || 'Indore'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer Action */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingTop: '2px' }}>
                   <button
                     type="button"
                     disabled={updatingId === order._id || !onDuty}
                     onClick={() => handleAcceptDelivery(order._id)}
+                    className="delivery-action-btn"
                     style={{
-                      padding: '11px 22px',
-                      borderRadius: '12px',
+                      padding: '7px 16px',
+                      borderRadius: '8px',
                       background: onDuty ? 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)' : '#cbd5e1',
                       border: 'none',
                       color: '#ffffff',
-                      fontSize: '0.85rem',
+                      fontSize: '0.78rem',
                       fontWeight: 800,
                       cursor: onDuty ? 'pointer' : 'not-allowed',
                       display: 'inline-flex',
                       alignItems: 'center',
-                      gap: '6px',
-                      boxShadow: onDuty ? '0 4px 14px rgba(37, 99, 235, 0.3)' : 'none'
+                      gap: '5px',
+                      boxShadow: onDuty ? '0 2px 8px rgba(37, 99, 235, 0.25)' : 'none'
                     }}
                   >
-                    <Check size={16} /> Accept & Start Route
+                    <Check size={14} /> Accept & Start Route
                   </button>
                 </div>
               </div>
