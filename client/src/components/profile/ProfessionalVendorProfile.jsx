@@ -36,6 +36,15 @@ import {
   Phone,
   MessageCircle,
   Menu,
+  Truck,
+  BarChart3,
+  Activity,
+  Zap,
+  FileText,
+  Download,
+  CheckCircle2,
+  AlertCircle,
+  RefreshCw,
 } from 'lucide-react';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
@@ -433,53 +442,90 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
           display: none;
         }
 
-        /* Metric Pill Card */
-        .metric-pill-card {
-          border-radius: 18px;
-          padding: 18px 20px;
+        /* Enterprise Pro KPI Cards */
+        .pro-kpi-card {
+          background: #ffffff;
+          border: 1px solid #e2e8f0;
+          border-radius: 16px;
+          padding: 20px 22px;
           display: flex;
           flex-direction: column;
-          gap: 12px;
-          flex: 1;
-          transition: transform 0.2s ease, box-shadow 0.2s ease;
+          gap: 14px;
+          transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+          box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+          position: relative;
+          overflow: hidden;
         }
-        .metric-pill-card:hover {
+        .pro-kpi-card:hover {
           transform: translateY(-2px);
-          box-shadow: 0 8px 20px -6px rgba(0, 0, 0, 0.06);
+          border-color: #cbd5e1;
+          box-shadow: 0 12px 28px -6px rgba(15, 23, 42, 0.08);
+        }
+        .pro-kpi-card::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 3px;
+          background: transparent;
+          transition: background 0.2s ease;
+        }
+        .pro-kpi-card:hover::before {
+          background: linear-gradient(90deg, #2563eb, #38bdf8);
         }
 
-        /* Cream Banner Card with Radial Meters */
-        .cream-banner-card {
-          background: #fdf5ee;
-          border: 1px solid #fed7aa;
-          border-radius: 22px;
-          padding: 22px 30px;
+        /* Pro Panel Container */
+        .pro-card {
+          background: #ffffff;
+          border: 1px solid #e2e8f0;
+          border-radius: 16px;
+          padding: 24px;
+          box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+          transition: border-color 0.2s ease;
+        }
+        .pro-card:hover {
+          border-color: #cbd5e1;
+        }
+
+        /* Pro Order Item Row */
+        .pro-order-row {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          flex-wrap: wrap;
-          gap: 20px;
+          padding: 12px 14px;
+          border-radius: 12px;
+          border: 1px solid transparent;
+          transition: all 0.15s ease;
+          cursor: pointer;
+        }
+        .pro-order-row:hover {
+          background: #f8fafc;
+          border-color: #e2e8f0;
         }
 
-        /* Circular SVG Radial Meter */
-        .radial-meter-box {
-          display: flex;
-          align-items: center;
-          gap: 14px;
-        }
-
-        /* Rounded Chart Bar */
-        .chart-bar-col {
+        /* Velocity Chart Bars */
+        .velocity-bar-col {
           display: flex;
           flex-direction: column;
           align-items: center;
           gap: 8px;
           flex: 1;
+          height: 100%;
+          justify-content: flex-end;
+          cursor: pointer;
+          position: relative;
         }
-        .chart-bar-pillar {
-          width: 14px;
-          border-radius: 9999px;
-          transition: height 0.3s ease;
+        .velocity-bar-col:hover .velocity-bar-pillar {
+          opacity: 0.9;
+          transform: scaleY(1.02);
+        }
+        .velocity-bar-pillar {
+          width: 100%;
+          max-width: 24px;
+          border-radius: 6px 6px 2px 2px;
+          transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+          transform-origin: bottom;
         }
 
         /* Responsive Breakpoints */
@@ -772,61 +818,64 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
             </nav>
           </div>
 
-          {/* Bottom Upgrade to Pro Promo Card */}
+          {/* Executive Merchant Status Card */}
           <div
             style={{
-              background: 'linear-gradient(135deg, #a78bfa 0%, #818cf8 100%)',
-              borderRadius: '20px',
-              padding: '18px 16px',
+              background: '#0f172a',
+              borderRadius: '16px',
+              padding: '16px 14px',
               color: '#ffffff',
-              textAlign: 'center',
-              boxShadow: '0 8px 24px -4px rgba(129, 140, 248, 0.45)',
-              marginTop: '24px',
-              position: 'relative',
-              overflow: 'hidden',
+              marginTop: 'auto',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              boxShadow: '0 4px 16px -2px rgba(15, 23, 42, 0.25)',
             }}
           >
-            <div
-              style={{
-                width: '44px',
-                height: '44px',
-                borderRadius: '12px',
-                background: 'rgba(255, 255, 255, 0.25)',
-                margin: '0 auto 10px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backdropFilter: 'blur(4px)',
-              }}
-            >
-              <Rocket size={22} color="#ffffff" />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+              <div
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '8px',
+                  background: 'rgba(16, 185, 129, 0.15)',
+                  border: '1px solid rgba(16, 185, 129, 0.3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#10b981',
+                }}
+              >
+                <ShieldCheck size={18} />
+              </div>
+              <div>
+                <div style={{ fontSize: '0.84rem', fontWeight: 800, color: '#f8fafc', lineHeight: 1.2 }}>
+                  CaSa Verified Merchant
+                </div>
+                <div style={{ fontSize: '0.68rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
+                  Live SLA: 99.4%
+                </div>
+              </div>
             </div>
-            <h4 style={{ margin: '0 0 4px', fontSize: '0.95rem', fontWeight: 800 }}>
-              CaSa Gold Merchant Tier
-            </h4>
-            <p style={{ margin: '0 0 14px', fontSize: '0.72rem', color: '#e0e7ff', lineHeight: 1.4 }}>
-              99.4% On-time SLA. Enjoy T+2 daily rolling settlements & 0% listing fee.
+            <p style={{ margin: '0 0 10px', fontSize: '0.72rem', color: '#94a3b8', lineHeight: 1.4 }}>
+              Tier 1 Merchant status active with T+2 daily automatic bank settlements.
             </p>
             <button
               type="button"
-              onClick={() => {
-                setFormData({ ...savedData });
-                setIsEditModalOpen(true);
-              }}
+              onClick={() => setActiveTab('kyc')}
               style={{
                 width: '100%',
-                padding: '9px',
-                borderRadius: '10px',
-                background: '#ff6b4a',
-                color: '#ffffff',
-                border: 'none',
-                fontWeight: 800,
-                fontSize: '0.8rem',
+                padding: '7px 10px',
+                borderRadius: '8px',
+                background: 'rgba(255, 255, 255, 0.08)',
+                color: '#e2e8f0',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
+                fontWeight: 700,
+                fontSize: '0.75rem',
                 cursor: 'pointer',
-                boxShadow: '0 4px 12px rgba(255, 107, 74, 0.35)',
+                transition: 'all 0.15s ease',
               }}
             >
-              Verified Pro Active
+              Merchant KYC & Hub Details →
             </button>
           </div>
         </aside>
@@ -899,7 +948,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
               {/* View Storefront Pill Button */}
               <button
                 type="button"
-                onClick={() => switchRole('user')}
+                onClick={() => navigate('/')}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -997,538 +1046,628 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
             </div>
           </div>
 
-          {/* ================= TAB 1: MAIN DASHBOARD VIEW ================= */}
+          {/* ================= TAB 1: ENTERPRISE MERCHANT COMMAND CENTER ================= */}
           {activeTab === 'dashboard' && (
-            <>
-              {/* TOP ROW: 3 PASTEL METRIC PILL CARDS + LAST ORDERS CARD */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '20px' }}>
-                {/* Left 8 Columns: 3 Pastel Stat Cards + Cream Radial Banner */}
-                <div style={{ gridColumn: 'span 8', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                  {/* Row of 3 Pastel Metric Cards */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-                    {/* Card 1: Views / Impressions (Lavender) */}
-                    <div className="metric-pill-card" style={{ background: '#f5f3ff' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div
-                          style={{
-                            width: '38px',
-                            height: '38px',
-                            borderRadius: '12px',
-                            background: '#7c3aed',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: '#ffffff',
-                          }}
-                        >
-                          <Eye size={18} />
-                        </div>
-                        <MoreVertical size={16} color="#94a3b8" />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              {/* SECTION 1: EXECUTIVE FINTECH & PERFORMANCE KPI METRIC CARDS */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '18px' }}>
+                {/* KPI 1: Gross Sales MTD */}
+                <div className="pro-kpi-card">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div
+                        style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '10px',
+                          background: '#0f172a',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#ffffff',
+                        }}
+                      >
+                        <TrendingUp size={20} />
                       </div>
                       <div>
-                        <div style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600 }}>Views</div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '4px' }}>
-                          <span style={{ fontSize: '1.45rem', fontWeight: 900, color: '#1e1e24' }}>1696</span>
-                          <span style={{ fontSize: '0.74rem', color: '#06b6d4', fontWeight: 800 }}>+45%</span>
+                        <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b' }}>Gross Sales MTD</div>
+                        <div style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '3px', marginTop: '2px' }}>
+                          <ArrowUpRight size={13} /> +18.4% vs last cycle
                         </div>
                       </div>
                     </div>
-
-                    {/* Card 2: Visits / Traffic (Mint Green) */}
-                    <div className="metric-pill-card" style={{ background: '#f0fdf4' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div
-                          style={{
-                            width: '38px',
-                            height: '38px',
-                            borderRadius: '12px',
-                            background: '#4f46e5',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: '#ffffff',
-                          }}
-                        >
-                          <Users size={18} />
-                        </div>
-                        <MoreVertical size={16} color="#94a3b8" />
-                      </div>
-                      <div>
-                        <div style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600 }}>Visits</div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '4px' }}>
-                          <span style={{ fontSize: '1.45rem', fontWeight: 900, color: '#1e1e24' }}>3490</span>
-                          <span style={{ fontSize: '0.74rem', color: '#10b981', fontWeight: 800 }}>+32%</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Card 3: Orders (Soft Peach / Coral) */}
-                    <div className="metric-pill-card" style={{ background: '#fff1f2' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div
-                          style={{
-                            width: '38px',
-                            height: '38px',
-                            borderRadius: '12px',
-                            background: '#f97316',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: '#ffffff',
-                          }}
-                        >
-                          <Package size={18} />
-                        </div>
-                        <MoreVertical size={16} color="#94a3b8" />
-                      </div>
-                      <div>
-                        <div style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600 }}>Orders</div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '4px' }}>
-                          <span style={{ fontSize: '1.45rem', fontWeight: 900, color: '#1e1e24' }}>{orders.length ? `${orders.length}20` : '4860'}</span>
-                          <span style={{ fontSize: '0.74rem', color: '#f43f5e', fontWeight: 800 }}>24%</span>
-                        </div>
-                      </div>
-                    </div>
+                    <span style={{ fontSize: '0.72rem', background: '#f1f5f9', color: '#475569', padding: '3px 8px', borderRadius: '6px', fontWeight: 700 }}>
+                      Live MTD
+                    </span>
                   </div>
 
-                  {/* Wide Cream/Peach Banner Card with 3 Radial Progress Rings */}
-                  <div className="cream-banner-card">
-                    {/* Ring 1: Income Today */}
-                    <div className="radial-meter-box">
+                  <div>
+                    <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
+                      {formatINR(stats?.totalRevenue || 184650)}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', fontSize: '0.74rem', color: '#64748b' }}>
+                      <span>Net Payout: <strong style={{ color: '#0f172a' }}>{formatINR(Math.round((stats?.totalRevenue || 184650) * 0.93))}</strong></span>
+                      <span style={{ color: '#059669', fontWeight: 700 }}>T+1 Rolling</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* KPI 2: Customer Bookings & Orders */}
+                <div className="pro-kpi-card">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div
+                        style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '10px',
+                          background: '#2563eb',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#ffffff',
+                        }}
+                      >
+                        <Package size={20} />
+                      </div>
                       <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span style={{ fontSize: '0.88rem', fontWeight: 800, color: '#1e1e24' }}>Income</span>
-                          <ArrowUpRight size={14} color="#10b981" />
+                        <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b' }}>Customer Orders</div>
+                        <div style={{ fontSize: '0.7rem', color: '#2563eb', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '3px', marginTop: '2px' }}>
+                          <CheckCircle2 size={13} /> Real-time Sync
                         </div>
-                        <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '2px' }}>Today</div>
-                        <div style={{ fontSize: '1.35rem', fontWeight: 900, color: '#1e1e24', marginTop: '4px' }}>
-                          {formatINR(stats?.totalRevenue || 126000)}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('orders')}
+                      style={{ background: 'transparent', border: 'none', color: '#2563eb', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer', padding: 0 }}
+                    >
+                      Manage
+                    </button>
+                  </div>
+
+                  <div>
+                    <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
+                      {orders.length ? `${orders.length}` : '48'} <span style={{ fontSize: '0.95rem', fontWeight: 600, color: '#64748b' }}>Bookings</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', fontSize: '0.74rem', color: '#64748b' }}>
+                      <span>Average Order Value:</span>
+                      <strong style={{ color: '#0f172a' }}>{formatINR(Math.round((stats?.totalRevenue || 184650) / (orders.length || 48)))}</strong>
+                    </div>
+                  </div>
+                </div>
+
+                {/* KPI 3: Storefront Traffic & Conversion */}
+                <div className="pro-kpi-card">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div
+                        style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '10px',
+                          background: '#7c3aed',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#ffffff',
+                        }}
+                      >
+                        <Activity size={20} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b' }}>Marketplace Reach</div>
+                        <div style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '3px', marginTop: '2px' }}>
+                          <ArrowUpRight size={13} /> +32.8% visits
+                        </div>
+                      </div>
+                    </div>
+                    <span style={{ fontSize: '0.72rem', background: '#f5f3ff', color: '#7c3aed', padding: '3px 8px', borderRadius: '6px', fontWeight: 700 }}>
+                      4.2% CVR
+                    </span>
+                  </div>
+
+                  <div>
+                    <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
+                      18,490 <span style={{ fontSize: '0.95rem', fontWeight: 600, color: '#64748b' }}>Visits</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', fontSize: '0.74rem', color: '#64748b' }}>
+                      <span>Catalog Impressions:</span>
+                      <strong style={{ color: '#0f172a' }}>84,210 views</strong>
+                    </div>
+                  </div>
+                </div>
+
+                {/* KPI 4: Fulfillment SLA & Dispatch Rate */}
+                <div className="pro-kpi-card">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div
+                        style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '10px',
+                          background: '#059669',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#ffffff',
+                        }}
+                      >
+                        <Truck size={20} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b' }}>Logistics SLA</div>
+                        <div style={{ fontSize: '0.7rem', color: '#059669', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '3px', marginTop: '2px' }}>
+                          <CheckCircle2 size={13} /> Zero Breach
+                        </div>
+                      </div>
+                    </div>
+                    <span style={{ fontSize: '0.72rem', background: '#ecfdf5', color: '#059669', padding: '3px 8px', borderRadius: '6px', fontWeight: 700 }}>
+                      Priority Courier
+                    </span>
+                  </div>
+
+                  <div>
+                    <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
+                      99.4% <span style={{ fontSize: '0.95rem', fontWeight: 600, color: '#059669' }}>On-Time</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', fontSize: '0.74rem', color: '#64748b' }}>
+                      <span>Avg Dispatch Time:</span>
+                      <strong style={{ color: '#0f172a' }}>14.2 Hours</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 2: 2-COLUMN ENTERPRISE ANALYTICS & LIVE CUSTOMER BOOKINGS */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '20px' }}>
+                {/* Left 8 Cols: Sales Velocity & Operations Chart */}
+                <div style={{ gridColumn: 'span 8', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  <div className="pro-card">
+                    {/* Header with Title and Period Filter */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '22px' }}>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>
+                            Sales & Dispatch Velocity
+                          </h3>
+                          <span style={{ fontSize: '0.72rem', background: '#eff6ff', color: '#2563eb', padding: '3px 8px', borderRadius: '6px', fontWeight: 700 }}>
+                            Updated Live
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '3px' }}>
+                          Daily confirmed merchant revenue vs completed logistics handovers
                         </div>
                       </div>
 
-                      {/* Radial Progress Ring SVG */}
-                      <div style={{ position: 'relative', width: '56px', height: '56px' }}>
-                        <svg width="56" height="56" viewBox="0 0 36 36">
-                          <path
-                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                            fill="none"
-                            stroke="#f3e8ff"
-                            strokeWidth="3.5"
-                          />
-                          <path
-                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                            fill="none"
-                            stroke="#7c3aed"
-                            strokeWidth="3.5"
-                            strokeDasharray="65, 100"
-                            strokeLinecap="round"
-                          />
-                        </svg>
-                        <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 800, color: '#1e1e24' }}>
-                          65%
-                        </span>
+                      {/* Period Switcher */}
+                      <div style={{ display: 'flex', alignItems: 'center', background: '#f8fafc', padding: '3px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                        {['7 Days', '30 Days', 'Quarterly'].map((period, idx) => (
+                          <button
+                            key={period}
+                            type="button"
+                            style={{
+                              padding: '5px 12px',
+                              borderRadius: '6px',
+                              border: 'none',
+                              fontSize: '0.75rem',
+                              fontWeight: idx === 0 ? 800 : 600,
+                              background: idx === 0 ? '#ffffff' : 'transparent',
+                              color: idx === 0 ? '#0f172a' : '#64748b',
+                              boxShadow: idx === 0 ? '0 1px 3px rgba(15,23,42,0.08)' : 'none',
+                              cursor: 'pointer',
+                              transition: 'all 0.15s ease',
+                            }}
+                          >
+                            {period}
+                          </button>
+                        ))}
                       </div>
                     </div>
 
-                    {/* Ring 2: Sales Per hour */}
-                    <div className="radial-meter-box">
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span style={{ fontSize: '0.88rem', fontWeight: 800, color: '#1e1e24' }}>Sales</span>
-                          <ArrowDownRight size={14} color="#f97316" />
-                        </div>
-                        <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '2px' }}>Per hour</div>
-                        <div style={{ fontSize: '1.35rem', fontWeight: 900, color: '#1e1e24', marginTop: '4px' }}>
-                          ₹1,400
-                        </div>
-                      </div>
-
-                      <div style={{ position: 'relative', width: '56px', height: '56px' }}>
-                        <svg width="56" height="56" viewBox="0 0 36 36">
-                          <path
-                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                            fill="none"
-                            stroke="#ffedd5"
-                            strokeWidth="3.5"
+                    {/* Clean SVG Area & Bar Chart Visualization */}
+                    <div style={{ position: 'relative', height: '190px', display: 'flex', alignItems: 'flex-end', gap: '12px', padding: '16px 8px 0', borderBottom: '1px solid #f1f5f9' }}>
+                      {/* Grid Lines */}
+                      <div style={{ position: 'absolute', top: '15%', left: 0, right: 0, height: '1px', background: '#f8fafc', borderBottom: '1px dashed #e2e8f0' }} />
+                      <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: '1px', background: '#f8fafc', borderBottom: '1px dashed #e2e8f0' }} />
+                      
+                      {[
+                        { day: 'Mon', revenue: '₹18,400', heightPct: 45, units: 14, date: 'Oct 16' },
+                        { day: 'Tue', revenue: '₹28,600', heightPct: 68, units: 22, date: 'Oct 17' },
+                        { day: 'Wed', revenue: '₹22,100', heightPct: 54, units: 18, date: 'Oct 18' },
+                        { day: 'Thu', revenue: '₹42,800', heightPct: 92, units: 31, date: 'Oct 19', active: true },
+                        { day: 'Fri', revenue: '₹34,500', heightPct: 76, units: 26, date: 'Oct 20' },
+                        { day: 'Sat', revenue: '₹39,200', heightPct: 84, units: 29, date: 'Oct 21' },
+                        { day: 'Sun', revenue: '₹26,750', heightPct: 60, units: 20, date: 'Today' },
+                      ].map((item, idx) => (
+                        <div key={idx} className="velocity-bar-col" title={`${item.date}: ${item.revenue} (${item.units} units)`}>
+                          {item.active && (
+                            <div
+                              style={{
+                                background: '#0f172a',
+                                color: '#ffffff',
+                                padding: '4px 10px',
+                                borderRadius: '6px',
+                                fontSize: '0.72rem',
+                                fontWeight: 800,
+                                marginBottom: '6px',
+                                boxShadow: '0 4px 12px rgba(15,23,42,0.25)',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {item.revenue}
+                            </div>
+                          )}
+                          <div
+                            className="velocity-bar-pillar"
+                            style={{
+                              height: `${item.heightPct}%`,
+                              background: item.active
+                                ? 'linear-gradient(180deg, #2563eb 0%, #1e40af 100%)'
+                                : 'linear-gradient(180deg, #93c5fd 0%, #3b82f6 100%)',
+                            }}
                           />
-                          <path
-                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                            fill="none"
-                            stroke="#f97316"
-                            strokeWidth="3.5"
-                            strokeDasharray="40, 100"
-                            strokeLinecap="round"
-                          />
-                        </svg>
-                        <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 800, color: '#1e1e24' }}>
-                          40%
-                        </span>
-                      </div>
+                          <span style={{ fontSize: '0.72rem', color: item.active ? '#0f172a' : '#64748b', fontWeight: item.active ? 800 : 600 }}>
+                            {item.day}
+                          </span>
+                        </div>
+                      ))}
                     </div>
 
-                    {/* Ring 3: Visits Total today */}
-                    <div className="radial-meter-box">
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span style={{ fontSize: '0.88rem', fontWeight: 800, color: '#1e1e24' }}>Visits</span>
-                          <ArrowUpRight size={14} color="#06b6d4" />
-                        </div>
-                        <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '2px' }}>Total today</div>
-                        <div style={{ fontSize: '1.35rem', fontWeight: 900, color: '#1e1e24', marginTop: '4px' }}>
-                          2600
-                        </div>
+                    {/* Operational Strip Below Chart */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginTop: '18px', paddingTop: '16px' }}>
+                      <div style={{ borderRight: '1px solid #f1f5f9', paddingRight: '12px' }}>
+                        <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>Today's Dispatch</div>
+                        <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '3px' }}>₹65,575</div>
+                        <div style={{ fontSize: '0.68rem', color: '#10b981', fontWeight: 700, marginTop: '2px' }}>18 Shipments</div>
                       </div>
 
-                      <div style={{ position: 'relative', width: '56px', height: '56px' }}>
-                        <svg width="56" height="56" viewBox="0 0 36 36">
-                          <path
-                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                            fill="none"
-                            stroke="#fce7f3"
-                            strokeWidth="3.5"
-                          />
-                          <path
-                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                            fill="none"
-                            stroke="#f43f5e"
-                            strokeWidth="3.5"
-                            strokeDasharray="75, 100"
-                            strokeLinecap="round"
-                          />
-                        </svg>
-                        <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 800, color: '#1e1e24' }}>
-                          75%
-                        </span>
+                      <div style={{ borderRight: '1px solid #f1f5f9', paddingRight: '12px' }}>
+                        <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>COD In-Transit</div>
+                        <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '3px' }}>₹24,800</div>
+                        <div style={{ fontSize: '0.68rem', color: '#2563eb', fontWeight: 700, marginTop: '2px' }}>Auto-Remitted T+2</div>
+                      </div>
+
+                      <div style={{ borderRight: '1px solid #f1f5f9', paddingRight: '12px' }}>
+                        <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>Return / RTO Ratio</div>
+                        <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#059669', marginTop: '3px' }}>0.4%</div>
+                        <div style={{ fontSize: '0.68rem', color: '#059669', fontWeight: 700, marginTop: '2px' }}>Best in Class</div>
+                      </div>
+
+                      <div>
+                        <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>Next Courier Cutoff</div>
+                        <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '3px' }}>4:30 PM</div>
+                        <div style={{ fontSize: '0.68rem', color: '#f59e0b', fontWeight: 700, marginTop: '2px' }}>1h 24m remaining</div>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Right 4 Columns: "Last orders" Card (Matching Design Right Box) */}
-                <div
-                  style={{
-                    gridColumn: 'span 4',
-                    background: '#ffffff',
-                    border: '1px solid #eef2f6',
-                    borderRadius: '22px',
-                    padding: '22px 20px',
-                    boxShadow: '0 4px 16px -4px rgba(0, 0, 0, 0.04)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                  }}
-                >
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                      <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 900, color: '#1e1e24' }}>
-                        Last orders
-                      </h3>
-                      <button
-                        type="button"
-                        onClick={() => setActiveTab('orders')}
-                        style={{ background: 'none', border: 'none', color: '#6366f1', fontSize: '0.78rem', fontWeight: 800, cursor: 'pointer' }}
-                      >
-                        View all
-                      </button>
-                    </div>
-
-                    {/* Order Row items */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                      {displayOrders.map((ord, idx) => (
-                        <div
-                          key={ord._id || idx}
+                {/* Right 4 Cols: Live Customer Bookings Queue (Real-Time Feed) */}
+                <div style={{ gridColumn: 'span 4' }}>
+                  <div className="pro-card" style={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box' }}>
+                    <div>
+                      {/* Header */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', display: 'inline-block', boxShadow: '0 0 0 3px rgba(16,185,129,0.2)' }} />
+                          <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: '#0f172a' }}>
+                            Customer Bookings
+                          </h3>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab('orders')}
                           style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
+                            background: 'none',
+                            border: 'none',
+                            color: '#2563eb',
+                            fontSize: '0.78rem',
+                            fontWeight: 700,
                             cursor: 'pointer',
-                            padding: '4px 0',
+                            padding: 0,
                           }}
-                          onClick={() => {
-                            if (ord.rawOrder) setSelectedInvoiceOrder(ord.rawOrder);
-                            else setActiveTab('orders');
-                          }}
-                          title="Click to view details or print slip"
                         >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <img
-                              src={ord.avatar}
-                              alt={ord.customer}
-                              style={{ width: '38px', height: '38px', borderRadius: '12px', objectFit: 'cover' }}
-                            />
-                            <div>
-                              <div style={{ fontSize: '0.86rem', fontWeight: 800, color: '#1e1e24' }}>
-                                {ord.customer}
+                          View All ({orders.length || '48'})
+                        </button>
+                      </div>
+
+                      <div style={{ fontSize: '0.74rem', color: '#64748b', marginBottom: '16px' }}>
+                        Live orders placed by CaSa buyers synced in real time
+                      </div>
+
+                      {/* Orders List */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {displayOrders.slice(0, 4).map((ord, idx) => (
+                          <div
+                            key={ord._id || idx}
+                            className="pro-order-row"
+                            onClick={() => {
+                              if (ord.rawOrder) setSelectedInvoiceOrder(ord.rawOrder);
+                              else setActiveTab('orders');
+                            }}
+                            title="Click to print invoice slip or manage order"
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+                              <img
+                                src={ord.avatar}
+                                alt={ord.customer}
+                                style={{ width: '38px', height: '38px', borderRadius: '10px', objectFit: 'cover', flexShrink: 0, border: '1px solid #e2e8f0' }}
+                              />
+                              <div style={{ minWidth: 0 }}>
+                                <div style={{ fontSize: '0.86rem', fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                  {ord.customer}
+                                </div>
+                                <div style={{ fontSize: '0.72rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <span>{ord.itemsCount} {ord.itemsCount === 1 ? 'item' : 'items'}</span>
+                                  <span>•</span>
+                                  <span>{['Indore, MP', 'Bengaluru, KA', 'Delhi NCR', 'Mumbai, MH'][idx % 4]}</span>
+                                </div>
                               </div>
-                              <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
-                                items: {ord.itemsCount}
+                            </div>
+
+                            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                              <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#0f172a' }}>
+                                {formatINR(ord.price)}
+                              </div>
+                              <span
+                                style={{
+                                  display: 'inline-block',
+                                  fontSize: '0.68rem',
+                                  fontWeight: 700,
+                                  color: ord.statusColor,
+                                  background: ord.statusBg || (ord.status === 'Complete' ? '#ecfdf5' : ord.status === 'Processing' ? '#eff6ff' : '#fffbeb'),
+                                  padding: '2px 7px',
+                                  borderRadius: '5px',
+                                  marginTop: '3px',
+                                }}
+                              >
+                                {ord.status}
                               </span>
                             </div>
                           </div>
+                        ))}
+                      </div>
+                    </div>
 
-                          <div style={{ textAlign: 'right' }}>
-                            <div style={{ fontSize: '0.88rem', fontWeight: 900, color: '#1e1e24' }}>
-                              {formatINR(ord.price)}
+                    {/* Card Footer Button */}
+                    <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 600 }}>Auto-dispatch SLA: 99.4%</span>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('orders')}
+                        style={{
+                          background: '#0f172a',
+                          color: '#ffffff',
+                          border: 'none',
+                          padding: '7px 14px',
+                          borderRadius: '8px',
+                          fontSize: '0.76rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          transition: 'background 0.15s ease',
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = '#2563eb')}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = '#0f172a')}
+                      >
+                        <Printer size={13} />
+                        Fulfill & Print Slips
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 3: BOTTOM 3 ENTERPRISE SAAS MODULES */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+                {/* Module 1: High-Velocity Catalog Products */}
+                <div className="pro-card">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                    <div>
+                      <h4 style={{ margin: 0, fontSize: '0.98rem', fontWeight: 800, color: '#0f172a' }}>
+                        Catalog Velocity Leaders
+                      </h4>
+                      <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '2px' }}>
+                        Top selling SKUs by units & revenue
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('products')}
+                      style={{ background: 'none', border: 'none', color: '#2563eb', fontSize: '0.74rem', fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      All ({products.length || 14})
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {[
+                      {
+                        title: products[0]?.name || 'Chanderi Pure Silk Handloom Saree',
+                        sales: '₹48,200',
+                        units: 32,
+                        stock: 45,
+                        img: products[0]?.image || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=120&auto=format&fit=crop&q=80',
+                      },
+                      {
+                        title: products[1]?.name || 'Maheshwari Zari Border Dupatta',
+                        sales: '₹24,600',
+                        units: 28,
+                        stock: 62,
+                        img: products[1]?.image || 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=120&auto=format&fit=crop&q=80',
+                      },
+                      {
+                        title: products[2]?.name || 'Handcrafted Organic Cotton Kurta',
+                        sales: '₹19,800',
+                        units: 24,
+                        stock: 18,
+                        img: products[2]?.image || 'https://images.unsplash.com/photo-1598033129183-c4f50c736f10?w=120&auto=format&fit=crop&q=80',
+                      },
+                    ].map((prod, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '8px 10px',
+                          borderRadius: '10px',
+                          background: '#f8fafc',
+                          border: '1px solid #f1f5f9',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                          <img
+                            src={prod.img}
+                            alt={prod.title}
+                            style={{ width: '38px', height: '38px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0, border: '1px solid #e2e8f0' }}
+                          />
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {prod.title}
                             </div>
-                            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: ord.statusColor }}>
-                              {ord.status}
-                            </span>
+                            <div style={{ fontSize: '0.68rem', color: '#64748b' }}>
+                              {prod.units} sold • Stock: <span style={{ color: prod.stock < 20 ? '#f59e0b' : '#059669', fontWeight: 700 }}>{prod.stock}</span>
+                            </div>
                           </div>
                         </div>
-                      ))}
+                        <span style={{ fontSize: '0.86rem', fontWeight: 800, color: '#0f172a', flexShrink: 0, marginLeft: '8px' }}>
+                          {prod.sales}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.72rem', color: '#64748b' }}>Stock Health: 98% Optimal</span>
+                    <button
+                      type="button"
+                      onClick={() => setIsAddProductModalOpen(true)}
+                      style={{ background: 'none', border: 'none', color: '#2563eb', fontSize: '0.74rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      <Plus size={13} /> Add Product
+                    </button>
+                  </div>
+                </div>
+
+                {/* Module 2: Pan-India Express Logistics Pipeline */}
+                <div className="pro-card">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                    <div>
+                      <h4 style={{ margin: 0, fontSize: '0.98rem', fontWeight: 800, color: '#0f172a' }}>
+                        Logistics & Courier Routing
+                      </h4>
+                      <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '2px' }}>
+                        Integrated 3PL Carrier Performance
+                      </div>
+                    </div>
+                    <span style={{ fontSize: '0.7rem', background: '#ecfdf5', color: '#059669', padding: '2px 7px', borderRadius: '5px', fontWeight: 700 }}>
+                      100% Insured
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {[
+                      { hub: 'North Hub (Delhi NCR & UP)', share: '36%', status: 'Next Pickup 4:30 PM', color: '#2563eb' },
+                      { hub: 'West Hub (Mumbai & MP)', share: '28%', status: 'Daily Linehaul Active', color: '#059669' },
+                      { hub: 'South Hub (Bengaluru & Hyd)', share: '22%', status: 'Direct Air Express', color: '#7c3aed' },
+                      { hub: 'East Hub (Kolkata & Bihar)', share: '14%', status: 'Surface Fastrack', color: '#f59e0b' },
+                    ].map((route, idx) => (
+                      <div key={idx} style={{ padding: '8px 10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #f1f5f9' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem' }}>
+                          <span style={{ fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: route.color }} />
+                            {route.hub}
+                          </span>
+                          <span style={{ fontWeight: 800, color: '#0f172a' }}>{route.share}</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px', fontSize: '0.68rem', color: '#64748b' }}>
+                          <span>{route.status}</span>
+                          <span style={{ color: '#059669', fontWeight: 700 }}>SLA: 99.6%</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.7rem', color: '#475569', fontWeight: 600 }}>
+                    <span>⚡ BlueDart • Delhivery • Shadowfax</span>
+                    <span style={{ color: '#059669', fontWeight: 700 }}>Direct API Linked</span>
+                  </div>
+                </div>
+
+                {/* Module 3: Merchant Treasury & Rolling Settlements */}
+                <div className="pro-card">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                    <div>
+                      <h4 style={{ margin: 0, fontSize: '0.98rem', fontWeight: 800, color: '#0f172a' }}>
+                        Payouts & Treasury Ledger
+                      </h4>
+                      <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '2px' }}>
+                        Automated T+1 Bank Transfers
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('transactions')}
+                      style={{ background: 'none', border: 'none', color: '#2563eb', fontSize: '0.74rem', fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      History
+                    </button>
+                  </div>
+
+                  <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '14px', border: '1px solid #e2e8f0' }}>
+                    <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>Upcoming Scheduled Transfer</div>
+                    <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#0f172a', marginTop: '4px', letterSpacing: '-0.02em' }}>
+                      ₹48,290.00
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px', fontSize: '0.72rem', color: '#059669', fontWeight: 700 }}>
+                      <CheckCircle2 size={13} /> Scheduled Tomorrow, 11:00 AM IST
+                    </div>
+
+                    <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.72rem', color: '#64748b' }}>
+                      <span>Destination Account:</span>
+                      <strong style={{ color: '#0f172a' }}>HDFC Bank (•••• 4921)</strong>
                     </div>
                   </div>
 
-                  <div style={{ paddingTop: '16px', borderTop: '1px solid #f1f5f9', marginTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '0.74rem', color: '#94a3b8', fontWeight: 700 }}>Dispatch SLA: 99.4%</span>
+                  <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: '#64748b' }}>
+                      <span>Monthly Reserve Status:</span>
+                      <span style={{ color: '#059669', fontWeight: 700 }}>₹0 Reserve (Tier 1 Pro)</span>
+                    </div>
                     <button
                       type="button"
-                      onClick={() => setActiveTab('orders')}
-                      style={{ background: '#f4f6fa', border: 'none', padding: '5px 12px', borderRadius: '6px', fontSize: '0.74rem', fontWeight: 800, color: '#1e1e24', cursor: 'pointer' }}
+                      onClick={() => setActiveTab('transactions')}
+                      style={{
+                        width: '100%',
+                        background: '#ffffff',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: '8px',
+                        padding: '8px 12px',
+                        fontSize: '0.76rem',
+                        fontWeight: 700,
+                        color: '#0f172a',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        transition: 'all 0.15s ease',
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#0f172a')}
+                      onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#cbd5e1')}
                     >
-                      Fulfill Orders
+                      <Download size={13} />
+                      Download GST Tax Invoices
                     </button>
                   </div>
                 </div>
               </div>
-
-              {/* BOTTOM SECTION: "Top category" / Analytics (3 Cards) */}
-              <div>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#1e1e24', margin: '0 0 16px' }}>
-                  Top category
-                </h2>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
-                  {/* Card 1: Products sold (Bar chart visualization) */}
-                  <div
-                    style={{
-                      background: '#ffffff',
-                      border: '1px solid #eef2f6',
-                      borderRadius: '22px',
-                      padding: '22px 20px',
-                      boxShadow: '0 4px 16px -4px rgba(0, 0, 0, 0.04)',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'space-between',
-                    }}
-                  >
-                    <div>
-                      <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 900, color: '#1e1e24' }}>
-                        Products sold
-                      </h3>
-                      <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: '2px' }}>
-                        900 Products
-                      </div>
-                    </div>
-
-                    {/* Bar Chart Visualization with active Black Tooltip Bubble */}
-                    <div style={{ height: '140px', display: 'flex', alignItems: 'flex-end', gap: '8px', padding: '20px 0 0' }}>
-                      {[
-                        { day: 'sun', height: '40px', bg: '#fcd34d' },
-                        { day: 'mon', height: '65px', bg: '#fdba74' },
-                        { day: 'tue', height: '50px', bg: '#fca5a5' },
-                        { day: 'wed', height: '95px', bg: '#fb7185', active: true },
-                        { day: 'thu', height: '70px', bg: '#fdba74' },
-                        { day: 'fri', height: '85px', bg: '#fcd34d' },
-                        { day: 'sat', height: '45px', bg: '#fde68a' },
-                      ].map((bar, idx) => (
-                        <div key={idx} className="chart-bar-col">
-                          {bar.active && (
-                            <div
-                              style={{
-                                background: '#1e1e24',
-                                color: '#ffffff',
-                                padding: '3px 8px',
-                                borderRadius: '6px',
-                                fontSize: '0.7rem',
-                                fontWeight: 800,
-                                marginBottom: '4px',
-                                boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
-                              }}
-                            >
-                              900
-                            </div>
-                          )}
-                          <div
-                            className="chart-bar-pillar"
-                            style={{
-                              height: bar.height,
-                              background: bar.bg,
-                            }}
-                          />
-                          <span style={{ fontSize: '0.68rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>
-                            {bar.day}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Card 2: Sold today list */}
-                  <div
-                    style={{
-                      background: '#ffffff',
-                      border: '1px solid #eef2f6',
-                      borderRadius: '22px',
-                      padding: '22px 20px',
-                      boxShadow: '0 4px 16px -4px rgba(0, 0, 0, 0.04)',
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                      <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 900, color: '#1e1e24' }}>
-                        Sold today
-                      </h3>
-                      <button
-                        type="button"
-                        onClick={() => setActiveTab('products')}
-                        style={{ background: 'none', border: 'none', color: '#6366f1', fontSize: '0.78rem', fontWeight: 800, cursor: 'pointer' }}
-                      >
-                        View all
-                      </button>
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: '#e0f2fe', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            👟
-                          </div>
-                          <div>
-                            <div style={{ fontSize: '0.86rem', fontWeight: 800, color: '#1e1e24' }}>Men's shoes</div>
-                            <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>items: 150</span>
-                          </div>
-                        </div>
-                        <span style={{ fontSize: '0.9rem', fontWeight: 900, color: '#1e1e24' }}>₹10,000</span>
-                      </div>
-
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            🧥
-                          </div>
-                          <div>
-                            <div style={{ fontSize: '0.86rem', fontWeight: 800, color: '#1e1e24' }}>Men's clothing</div>
-                            <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>items: 200</span>
-                          </div>
-                        </div>
-                        <span style={{ fontSize: '0.9rem', fontWeight: 900, color: '#1e1e24' }}>₹4,000</span>
-                      </div>
-
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            👠
-                          </div>
-                          <div>
-                            <div style={{ fontSize: '0.86rem', fontWeight: 800, color: '#1e1e24' }}>Women's shoes</div>
-                            <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>items: 290</span>
-                          </div>
-                        </div>
-                        <span style={{ fontSize: '0.9rem', fontWeight: 900, color: '#1e1e24' }}>₹20,000</span>
-                      </div>
-                    </div>
-                    {/* Card 3: Top Delivery Hubs (India) */}
-                  <div
-                    style={{
-                      background: '#ffffff',
-                      border: '1px solid #eef2f6',
-                      borderRadius: '22px',
-                      padding: '22px 20px',
-                      boxShadow: '0 4px 16px -4px rgba(0, 0, 0, 0.04)',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'space-between',
-                    }}
-                  >
-                    <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                          <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 900, color: '#1e1e24' }}>
-                            Top Delivery Hubs (India)
-                          </h3>
-                          <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
-                            Express Courier Handover
-                          </span>
-                        </div>
-                        <select
-                          value={regionFilter}
-                          onChange={(e) => setRegionFilter(e.target.value)}
-                          style={{
-                            background: '#f4f6fa',
-                            border: 'none',
-                            borderRadius: '8px',
-                            padding: '4px 8px',
-                            fontSize: '0.74rem',
-                            fontWeight: 700,
-                            color: '#64748b',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          <option value="Weekly">Weekly</option>
-                          <option value="Monthly">Monthly</option>
-                          <option value="Lifetime">Lifetime</option>
-                        </select>
-                      </div>
-
-                      {/* India Logistics Network Nodes */}
-                      <div style={{ margin: '14px 0', textAlign: 'center', position: 'relative' }}>
-                        <svg viewBox="0 0 280 120" style={{ width: '100%', height: 'auto', opacity: 0.85 }}>
-                          {/* India Map stylized geometry */}
-                          <path
-                            d="M 130 15 L 150 25 L 170 30 L 165 55 L 185 65 L 175 80 L 150 110 L 135 112 L 125 90 L 105 70 L 115 45 L 120 25 Z"
-                            fill="#f1f5f9"
-                            stroke="#e2e8f0"
-                            strokeWidth="1.5"
-                          />
-                          {/* Courier Routing Lines */}
-                          <line x1="138" y1="35" x2="118" y2="60" stroke="#93c5fd" strokeWidth="1.5" strokeDasharray="3 3" />
-                          <line x1="118" y1="60" x2="135" y2="88" stroke="#93c5fd" strokeWidth="1.5" strokeDasharray="3 3" />
-                          <line x1="138" y1="35" x2="165" y2="62" stroke="#93c5fd" strokeWidth="1.5" strokeDasharray="3 3" />
-
-                          {/* Pulsing Hub Pins */}
-                          <circle cx="138" cy="35" r="5" fill="#2563eb" />
-                          <circle cx="138" cy="35" r="9" fill="#2563eb" opacity="0.2" />
-
-                          <circle cx="118" cy="60" r="5" fill="#f59e0b" />
-                          <circle cx="118" cy="60" r="9" fill="#f59e0b" opacity="0.2" />
-
-                          <circle cx="135" cy="88" r="5" fill="#10b981" />
-                          <circle cx="135" cy="88" r="9" fill="#10b981" opacity="0.2" />
-
-                          <circle cx="165" cy="62" r="5" fill="#ec4899" />
-                          <circle cx="165" cy="62" r="9" fill="#ec4899" opacity="0.2" />
-                        </svg>
-                      </div>
-                    </div>
-
-                    {/* Regional breakdown legend */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#2563eb' }} />
-                        34% North (Delhi NCR & UP)
-                      </span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f59e0b' }} />
-                        28% West (Mumbai & MP)
-                      </span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }} />
-                        22% South (Bengaluru)
-                      </span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ec4899' }} />
-                        16% East (Kolkata)
-                      </span>
-                    </div>
-
-                    <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.7rem', color: '#10b981', fontWeight: 800 }}>
-                      <span>⚡ BlueDart • Delhivery • Shadowfax</span>
-                      <span>100% Insured</span>
-                    </div>
-                  </div>                  </div>
-                </div>
-              </div>
-            </>
+            </div>
           )}
 
           {/* ================= TAB 2: PRODUCTS VIEW ================= */}
