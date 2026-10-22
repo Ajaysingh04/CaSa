@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -33,6 +33,8 @@ import {
   ExternalLink,
   ChevronRight,
   Rocket,
+  Phone,
+  MessageCircle,
 } from 'lucide-react';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
@@ -103,9 +105,32 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
   const [formData, setFormData] = useState(initialDetails);
   const [savedData, setSavedData] = useState(initialDetails);
 
-  const loadData = async () => {
+  const prevOrdersCountRef = useRef(null);
+
+  const playNewOrderChime = () => {
     try {
-      setLoading(true);
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+      osc.frequency.setValueAtTime(880, ctx.currentTime + 0.12);
+      gain.gain.setValueAtTime(0.2, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.35);
+    } catch {
+      // AudioContext blocked
+    }
+  };
+
+  const loadData = async (isPolling = false) => {
+    try {
+      if (!isPolling) setLoading(true);
       const [statsRes, ordersRes, productsRes, finRes] = await Promise.all([
         vendorService.getStats().catch(() => null),
         vendorService.getOrders('ALL').catch(() => []),
@@ -113,18 +138,33 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
         vendorService.getFinancials().catch(() => null),
       ]);
       setStats(statsRes);
+
+      // Check if new customer bookings arrived
+      if (prevOrdersCountRef.current !== null && ordersRes && ordersRes.length > prevOrdersCountRef.current) {
+        playNewOrderChime();
+        const latest = ordersRes[0];
+        const buyer = latest?.shippingAddress?.fullName || latest?.user?.name || 'Customer';
+        success(`🔔 New Customer Booking! Order #${latest?.orderNumber || 'New'} received from ${buyer}. Ready to pack!`);
+      }
+      prevOrdersCountRef.current = ordersRes ? ordersRes.length : 0;
+
       setOrders(ordersRes || []);
       setProducts(productsRes || []);
       setFinancials(finRes);
     } catch (err) {
       console.warn('Failed to load vendor metrics:', err);
     } finally {
-      setLoading(false);
+      if (!isPolling) setLoading(false);
     }
   };
 
   useEffect(() => {
     loadData();
+    // Auto-polling every 6 seconds so user bookings instantly reach the vendor
+    const interval = setInterval(() => {
+      loadData(true);
+    }, 6000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleCopy = (text, key) => {
@@ -1450,61 +1490,106 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                     style={{
                       border: '1px solid #eef2f6',
                       borderRadius: '16px',
-                      padding: '16px 20px',
+                      padding: '18px 20px',
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
                       flexWrap: 'wrap',
                       gap: '14px',
                       boxShadow: '0 2px 8px rgba(0, 0, 0, 0.02)',
+                      background: '#ffffff',
                     }}
                   >
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ fontWeight: 900, fontSize: '0.94rem', color: '#1e1e24' }}>
+                    <div style={{ flex: 1, minWidth: '280px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                        <span style={{ fontWeight: 900, fontSize: '0.98rem', color: '#1e1e24' }}>
                           #{ord.orderNumber}
                         </span>
                         <span
                           style={{
-                            padding: '2px 8px',
+                            padding: '3px 10px',
                             borderRadius: '6px',
                             fontSize: '0.72rem',
                             fontWeight: 800,
-                            background: ord.orderStatus === 'Delivered' ? '#ecfdf5' : '#eff6ff',
-                            color: ord.orderStatus === 'Delivered' ? '#10b981' : '#6366f1',
+                            background: ord.orderStatus === 'Delivered' ? '#ecfdf5' : ord.orderStatus === 'Shipped' ? '#eff6ff' : '#fffbeb',
+                            color: ord.orderStatus === 'Delivered' ? '#10b981' : ord.orderStatus === 'Shipped' ? '#2563eb' : '#d97706',
                           }}
                         >
                           {ord.orderStatus}
                         </span>
+                        <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+                          {formatDateTime(ord.createdAt)}
+                        </span>
                       </div>
-                      <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '4px' }}>
-                        Customer: <strong>{ord.shippingAddress?.fullName || 'Buyer'}</strong> • {ord.shippingAddress?.city} • {formatDateTime(ord.createdAt)}
+
+                      {/* Buyer Details & Direct Contact */}
+                      <div style={{ marginTop: '8px', fontSize: '0.82rem', color: '#334155' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          <span>Buyer: <strong>{ord.shippingAddress?.fullName || ord.user?.name || 'Customer'}</strong></span>
+                          {(ord.shippingAddress?.phone || ord.user?.phone) && (
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                              <a
+                                href={`tel:${ord.shippingAddress?.phone || ord.user?.phone}`}
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#2563eb', textDecoration: 'none', fontSize: '0.75rem', fontWeight: 700, background: '#eff6ff', padding: '2px 8px', borderRadius: '4px' }}
+                                title="Call Buyer"
+                              >
+                                <Phone size={11} />
+                                <span>{ord.shippingAddress?.phone || ord.user?.phone}</span>
+                              </a>
+                              <a
+                                href={`https://wa.me/91${(ord.shippingAddress?.phone || ord.user?.phone || '').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hello ${ord.shippingAddress?.fullName || 'Customer'}, regarding your CaSa order #${ord.orderNumber}...`)}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#16a34a', textDecoration: 'none', fontSize: '0.75rem', fontWeight: 700, background: '#f0fdf4', padding: '2px 8px', borderRadius: '4px' }}
+                                title="WhatsApp Buyer"
+                              >
+                                <MessageCircle size={11} />
+                                <span>WhatsApp</span>
+                              </a>
+                            </div>
+                          )}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '3px' }}>
+                          📍 Ship To: {ord.shippingAddress?.street}, {ord.shippingAddress?.city} - {ord.shippingAddress?.pincode}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>
+                          📦 Items: {ord.items?.map((it) => `${it.name} (x${it.quantity})`).join(', ')}
+                        </div>
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                      <span style={{ fontSize: '1rem', fontWeight: 900, color: '#1e1e24' }}>
-                        {formatINR(ord.totalPrice)}
-                      </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                      <div style={{ textAlign: 'right', minWidth: '90px' }}>
+                        <div style={{ fontSize: '1.05rem', fontWeight: 900, color: '#1e1e24' }}>
+                          {formatINR(ord.totalPrice)}
+                        </div>
+                        <span style={{ fontSize: '0.7rem', color: ord.isPaid ? '#10b981' : '#f59e0b', fontWeight: 800 }}>
+                          {ord.paymentMethod?.toUpperCase()} ({ord.isPaid ? 'PAID' : 'COD'})
+                        </span>
+                      </div>
+
                       <button
                         type="button"
                         onClick={() => setSelectedInvoiceOrder(ord)}
                         style={{
                           background: '#f4f6fa',
                           border: 'none',
-                          padding: '7px 12px',
+                          padding: '8px 12px',
                           borderRadius: '8px',
                           fontSize: '0.76rem',
                           fontWeight: 800,
                           cursor: 'pointer',
                           color: '#1e1e24',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
                         }}
                       >
-                        <Printer size={13} style={{ display: 'inline', marginRight: '4px' }} />
+                        <Printer size={13} />
                         Slip
                       </button>
 
-                      {['Confirmed', 'Processing'].includes(ord.orderStatus) && (
+                      {['Confirmed', 'Processing', 'Pending'].includes(ord.orderStatus) && (
                         <button
                           type="button"
                           onClick={() => handleUpdateOrderStatus(ord._id, 'Packed')}
@@ -1512,14 +1597,14 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                             background: '#1e1e24',
                             color: '#ffffff',
                             border: 'none',
-                            padding: '7px 14px',
+                            padding: '8px 14px',
                             borderRadius: '8px',
                             fontSize: '0.76rem',
                             fontWeight: 800,
                             cursor: 'pointer',
                           }}
                         >
-                          Pack
+                          Pack Order
                         </button>
                       )}
 
@@ -1528,17 +1613,36 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                           type="button"
                           onClick={() => handleUpdateOrderStatus(ord._id, 'Shipped')}
                           style={{
-                            background: '#10b981',
+                            background: '#2563eb',
                             color: '#ffffff',
                             border: 'none',
-                            padding: '7px 14px',
+                            padding: '8px 14px',
                             borderRadius: '8px',
                             fontSize: '0.76rem',
                             fontWeight: 800,
                             cursor: 'pointer',
                           }}
                         >
-                          Dispatch
+                          Dispatch / Ship
+                        </button>
+                      )}
+
+                      {ord.orderStatus === 'Shipped' && (
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateOrderStatus(ord._id, 'Delivered')}
+                          style={{
+                            background: '#10b981',
+                            color: '#ffffff',
+                            border: 'none',
+                            padding: '8px 14px',
+                            borderRadius: '8px',
+                            fontSize: '0.76rem',
+                            fontWeight: 800,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Mark Delivered
                         </button>
                       )}
                     </div>

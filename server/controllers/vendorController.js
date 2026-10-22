@@ -80,11 +80,15 @@ exports.getVendorOrders = async (req, res, next) => {
         query.orderStatus = status;
       }
 
-      // Vendor Data Isolation Rule: Only fetch orders that contain items from this vendor
+      // Vendor Data Isolation Rule: Only fetch orders that contain items from this vendor, or open marketplace orders
       if (req.user.role === 'vendor') {
         query.$or = [
           { 'items.vendor': req.user._id },
-          { 'items.vendor': null } // Fallback for backward compatibility
+          { 'items.vendor': null },
+          { 'items.vendor': { $exists: false } },
+          { vendor: req.user._id },
+          { vendor: null },
+          { vendor: { $exists: false } }
         ];
       }
 
@@ -130,11 +134,11 @@ exports.updateVendorOrderStatus = async (req, res, next) => {
     const { id } = req.params;
     const { status, vendorNotes } = req.body;
 
-    const allowedVendorStatuses = ['Processing', 'Packed', 'Shipped'];
+    const allowedVendorStatuses = ['Processing', 'Packed', 'Shipped', 'Delivered'];
     if (!allowedVendorStatuses.includes(status)) {
       return res.status(400).json({
         success: false,
-        message: `Vendor can only update order to Processing, Packed, or Shipped. Received: ${status}`
+        message: `Vendor can update order to Processing, Packed, Shipped, or Delivered. Received: ${status}`
       });
     }
 
@@ -290,10 +294,13 @@ exports.createVendorProduct = async (req, res, next) => {
       tags
     } = req.body;
 
-    if (!name || !price || !categorySlug || !subcategory) {
+    const finalCategorySlug = categorySlug || (category ? category.toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'apparel');
+    const finalSubcategory = subcategory || 'General';
+
+    if (!name || !price) {
       return res.status(400).json({
         success: false,
-        message: 'Name, price, category, and subcategory are required.'
+        message: 'Product name and price are required.'
       });
     }
 
@@ -308,8 +315,8 @@ exports.createVendorProduct = async (req, res, next) => {
         slug,
         brand: brand || req.user.vendorStoreName || 'CASA Merchant',
         category: category || undefined,
-        categorySlug,
-        subcategory,
+        categorySlug: finalCategorySlug,
+        subcategory: finalSubcategory,
         description: description || `${name} offered by verified CASA marketplace partner.`,
         price: Number(price),
         discountPrice: discountPrice ? Number(discountPrice) : null,
@@ -329,8 +336,8 @@ exports.createVendorProduct = async (req, res, next) => {
         name,
         slug,
         brand: brand || req.user.vendorStoreName || 'CASA Merchant',
-        categorySlug,
-        subcategory,
+        categorySlug: finalCategorySlug,
+        subcategory: finalSubcategory,
         description: description || `${name} offered by verified CASA marketplace partner.`,
         price: Number(price),
         discountPrice: discountPrice ? Number(discountPrice) : null,

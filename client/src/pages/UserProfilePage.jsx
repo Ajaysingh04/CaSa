@@ -1319,7 +1319,7 @@ const UserProfilePage = () => {
             </div>
           </div>
 
-          {/* Flipkart-Style 4-Step Courier Protocols */}
+          {/* CaSa-Style 4-Step Courier Protocols */}
           <div
             style={{
               padding: '16px',
@@ -1330,7 +1330,7 @@ const UserProfilePage = () => {
           >
             <h4 style={{ fontSize: '0.9rem', fontWeight: 800, color: '#0f172a', margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <PackageCheck size={16} color="#059669" />
-              Flipkart-Style Courier Field Workflow Checkpoints
+              CaSa Courier Field Workflow Checkpoints
             </h4>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px' }}>
               <div style={{ padding: '12px 14px', borderRadius: '10px', background: '#ffffff', border: '1px solid #e2e8f0' }}>

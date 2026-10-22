@@ -76,7 +76,7 @@ const VendorStoreSettings = ({ user, onSettingsSaved }) => {
 
       const res = await api.put('/auth/profile', payload);
       if (res.data?.success) {
-        success('Vendor operations and Flipkart store fulfillment settings saved successfully!');
+        success('CaSa Vendor operations & automation settings saved successfully!');
         setSavedRecently(true);
         setTimeout(() => setSavedRecently(false), 3000);
         if (onSettingsSaved) {
@@ -95,17 +95,17 @@ const VendorStoreSettings = ({ user, onSettingsSaved }) => {
       <style>{`
         .setting-section-card {
           background: #ffffff;
-          border: 1px solid #dfe3e8;
-          border-radius: 4px;
-          padding: 20px 22px;
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+          border: 1px solid #eef2f6;
+          border-radius: 18px;
+          padding: 22px 24px;
+          box-shadow: 0 4px 16px -4px rgba(0, 0, 0, 0.04);
         }
         .setting-row {
           display: flex;
           align-items: center;
-          justify-content: space-between;
-          padding: 13px 0;
-          border-bottom: 1px solid #f1f3f6;
+          justifyContent: space-between;
+          padding: 14px 0;
+          border-bottom: 1px solid #f1f5f9;
           gap: 16px;
           flex-wrap: wrap;
         }
@@ -126,53 +126,52 @@ const VendorStoreSettings = ({ user, onSettingsSaved }) => {
           transform: scale(1.05);
         }
         .fk-btn-primary {
-          background: #fb641b;
+          background: #2563eb;
           color: #ffffff;
           border: none;
-          border-radius: 2px;
+          border-radius: 10px;
           padding: 10px 22px;
-          font-weight: 700;
-          font-size: 0.85rem;
+          font-weight: 800;
+          font-size: 0.84rem;
           cursor: pointer;
           display: inline-flex;
           align-items: center;
           gap: 6px;
-          text-transform: uppercase;
-          letter-spacing: 0.03em;
-          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+          letter-spacing: 0.01em;
+          box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
           transition: all 0.15s ease;
         }
         .fk-btn-primary:hover {
-          background: #e65510;
+          background: #1d4ed8;
         }
       `}</style>
 
-      {/* Header Banner - Flipkart Blue Header */}
+      {/* Header Banner - CaSa Vendor Seller Banner */}
       <div
         style={{
-          background: '#2874f0',
-          borderRadius: '4px',
-          padding: '20px 24px',
+          background: 'linear-gradient(135deg, #1e1e24 0%, #2563eb 100%)',
+          borderRadius: '18px',
+          padding: '22px 26px',
           color: '#ffffff',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           flexWrap: 'wrap',
           gap: '16px',
-          boxShadow: '0 2px 6px rgba(40, 116, 240, 0.2)',
+          boxShadow: '0 8px 24px -4px rgba(37, 99, 235, 0.25)',
         }}
       >
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ width: '36px', height: '36px', borderRadius: '4px', background: '#ffe500', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Sliders size={20} color="#2874f0" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
+              <Sliders size={20} color="#ffffff" />
             </div>
             <div>
-              <h2 style={{ fontSize: '1.2rem', fontWeight: 900, color: '#ffffff', margin: 0 }}>
-                Flipkart Store Operations & Automation Settings
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#ffffff', margin: 0, letterSpacing: '-0.02em' }}>
+                CaSa Vendor Operations & Store Automation
               </h2>
-              <p style={{ margin: '3px 0 0 0', fontSize: '0.8rem', color: '#dbeafe' }}>
-                Configure real-time order alerts, courier fulfillment rules, automated GST billing, and return policies.
+              <p style={{ margin: '3px 0 0 0', fontSize: '0.8rem', color: '#e0e7ff' }}>
+                Configure real-time buyer order alerts, express fulfillment dispatch, GST billing, and return management.
               </p>
             </div>
           </div>
@@ -183,7 +182,7 @@ const VendorStoreSettings = ({ user, onSettingsSaved }) => {
           onClick={handleSaveSettings}
           disabled={isSaving}
           className="fk-btn-primary"
-          style={{ background: savedRecently ? '#388e3c' : '#fb641b' }}
+          style={{ background: savedRecently ? '#10b981' : '#2563eb' }}
         >
           {savedRecently ? <Check size={16} /> : <Save size={16} />}
           <span>{isSaving ? 'Saving Settings...' : savedRecently ? 'Settings Saved!' : 'Save All Settings'}</span>
@@ -192,12 +191,12 @@ const VendorStoreSettings = ({ user, onSettingsSaved }) => {
 
       {/* 1. ORDER DISPATCH & FULFILLMENT AUTOMATION */}
       <div className="setting-section-card">
-        <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#212121', margin: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Truck size={18} color="#2874f0" />
-          Fulfillment & Courier Logistics Rules
+        <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#1e1e24', margin: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Truck size={18} color="#2563eb" />
+          CaSa Express Logistics & Dispatch Rules
         </h3>
-        <p style={{ fontSize: '0.78rem', color: '#878787', margin: '0 0 16px 0' }}>
-          Automate order acceptance and daily shipping dispatch with integrated Flipkart logistics partners.
+        <p style={{ fontSize: '0.78rem', color: '#64748b', margin: '0 0 16px 0' }}>
+          Automate order acceptance and daily shipping dispatch with integrated CaSa Express Logistics courier partners.
         </p>
 
         {/* Auto Confirm Orders */}
@@ -251,7 +250,7 @@ const VendorStoreSettings = ({ user, onSettingsSaved }) => {
           >
             <option value="Delhivery Express Air & Surface">Delhivery Express Air & Surface (Recommended)</option>
             <option value="BlueDart Air Express Cargo">BlueDart Air Express Cargo</option>
-            <option value="Flipkart Dedicated Express Logistics">Flipkart Dedicated Express Logistics</option>
+            <option value="CaSa Dedicated Express Logistics">CaSa Dedicated Express Logistics</option>
             <option value="Smart Auto-Routing (Fastest Available)">Smart Auto-Routing (Fastest Available)</option>
           </select>
         </div>
@@ -293,10 +292,10 @@ const VendorStoreSettings = ({ user, onSettingsSaved }) => {
               Standard Dispatch Packaging Unit
             </strong>
             <span style={{ fontSize: '0.76rem', color: '#878787' }}>
-              Official Flipkart branded packaging tier used for calculating courier volumetric weight.
+              Official CaSa branded packaging tier used for calculating courier volumetric weight.
             </span>
           </div>
-          <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#2874f0', background: '#e8f0fe', padding: '4px 10px', borderRadius: '3px' }}>
+          <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#2563eb', background: '#eff6ff', padding: '5px 12px', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
             {settings.packagingBagType}
           </span>
         </div>
@@ -507,7 +506,7 @@ const VendorStoreSettings = ({ user, onSettingsSaved }) => {
             onChange={(e) => setSettings({ ...settings, returnWindowDays: Number(e.target.value) })}
             style={{
               padding: '7px 12px',
-              borderRadius: '3px',
+              borderRadius: '8px',
               border: '1px solid #dfe3e8',
               fontSize: '0.82rem',
               fontWeight: 700,
@@ -516,7 +515,7 @@ const VendorStoreSettings = ({ user, onSettingsSaved }) => {
               cursor: 'pointer',
             }}
           >
-            <option value={7}>7 Days Easy Return (Flipkart Standard Policy)</option>
+            <option value={7}>7 Days Easy Return (CaSa Standard Policy)</option>
             <option value={10}>10 Days Extended Return Window</option>
             <option value={14}>14 Days Premium Handloom Privilege</option>
           </select>
