@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
+  Menu,
   Store,
   Package,
   Clock,
@@ -45,6 +46,9 @@ import { formatINR, formatDate, formatDateTime } from '../../utils/formatters';
 const VendorDashboardPage = () => {
   const { user, switchRole, login } = useAuth();
   const { success, error, info } = useToast();
+
+  // 3-Lines Hamburger Left Sidebar State
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   // Flipkart Seller Hub Tabs: 'dashboard' | 'orders' | 'inventory' | 'financials' | 'profile'
   const [activeTab, setActiveTab] = useState('orders');
@@ -485,8 +489,28 @@ const VendorDashboardPage = () => {
       {/* TOP BRAND HEADER - FLIPKART SELLER HUB STYLE */}
       <div className="fk-seller-header">
         <div style={{ maxWidth: '1360px', margin: '0 auto', padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px' }}>
-          {/* Logo & Identity */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          {/* Logo & Identity with 3-Lines Hamburger Button */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <button
+              type="button"
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              style={{
+                background: 'rgba(255, 255, 255, 0.16)',
+                border: '1px solid rgba(255, 255, 255, 0.28)',
+                borderRadius: '6px',
+                width: '38px',
+                height: '38px',
+                color: '#ffffff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+              }}
+              title={isSidebarOpen ? 'Close Menu' : 'Open 3-Lines Dashboard Menu'}
+            >
+              {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+
             <Link to="/vendor" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <div
                 style={{
