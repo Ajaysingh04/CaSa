@@ -120,6 +120,26 @@ const AdminLayout = () => {
   return (
     <div style={adminWrapper}>
       <style>{`
+        /* Custom slim scrollbar for admin sidebar and right content */
+        .admin-sidebar-desktop::-webkit-scrollbar,
+        .admin-right-content::-webkit-scrollbar {
+          width: 6px;
+          height: 6px;
+        }
+        .admin-sidebar-desktop::-webkit-scrollbar-track,
+        .admin-right-content::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .admin-sidebar-desktop::-webkit-scrollbar-thumb,
+        .admin-right-content::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 9999px;
+        }
+        .admin-sidebar-desktop::-webkit-scrollbar-thumb:hover,
+        .admin-right-content::-webkit-scrollbar-thumb:hover {
+          background: #94a3b8;
+        }
+
         /* Responsive adjustments */
         @media (max-width: 1024px) {
           .admin-sidebar-desktop {
@@ -303,7 +323,7 @@ const AdminLayout = () => {
       </aside>
 
       {/* ================= RIGHT MAIN AREA ================= */}
-      <div style={rightContentWrapper}>
+      <div className="admin-right-content" style={rightContentWrapper}>
         {/* Top Navbar */}
         <header style={adminHeaderStyle}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -464,7 +484,9 @@ const AdminLayout = () => {
 
 /* Styles - Exact original design preserved */
 const adminWrapper = {
-  minHeight: '100vh',
+  height: '100vh',
+  maxHeight: '100vh',
+  overflow: 'hidden',
   background: '#f8fafc',
   display: 'flex',
   width: '100%',
@@ -475,16 +497,15 @@ const sidebarStyle = {
   minWidth: '240px',
   background: '#ffffff',
   borderRight: '1.5px solid #e2e8f0',
-  minHeight: '100vh',
+  height: '100vh',
+  maxHeight: '100vh',
   display: 'flex',
   flexDirection: 'column',
   justifyContent: 'space-between',
   padding: '16px 14px',
   boxSizing: 'border-box',
-  position: 'sticky',
-  top: 0,
-  height: '100vh',
   overflowY: 'auto',
+  flexShrink: 0,
   zIndex: 90,
 };
 
@@ -576,7 +597,12 @@ const rightContentWrapper = {
   display: 'flex',
   flexDirection: 'column',
   minWidth: 0,
+  height: '100vh',
+  maxHeight: '100vh',
+  overflowY: 'auto',
+  overflowX: 'hidden',
   background: '#f8fafc',
+  position: 'relative',
 };
 
 const adminHeaderStyle = {
@@ -590,6 +616,7 @@ const adminHeaderStyle = {
   top: 0,
   zIndex: 80,
   boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)',
+  flexShrink: 0,
 };
 
 const headerTitleStyle = {
