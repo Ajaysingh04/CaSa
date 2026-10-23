@@ -35,6 +35,12 @@ import {
   Sliders,
   BarChart3,
   Calendar,
+  UserCheck,
+  Shield,
+  ArrowRight,
+  X,
+  Phone,
+  Mail,
 } from 'lucide-react';
 import { adminService } from '../../services/adminService';
 import { formatINR, formatDate, formatDateTime } from '../../utils/formatters';
@@ -71,6 +77,12 @@ const AdminDashboardPage = () => {
   const [hoveredDonut, setHoveredDonut] = useState(null);
   const [copiedId, setCopiedId] = useState(null);
 
+  // Master Ecosystem Quick-Access Drawer State
+  const [ecosystemDrawerRole, setEcosystemDrawerRole] = useState(null); // 'user' | 'vendor' | 'delivery' | null
+  const [drawerUsers, setDrawerUsers] = useState([]);
+  const [drawerLoading, setDrawerLoading] = useState(false);
+  const [drawerSearch, setDrawerSearch] = useState('');
+
   const fetchStats = async (isManual = false) => {
     if (isManual) setRefreshing(true);
     else setLoading(true);
@@ -102,6 +114,37 @@ const AdminDashboardPage = () => {
     } catch (e) {}
   }, []);
 
+  const openEcosystemDrawer = async (role) => {
+    setEcosystemDrawerRole(role);
+    setDrawerLoading(true);
+    setDrawerSearch('');
+    try {
+      const data = await adminService.getUsers({ role });
+      setDrawerUsers(Array.isArray(data) ? data : data?.users || []);
+    } catch (e) {
+      console.error('Failed to load ecosystem users:', e);
+      setDrawerUsers([]);
+    } finally {
+      setDrawerLoading(false);
+    }
+  };
+
+  const closeEcosystemDrawer = () => {
+    setEcosystemDrawerRole(null);
+    setDrawerUsers([]);
+  };
+
+  const filteredDrawerUsers = useMemo(() => {
+    if (!drawerSearch.trim()) return drawerUsers;
+    const q = drawerSearch.toLowerCase();
+    return drawerUsers.filter(
+      (u) =>
+        (u.name && u.name.toLowerCase().includes(q)) ||
+        (u.email && u.email.toLowerCase().includes(q)) ||
+        (u.phone && u.phone.includes(q))
+    );
+  }, [drawerUsers, drawerSearch]);
+
   const {
     totalRevenue = 0,
     grossGMV = 0,
@@ -130,6 +173,32 @@ const AdminDashboardPage = () => {
     monthlySales = [],
     ordersByStatus = {},
   } = stats || {};
+
+  // Image fallbacks so broken icons never show
+  const handleProductImgError = (e) => {
+    e.currentTarget.onerror = null;
+    e.currentTarget.src = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100';
+  };
+
+  const handleOrderImgError = (e) => {
+    e.currentTarget.onerror = null;
+    e.currentTarget.src = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=100';
+  };
+
+  // Products to display in right-side card (smart fallback so gap never occurs)
+  const displayedProducts = useMemo(() => {
+    if (selectedProductTab === 'lowstock') {
+      return lowStockProducts && lowStockProducts.length > 0 ? lowStockProducts : [];
+    }
+    // bestsellers
+    if (topProducts && topProducts.length > 0) {
+      return topProducts;
+    }
+    if (lowStockProducts && lowStockProducts.length > 0) {
+      return lowStockProducts;
+    }
+    return [];
+  }, [selectedProductTab, topProducts, lowStockProducts]);
 
   // Real monthly timeline computed from actual database records
   const monthlyBars = useMemo(() => {
@@ -227,8 +296,6 @@ const AdminDashboardPage = () => {
     });
 
     const maxVal = Math.max(...dataPoints, 1);
-    const minVal = 0;
-
     const stepX = (width - paddingX * 2) / Math.max(activeTimeline.length - 1, 1);
 
     const points = activeTimeline.map((item, idx) => {
@@ -247,9 +314,10 @@ const AdminDashboardPage = () => {
     });
 
     const linePath = getSmoothPath(points);
-    const areaPath = points.length > 0
-      ? `${linePath} L ${points[points.length - 1].x} ${height - paddingY} L ${points[0].x} ${height - paddingY} Z`
-      : '';
+    const areaPath =
+      points.length > 0
+        ? `${linePath} L ${points[points.length - 1].x} ${height - paddingY} L ${points[0].x} ${height - paddingY} Z`
+        : '';
 
     return {
       width,
@@ -348,47 +416,52 @@ const AdminDashboardPage = () => {
       o.totalPrice || o.totalAmount || 0,
       o.paymentMethod || 'Razorpay',
       o.orderStatus || 'Pending',
-      o.createdAt ? new Date(o.createdAt).toLocaleDateString('en-IN') : '',
+      o.createdAt ? new Date(o.createdAt).toLocaleDateString() : 'N/A',
     ]);
 
-    const csvContent =
-      'data:text/csv;charset=utf-8,' +
-      [headers.join(','), ...rows.map((e) => e.map((val) => `"${String(val).replace(/"/g, '""')}"`).join(','))].join('\n');
-
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `CASA_Analytics_Export_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `CASA_Orders_Report_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
+  // Download printable summary report
+  const handleDownloadReport = () => {
+    window.print();
+  };
+
   if (loading) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '12px 0' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
-          {[...Array(4)].map((_, i) => (
-            <div
-              key={i}
-              style={{
-                height: '140px',
-                borderRadius: '18px',
-                background: 'linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%)',
-                backgroundSize: '200% 100%',
-                animation: 'pulse 1.5s infinite',
-              }}
-            />
-          ))}
+      <div style={{ minHeight: '75vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
+        <div className="spin-animation" style={{ width: '44px', height: '44px', borderRadius: '50%', border: '3.5px solid #e2e8f0', borderTopColor: '#2563eb' }} />
+        <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#334155' }}>
+          Loading CASA Master Intelligence Engine...
         </div>
-        <div style={{ height: '340px', borderRadius: '20px', background: '#f8fafc', border: '1px solid #e2e8f0' }} />
       </div>
     );
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', paddingBottom: '40px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '22px', paddingBottom: '40px' }}>
       <style>{`
+        /* Smooth Fade In Up Animation */
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(14px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .anim-card {
+          animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
         .chart-point-pulse {
           animation: chartPulse 2s infinite;
         }
@@ -406,15 +479,42 @@ const AdminDashboardPage = () => {
           flex-direction: column;
           justifyContent: space-between;
           box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
-          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
           position: relative;
           overflow: hidden;
         }
         .pro-metric-card:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 10px 24px -6px rgba(15, 23, 42, 0.08);
+          transform: translateY(-3px);
+          box-shadow: 0 12px 28px -6px rgba(15, 23, 42, 0.09);
           border-color: #cbd5e1;
         }
+        .ecosystem-hub-card {
+          background: #ffffff;
+          border: 1.5px solid #e2e8f0;
+          border-radius: 18px;
+          padding: 20px;
+          transition: all 0.22s ease;
+          display: flex;
+          flex-direction: column;
+          justifyContent: space-between;
+          box-shadow: 0 2px 4px rgba(15, 23, 42, 0.03);
+        }
+        .ecosystem-hub-card:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 10px 24px -5px rgba(15, 23, 42, 0.08);
+        }
+        .tab-pill-btn {
+          border: none;
+          padding: 6px 14px;
+          border-radius: 8px;
+          font-size: 0.78rem;
+          cursor: pointer;
+          transition: all 0.18s ease;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+        }
+        /* Mobile and Tablet Responsiveness */
         @media (max-width: 1024px) {
           .admin-charts-grid-two-col {
             grid-template-columns: 1fr !important;
@@ -422,11 +522,25 @@ const AdminDashboardPage = () => {
           .admin-dashboard-bottom-grid {
             grid-template-columns: 1fr !important;
           }
+          .admin-ecosystem-three-col {
+            grid-template-columns: 1fr !important;
+          }
+        }
+        @media (max-width: 640px) {
+          .admin-header-actions {
+            width: 100% !important;
+            justify-content: flex-start !important;
+          }
+          .admin-header-actions > div,
+          .admin-header-actions > button {
+            flex: 1 1 auto;
+          }
         }
       `}</style>
 
-      {/* Top Header Row (Dashboard Title, Live Sync Status, Search, Export Buttons) */}
+      {/* TOP HEADER ROW: Dashboard Title, Live Sync Status, Search, Export Buttons */}
       <div
+        className="anim-card"
         style={{
           display: 'flex',
           flexWrap: 'wrap',
@@ -457,14 +571,31 @@ const AdminDashboardPage = () => {
               <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#16a34a' }} />
               MongoDB Live Connected
             </span>
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                background: '#eff6ff',
+                color: '#1d4ed8',
+                border: '1px solid #dbeafe',
+                padding: '4px 10px',
+                borderRadius: '999px',
+                fontSize: '0.74rem',
+                fontWeight: 700,
+              }}
+            >
+              <Zap size={12} color="#2563eb" />
+              Socket Synced
+            </span>
           </div>
           <p style={{ fontSize: '0.825rem', color: '#64748b', margin: '4px 0 0 0' }}>
-            Real-time operations, fulfillment velocity, and sales performance across all departments.
+            Real-time operations, ecosystem role permissions, fulfillment velocity, and marketplace ledger.
           </p>
         </div>
 
         {/* Quick Search & Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+        <div className="admin-header-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           <div style={{ position: 'relative' }}>
             <Search
               size={15}
@@ -519,29 +650,29 @@ const AdminDashboardPage = () => {
               borderRadius: '10px',
               border: '1.5px solid #e2e8f0',
               background: '#ffffff',
-              color: '#2563eb',
+              color: '#334155',
               fontSize: '0.825rem',
               fontWeight: 700,
               cursor: 'pointer',
             }}
           >
-            <FileSpreadsheet size={14} />
+            <FileSpreadsheet size={14} color="#059669" />
             <span>Export CSV</span>
           </button>
 
           <button
-            onClick={() => window.print()}
+            onClick={handleDownloadReport}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
               padding: '8px 16px',
               borderRadius: '10px',
+              border: 'none',
               background: '#2563eb',
               color: '#ffffff',
               fontSize: '0.825rem',
-              fontWeight: 700,
-              border: 'none',
+              fontWeight: 800,
               cursor: 'pointer',
               boxShadow: '0 2px 8px rgba(37, 99, 235, 0.25)',
             }}
@@ -554,6 +685,7 @@ const AdminDashboardPage = () => {
 
       {/* 4 PRIMARY EXECUTIVE KPI CARDS WITH INTEGRATED SPARKLINE GRAPHS */}
       <div
+        className="anim-card"
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(235px, 1fr))',
@@ -752,15 +884,345 @@ const AdminDashboardPage = () => {
             <span style={{ color: '#7c3aed', fontWeight: 700 }}>
               👥 {totalCustomers} Active Shoppers
             </span>
-            <Link to="/admin/users" style={{ color: '#2563eb', fontWeight: 700, textDecoration: 'none' }}>
+            <button
+              onClick={() => openEcosystemDrawer('user')}
+              style={{ background: 'none', border: 'none', color: '#2563eb', fontWeight: 700, cursor: 'pointer', padding: 0, fontSize: '0.75rem' }}
+            >
               Directory →
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* SUPREME ECOSYSTEM MASTER COMMAND & ROLE ACCESS HUB (User, Vendor, Rider)   */}
+      {/* ========================================================================= */}
+      <div
+        className="anim-card"
+        style={{
+          background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+          borderRadius: '22px',
+          padding: '24px',
+          color: '#ffffff',
+          boxShadow: '0 10px 30px -10px rgba(15, 23, 42, 0.3)',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '18px' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <ShieldCheck size={20} color="#38bdf8" />
+              <h2 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0, letterSpacing: '-0.01em', color: '#ffffff' }}>
+                Supreme Ecosystem Command Center
+              </h2>
+              <span style={{ padding: '2px 8px', borderRadius: '6px', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', fontSize: '0.7rem', fontWeight: 800, border: '1px solid rgba(56, 189, 248, 0.3)' }}>
+                Full Access Granted
+              </span>
+            </div>
+            <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: '4px 0 0 0' }}>
+              Admin has full control to test, simulate, inspect, and manage Customer, Vendor, and Delivery Fleet portals.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <Link
+              to="/admin/users"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '7px 14px',
+                borderRadius: '8px',
+                background: 'rgba(255, 255, 255, 0.1)',
+                color: '#ffffff',
+                textDecoration: 'none',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+              }}
+            >
+              <Users size={14} /> Manage All User Roles
             </Link>
+          </div>
+        </div>
+
+        {/* 3 Master Ecosystem Columns: User, Vendor, Delivery */}
+        <div
+          className="admin-ecosystem-three-col"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: '16px',
+          }}
+        >
+          {/* ACTOR 1: CUSTOMER & SHOPPERS */}
+          <div
+            style={{
+              background: 'rgba(255, 255, 255, 0.05)',
+              borderRadius: '16px',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              padding: '18px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              gap: '14px',
+            }}
+          >
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'rgba(59, 130, 246, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Users size={19} color="#60a5fa" />
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#ffffff' }}>Customer Ecosystem</div>
+                    <div style={{ fontSize: '0.74rem', color: '#94a3b8' }}>{totalCustomers} Registered Shoppers</div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => openEcosystemDrawer('user')}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.08)',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    color: '#93c5fa',
+                    padding: '4px 8px',
+                    borderRadius: '6px',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Inspect List
+                </button>
+              </div>
+
+              <p style={{ fontSize: '0.78rem', color: '#cbd5e1', margin: '12px 0 0 0', lineHeight: 1.5 }}>
+                Inspect customer account security, order checkouts, delivery history, and live cart sessions.
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <Link
+                to="/"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  padding: '9px 12px',
+                  borderRadius: '10px',
+                  background: '#2563eb',
+                  color: '#ffffff',
+                  fontSize: '0.8rem',
+                  fontWeight: 800,
+                  textDecoration: 'none',
+                  boxShadow: '0 2px 6px rgba(37, 99, 235, 0.3)',
+                }}
+              >
+                <span>Launch Customer Storefront</span>
+                <ExternalLink size={13} />
+              </Link>
+              <Link
+                to="/admin/users?role=user"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  padding: '7px 12px',
+                  borderRadius: '10px',
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  color: '#e2e8f0',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  textDecoration: 'none',
+                }}
+              >
+                <span>Manage Customer Directory →</span>
+              </Link>
+            </div>
+          </div>
+
+          {/* ACTOR 2: VENDOR & MERCHANTS */}
+          <div
+            style={{
+              background: 'rgba(255, 255, 255, 0.05)',
+              borderRadius: '16px',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              padding: '18px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              gap: '14px',
+            }}
+          >
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'rgba(245, 158, 11, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Store size={19} color="#fbbf24" />
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#ffffff' }}>Vendor & Stores</div>
+                    <div style={{ fontSize: '0.74rem', color: '#94a3b8' }}>{totalVendors} Active Merchants</div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => openEcosystemDrawer('vendor')}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.08)',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    color: '#fcd34d',
+                    padding: '4px 8px',
+                    borderRadius: '6px',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Inspect List
+                </button>
+              </div>
+
+              <p style={{ fontSize: '0.78rem', color: '#cbd5e1', margin: '12px 0 0 0', lineHeight: 1.5 }}>
+                Master access to vendor catalogs, merchant settlements ({formatINR(netSettlementDisbursed)}), and store management.
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <Link
+                to="/vendor"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  padding: '9px 12px',
+                  borderRadius: '10px',
+                  background: '#d97706',
+                  color: '#ffffff',
+                  fontSize: '0.8rem',
+                  fontWeight: 800,
+                  textDecoration: 'none',
+                  boxShadow: '0 2px 6px rgba(217, 119, 6, 0.3)',
+                }}
+              >
+                <span>Launch Vendor Console</span>
+                <ExternalLink size={13} />
+              </Link>
+              <Link
+                to="/admin/users?role=vendor"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  padding: '7px 12px',
+                  borderRadius: '10px',
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  color: '#e2e8f0',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  textDecoration: 'none',
+                }}
+              >
+                <span>Manage Merchant Accounts →</span>
+              </Link>
+            </div>
+          </div>
+
+          {/* ACTOR 3: DELIVERY FLEET & RIDERS */}
+          <div
+            style={{
+              background: 'rgba(255, 255, 255, 0.05)',
+              borderRadius: '16px',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              padding: '18px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              gap: '14px',
+            }}
+          >
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'rgba(6, 182, 212, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Truck size={19} color="#38bdf8" />
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#ffffff' }}>Delivery Fleet</div>
+                    <div style={{ fontSize: '0.74rem', color: '#94a3b8' }}>{totalDeliveryPartners} Active Dispatchers</div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => openEcosystemDrawer('delivery')}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.08)',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    color: '#7dd3fc',
+                    padding: '4px 8px',
+                    borderRadius: '6px',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Inspect List
+                </button>
+              </div>
+
+              <p style={{ fontSize: '0.78rem', color: '#cbd5e1', margin: '12px 0 0 0', lineHeight: 1.5 }}>
+                Real-time dispatch control, pickup/drop SLA verification, and rider earnings ({formatINR(deliveryFeesTotal)}).
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <Link
+                to="/delivery"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  padding: '9px 12px',
+                  borderRadius: '10px',
+                  background: '#0284c7',
+                  color: '#ffffff',
+                  fontSize: '0.8rem',
+                  fontWeight: 800,
+                  textDecoration: 'none',
+                  boxShadow: '0 2px 6px rgba(2, 132, 199, 0.3)',
+                }}
+              >
+                <span>Launch Rider Console</span>
+                <ExternalLink size={13} />
+              </Link>
+              <Link
+                to="/admin/users?role=delivery"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  padding: '7px 12px',
+                  borderRadius: '10px',
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  color: '#e2e8f0',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  textDecoration: 'none',
+                }}
+              >
+                <span>Manage Delivery Fleet →</span>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
 
       {/* FINANCIAL RECONCILIATION & COMMISSION STRIP */}
       <div
+        className="anim-card"
         style={{
           background: '#ffffff',
           borderRadius: '20px',
@@ -779,15 +1241,24 @@ const AdminDashboardPage = () => {
             </span>
           </div>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <span style={{ padding: '3px 10px', borderRadius: '6px', background: '#dbeafe', color: '#1d4ed8', fontSize: '0.74rem', fontWeight: 700 }}>
+            <button
+              onClick={() => openEcosystemDrawer('user')}
+              style={{ border: 'none', cursor: 'pointer', padding: '4px 10px', borderRadius: '6px', background: '#dbeafe', color: '#1d4ed8', fontSize: '0.74rem', fontWeight: 700 }}
+            >
               👥 {totalCustomers} Customers
-            </span>
-            <span style={{ padding: '3px 10px', borderRadius: '6px', background: '#fef3c7', color: '#b45309', fontSize: '0.74rem', fontWeight: 700 }}>
+            </button>
+            <button
+              onClick={() => openEcosystemDrawer('vendor')}
+              style={{ border: 'none', cursor: 'pointer', padding: '4px 10px', borderRadius: '6px', background: '#fef3c7', color: '#b45309', fontSize: '0.74rem', fontWeight: 700 }}
+            >
               🏪 {totalVendors} Merchants
-            </span>
-            <span style={{ padding: '3px 10px', borderRadius: '6px', background: '#e0f2fe', color: '#0369a1', fontSize: '0.74rem', fontWeight: 700 }}>
+            </button>
+            <button
+              onClick={() => openEcosystemDrawer('delivery')}
+              style={{ border: 'none', cursor: 'pointer', padding: '4px 10px', borderRadius: '6px', background: '#e0f2fe', color: '#0369a1', fontSize: '0.74rem', fontWeight: 700 }}
+            >
               🛵 {totalDeliveryPartners} Delivery Riders
-            </span>
+            </button>
           </div>
         </div>
 
@@ -850,7 +1321,7 @@ const AdminDashboardPage = () => {
 
       {/* GRAPHICAL CHARTS STUDIO: INTERACTIVE AREA CURVE + CATEGORY DONUT */}
       <div
-        className="admin-charts-grid-two-col"
+        className="admin-charts-grid-two-col anim-card"
         style={{
           display: 'grid',
           gridTemplateColumns: 'minmax(0, 1.7fr) minmax(320px, 1fr)',
@@ -940,7 +1411,7 @@ const AdminDashboardPage = () => {
             </div>
           </div>
 
-          {/* Graphical Smooth Curve Display (Interactive Canvas/SVG Area) */}
+          {/* Graphical Smooth Curve Display (Interactive SVG Area) */}
           <div style={{ position: 'relative', width: '100%', height: '220px', marginTop: '10px' }}>
             {/* Background Grid Lines */}
             <div style={{ position: 'absolute', inset: '10px 40px 30px 40px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', pointerEvents: 'none' }}>
@@ -955,63 +1426,49 @@ const AdminDashboardPage = () => {
               style={{ width: '100%', height: '100%', overflow: 'visible' }}
             >
               <defs>
-                <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#2563eb" stopOpacity="0.4" />
-                  <stop offset="60%" stopColor="#3b82f6" stopOpacity="0.1" />
+                <linearGradient id="splineAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#2563eb" stopOpacity="0.35" />
+                  <stop offset="70%" stopColor="#38bdf8" stopOpacity="0.08" />
                   <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
                 </linearGradient>
-                <filter id="glow">
-                  <feGaussianBlur stdDeviation="3" result="coloredBlur" />
-                  <feMerge>
-                    <feMergeNode in="coloredBlur" />
-                    <feMergeNode in="SourceGraphic" />
-                  </feMerge>
-                </filter>
+                <linearGradient id="splineStrokeGradient" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stopColor="#2563eb" />
+                  <stop offset="100%" stopColor="#06b6d4" />
+                </linearGradient>
               </defs>
 
-              {/* Shaded Area Fill */}
+              {/* Area Fill */}
               {chartCoordinates.areaPath && (
-                <path d={chartCoordinates.areaPath} fill="url(#areaGradient)" />
+                <path d={chartCoordinates.areaPath} fill="url(#splineAreaGradient)" />
               )}
 
-              {/* Glowing Bezier Stroke Line */}
+              {/* Spline Stroke Line */}
               {chartCoordinates.linePath && (
                 <path
                   d={chartCoordinates.linePath}
                   fill="none"
-                  stroke="#2563eb"
-                  strokeWidth="3.5"
+                  stroke="url(#splineStrokeGradient)"
+                  strokeWidth="3.2"
                   strokeLinecap="round"
-                  filter="url(#glow)"
+                  strokeLinejoin="round"
                 />
               )}
 
-              {/* Interactive Data Points */}
-              {chartCoordinates.points.map((pt, i) => {
-                const isHovered = hoveredPointIndex === i;
+              {/* Data Points and Interactivity */}
+              {chartCoordinates.points.map((pt, idx) => {
+                const isHovered = hoveredPointIndex === idx;
                 return (
-                  <g key={i}>
-                    {/* Vertical dashed line on hover */}
+                  <g key={idx}>
+                    {/* Hover Vertical Guide Line */}
                     {isHovered && (
                       <line
                         x1={pt.x}
-                        y1={chartCoordinates.paddingY}
+                        y1={20}
                         x2={pt.x}
                         y2={chartCoordinates.height - chartCoordinates.paddingY}
                         stroke="#94a3b8"
-                        strokeDasharray="4 4"
-                        strokeWidth="1.5"
-                      />
-                    )}
-
-                    {/* Outer pulse circle on hover */}
-                    {isHovered && (
-                      <circle
-                        cx={pt.x}
-                        cy={pt.y}
-                        r="9"
-                        fill="#2563eb"
-                        opacity="0.25"
+                        strokeWidth="1.2"
+                        strokeDasharray="3 3"
                       />
                     )}
 
@@ -1019,14 +1476,48 @@ const AdminDashboardPage = () => {
                     <circle
                       cx={pt.x}
                       cy={pt.y}
-                      r={isHovered ? 6 : 4.5}
-                      fill={isHovered ? '#1d4ed8' : '#ffffff'}
+                      r={isHovered ? 6 : 4}
+                      fill={isHovered ? '#2563eb' : '#ffffff'}
                       stroke="#2563eb"
-                      strokeWidth="2.5"
-                      style={{ cursor: 'pointer', transition: 'all 0.15s' }}
-                      onMouseEnter={() => setHoveredPointIndex(i)}
+                      strokeWidth={isHovered ? 3 : 2.5}
+                      style={{ transition: 'all 0.15s ease' }}
+                    />
+
+                    {/* Active Pulsing Ring */}
+                    {idx === chartCoordinates.points.length - 1 && !isHovered && (
+                      <circle
+                        cx={pt.x}
+                        cy={pt.y}
+                        r="5"
+                        fill="none"
+                        stroke="#2563eb"
+                        strokeWidth="2"
+                        className="chart-point-pulse"
+                      />
+                    )}
+
+                    {/* Invisible Hit Target */}
+                    <circle
+                      cx={pt.x}
+                      cy={pt.y}
+                      r="18"
+                      fill="transparent"
+                      style={{ cursor: 'pointer' }}
+                      onMouseEnter={() => setHoveredPointIndex(idx)}
                       onMouseLeave={() => setHoveredPointIndex(null)}
                     />
+
+                    {/* X-Axis Label */}
+                    <text
+                      x={pt.x}
+                      y={chartCoordinates.height - 8}
+                      textAnchor="middle"
+                      fill={isHovered ? '#0f172a' : '#64748b'}
+                      fontSize="11"
+                      fontWeight={isHovered ? 800 : 600}
+                    >
+                      {pt.label}
+                    </text>
                   </g>
                 );
               })}
@@ -1058,62 +1549,24 @@ const AdminDashboardPage = () => {
                   {formatINR(chartCoordinates.points[hoveredPointIndex].revenue)}
                 </div>
                 <div style={{ fontSize: '0.7rem', color: '#cbd5e1' }}>
-                  {chartCoordinates.points[hoveredPointIndex].orders} Orders Placed
+                  {chartCoordinates.points[hoveredPointIndex].orders} order(s) processed
                 </div>
               </div>
             )}
           </div>
 
-          {/* Bottom X-Axis Labels */}
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              padding: '6px 20px 0 20px',
-              borderTop: '1px solid #f1f5f9',
-            }}
-          >
-            {chartCoordinates.points.map((pt, i) => (
-              <span
-                key={i}
-                style={{
-                  fontSize: '0.75rem',
-                  fontWeight: hoveredPointIndex === i ? 800 : 600,
-                  color: hoveredPointIndex === i ? '#2563eb' : '#64748b',
-                  cursor: 'pointer',
-                }}
-                onMouseEnter={() => setHoveredPointIndex(i)}
-                onMouseLeave={() => setHoveredPointIndex(null)}
-              >
-                {pt.label}
-              </span>
-            ))}
-          </div>
-
-          {/* Quick Metrics Bar Under Chart */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginTop: '16px',
-              paddingTop: '12px',
-              fontSize: '0.8rem',
-              color: '#64748b',
-              flexWrap: 'wrap',
-              gap: '8px',
-            }}
-          >
+          {/* Chart Bottom Summary */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.76rem', color: '#64748b', borderTop: '1px solid #f1f5f9', paddingTop: '12px', marginTop: '12px' }}>
             <span>
-              Storewide Inflow: <strong style={{ color: '#0f172a' }}>{formatINR(totalRevenue)}</strong> across {totalOrders} {totalOrders === 1 ? 'order' : 'orders'}
+              Storewide Inflow: <strong>{formatINR(totalRevenue)}</strong> across {totalOrders} orders
             </span>
-            <span style={{ color: '#16a34a', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <CheckCircle2 size={15} /> Real-Time Socket Synced
+            <span style={{ color: '#16a34a', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <CheckCircle2 size={13} /> Real-Time Socket Synced
             </span>
           </div>
         </div>
 
-        {/* CHART 2: ELEVATED DEPARTMENT & CATEGORY DONUT CHART */}
+        {/* CHART 2: DEPARTMENT CATALOG BREAKDOWN DONUT */}
         <div
           style={{
             background: '#ffffff',
@@ -1126,79 +1579,72 @@ const AdminDashboardPage = () => {
             justifyContent: 'space-between',
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-            <div>
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Layers size={16} color="#7c3aed" />
+                <Layers size={17} color="#7c3aed" />
                 <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
                   Department Catalog Breakdown
                 </h3>
               </div>
-              <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '3px 0 0 0' }}>
-                Inventory share across active product departments
-              </p>
+              <span style={{ fontSize: '0.72rem', background: '#f3e8ff', color: '#7c3aed', padding: '3px 8px', borderRadius: '6px', fontWeight: 800 }}>
+                {categoryBreakdown.length || 6} Departments
+              </span>
             </div>
-            <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#059669', background: '#ecfdf5', padding: '3px 9px', borderRadius: '6px' }}>
-              {categorySegments.length} Departments
-            </span>
-          </div>
+            <p style={{ fontSize: '0.78rem', color: '#64748b', margin: '0 0 16px 0' }}>
+              Inventory share across active product departments
+            </p>
 
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '24px',
-              flexWrap: 'wrap',
-              padding: '10px 0',
-            }}
-          >
-            {/* Circular Donut Graphic */}
-            <div style={{ position: 'relative', width: '150px', height: '150px', flexShrink: 0 }}>
-              <svg viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)', width: '100%', height: '100%' }}>
-                <circle cx="50" cy="50" r="38" fill="none" stroke="#f1f5f9" strokeWidth="12" />
-                {categorySegments.map((seg) => (
-                  <circle
-                    key={seg.id}
-                    cx="50"
-                    cy="50"
-                    r="38"
-                    fill="none"
-                    stroke={seg.color}
-                    strokeWidth={hoveredDonut === seg.id ? '14' : '11'}
-                    strokeDasharray={seg.strokeDasharray}
-                    strokeDashoffset={seg.strokeDashoffset}
-                    style={{ transition: 'all 0.2s ease', cursor: 'pointer' }}
-                    onMouseEnter={() => setHoveredDonut(seg.id)}
-                    onMouseLeave={() => setHoveredDonut(null)}
-                  />
-                ))}
-              </svg>
+            {/* Donut SVG Graphic with Center Stat */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '14px 0' }}>
+              <div style={{ position: 'relative', width: '140px', height: '140px' }}>
+                <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
+                  {categorySegments.map((seg, idx) => (
+                    <circle
+                      key={idx}
+                      cx="50"
+                      cy="50"
+                      r="38"
+                      fill="transparent"
+                      stroke={seg.color}
+                      strokeWidth={hoveredDonut === seg.id ? 13 : 10}
+                      strokeDasharray={seg.strokeDasharray}
+                      strokeDashoffset={seg.strokeDashoffset}
+                      style={{
+                        transition: 'stroke-width 0.2s ease, opacity 0.2s ease',
+                        cursor: 'pointer',
+                        opacity: hoveredDonut && hoveredDonut !== seg.id ? 0.45 : 1,
+                      }}
+                      onMouseEnter={() => setHoveredDonut(seg.id)}
+                      onMouseLeave={() => setHoveredDonut(null)}
+                    />
+                  ))}
+                </svg>
 
-              {/* Center Stat */}
-              <div
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  textAlign: 'center',
-                  pointerEvents: 'none',
-                }}
-              >
-                <strong style={{ fontSize: '1.35rem', color: '#0f172a', fontWeight: 900 }}>
-                  {totalProducts}
-                </strong>
-                <span style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 800, letterSpacing: '0.04em' }}>
-                  PRODUCTS
-                </span>
+                {/* Center Badge in Donut */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    pointerEvents: 'none',
+                  }}
+                >
+                  <span style={{ fontSize: '1.35rem', fontWeight: 900, color: '#0f172a', lineHeight: 1 }}>
+                    {totalProducts}
+                  </span>
+                  <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: '2px' }}>
+                    PRODUCTS
+                  </span>
+                </div>
               </div>
             </div>
 
-            {/* Legend List */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, minWidth: '160px' }}>
+            {/* Interactive Legend List */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px' }}>
               {categorySegments.slice(0, 5).map((seg) => {
                 const isHov = hoveredDonut === seg.id;
                 return (
@@ -1279,7 +1725,7 @@ const AdminDashboardPage = () => {
           border-radius: 999px;
         }
       `}</style>
-      <div className="admin-dashboard-bottom-grid">
+      <div className="admin-dashboard-bottom-grid anim-card">
         {/* Left Column: Recent Orders Live Table */}
         <div
           style={{
@@ -1289,74 +1735,59 @@ const AdminDashboardPage = () => {
             boxShadow: '0 1px 3px rgba(15, 23, 42, 0.03)',
             display: 'flex',
             flexDirection: 'column',
+            justifyContent: 'space-between',
             overflow: 'hidden',
           }}
         >
-          {/* Table Header Row */}
-          <div
-            style={{
-              padding: '20px 24px',
-              borderBottom: '1px solid #e2e8f0',
-              display: 'flex',
-              flexWrap: 'wrap',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '12px',
-            }}
-          >
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Clock size={16} color="#2563eb" />
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>
-                  Recent Orders Tracker
+          {/* Header & Tabs */}
+          <div style={{ padding: '20px 24px', borderBottom: '1px solid #f1f5f9' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '14px' }}>
+              <div>
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Clock size={17} color="#2563eb" /> Recent Orders Tracker
                 </h3>
+                <span style={{ fontSize: '0.78rem', color: '#64748b' }}>
+                  Live order transactions, payment confirmation, and delivery fulfillment
+                </span>
               </div>
-              <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '3px 0 0 0' }}>
-                Live order transactions, payment confirmation, and delivery fulfillment
-              </p>
             </div>
 
-            {/* Quick Status Tabs with Counts */}
+            {/* Filter Tabs */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-              {[
-                { id: 'All', label: 'All', count: orderTabCounts.all },
-                { id: 'In Progress', label: 'In Progress', count: orderTabCounts.inProgress },
-                { id: 'Complete', label: 'Complete', count: orderTabCounts.complete },
-                { id: 'Waiting', label: 'Waiting', count: orderTabCounts.waiting },
-              ].map((tab) => {
-                const isActive = selectedOrderTab === tab.id;
+              {['All', 'In Progress', 'Complete', 'Waiting'].map((tab) => {
+                const isSelected = selectedOrderTab === tab;
+                const count =
+                  tab === 'All'
+                    ? orderTabCounts.all
+                    : tab === 'In Progress'
+                    ? orderTabCounts.inProgress
+                    : tab === 'Complete'
+                    ? orderTabCounts.complete
+                    : orderTabCounts.waiting;
+
                 return (
                   <button
-                    key={tab.id}
-                    onClick={() => setSelectedOrderTab(tab.id)}
+                    key={tab}
+                    onClick={() => setSelectedOrderTab(tab)}
+                    className="tab-pill-btn"
                     style={{
-                      padding: '5px 10px',
-                      borderRadius: '8px',
-                      fontSize: '0.78rem',
-                      fontWeight: isActive ? 800 : 600,
-                      background: isActive ? '#0f172a' : '#f1f5f9',
-                      color: isActive ? '#ffffff' : '#475569',
-                      border: 'none',
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '5px',
-                      transition: 'all 0.15s ease',
-                      whiteSpace: 'nowrap',
+                      background: isSelected ? '#0f172a' : '#f8fafc',
+                      color: isSelected ? '#ffffff' : '#64748b',
+                      fontWeight: isSelected ? 800 : 600,
+                      border: isSelected ? '1px solid #0f172a' : '1px solid #e2e8f0',
                     }}
                   >
-                    <span>{tab.label}</span>
+                    <span>{tab}</span>
                     <span
                       style={{
-                        fontSize: '0.7rem',
-                        padding: '1px 5px',
+                        padding: '1px 6px',
                         borderRadius: '999px',
-                        background: isActive ? 'rgba(255,255,255,0.2)' : '#e2e8f0',
-                        color: isActive ? '#ffffff' : '#64748b',
-                        fontWeight: 800,
+                        fontSize: '0.7rem',
+                        background: isSelected ? 'rgba(255, 255, 255, 0.2)' : '#e2e8f0',
+                        color: isSelected ? '#ffffff' : '#475569',
                       }}
                     >
-                      {tab.count}
+                      {count}
                     </span>
                   </button>
                 );
@@ -1398,7 +1829,6 @@ const AdminDashboardPage = () => {
                     const isDelivered = status === 'delivered';
                     const isProcessing = ['processing', 'confirmed', 'packed', 'shipped', 'out for delivery'].includes(status);
                     const isCancelled = ['cancelled', 'refunded'].includes(status);
-                    const isPending = status === 'pending';
 
                     const statusStyle = isDelivered
                       ? { bg: '#ecfdf5', text: '#059669', label: 'Delivered' }
@@ -1443,8 +1873,9 @@ const AdminDashboardPage = () => {
                         <td style={{ padding: '14px 18px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <img
-                              src={item.image || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100'}
+                              src={item.image || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=100'}
                               alt=""
+                              onError={handleOrderImgError}
                               style={{ width: '34px', height: '34px', borderRadius: '8px', objectFit: 'cover' }}
                             />
                             <div style={{ overflow: 'hidden' }}>
@@ -1458,23 +1889,13 @@ const AdminDashboardPage = () => {
                           </div>
                         </td>
 
-                        <td style={{ padding: '14px 18px', color: '#64748b', whiteSpace: 'nowrap' }}>
-                          {formatDate(order.createdAt)}
+                        <td style={{ padding: '14px 18px', color: '#64748b', fontSize: '0.78rem' }}>
+                          {order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Today'}
                         </td>
 
                         <td style={{ padding: '14px 18px' }}>
-                          <span
-                            style={{
-                              padding: '2px 8px',
-                              borderRadius: '6px',
-                              background: '#f1f5f9',
-                              color: '#475569',
-                              fontWeight: 800,
-                              fontSize: '0.72rem',
-                              textTransform: 'uppercase',
-                            }}
-                          >
-                            {order.paymentMethod || 'Razorpay'}
+                          <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#475569', background: '#f1f5f9', padding: '3px 8px', borderRadius: '6px' }}>
+                            {(order.paymentMethod || 'Razorpay').toUpperCase()}
                           </span>
                         </td>
 
@@ -1485,18 +1906,18 @@ const AdminDashboardPage = () => {
                         <td style={{ padding: '14px 18px' }}>
                           <span
                             style={{
-                              padding: '4px 10px',
-                              borderRadius: '999px',
-                              background: statusStyle.bg,
-                              color: statusStyle.text,
-                              fontWeight: 800,
-                              fontSize: '0.74rem',
                               display: 'inline-flex',
                               alignItems: 'center',
                               gap: '5px',
+                              padding: '4px 10px',
+                              borderRadius: '999px',
+                              fontSize: '0.72rem',
+                              fontWeight: 800,
+                              background: statusStyle.bg,
+                              color: statusStyle.text,
                             }}
                           >
-                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: statusStyle.text }} />
+                            <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: statusStyle.text }} />
                             {statusStyle.label}
                           </span>
                         </td>
@@ -1505,27 +1926,36 @@ const AdminDashboardPage = () => {
                   })
                 ) : (
                   <tr>
-                    <td colSpan="6" style={{ padding: '36px', textAlign: 'center', color: '#64748b' }}>
-                      No orders match the current filter.
+                    <td colSpan="6" style={{ textAlign: 'center', padding: '36px', color: '#94a3b8' }}>
+                      No transactions found matching this tab.
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
+
+          <div style={{ padding: '14px 24px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+              Showing {Math.min(filteredOrders.length, 7)} of {recentOrders.length} recent transactions
+            </span>
+            <Link to="/admin/orders" style={{ fontSize: '0.8rem', color: '#2563eb', fontWeight: 800, textDecoration: 'none' }}>
+              Open Master Orders Manager →
+            </Link>
+          </div>
         </div>
 
-        {/* Right Column: Top Selling Products & Restock Alerts */}
+        {/* Right Column: Top Products & Restock Alerts (Fixed gap with smart fallback) */}
         <div
           style={{
             background: '#ffffff',
             borderRadius: '20px',
             border: '1px solid #e2e8f0',
+            padding: '22px',
             boxShadow: '0 1px 3px rgba(15, 23, 42, 0.03)',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
-            padding: '20px',
           }}
         >
           <div>
@@ -1564,46 +1994,64 @@ const AdminDashboardPage = () => {
               </div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {(selectedProductTab === 'bestsellers' ? topProducts : lowStockProducts).slice(0, 5).map((prod) => (
-                <div
-                  key={prod._id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '8px',
-                    borderRadius: '10px',
-                    background: '#f8fafc',
-                    border: '1px solid #f1f5f9',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
-                    <img
-                      src={prod.images?.[0] || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100'}
-                      alt=""
-                      style={{ width: '38px', height: '38px', borderRadius: '8px', objectFit: 'cover' }}
-                    />
-                    <div style={{ overflow: 'hidden' }}>
-                      <div style={{ fontWeight: 800, fontSize: '0.82rem', color: '#0f172a', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', maxWidth: '140px' }}>
-                        {prod.name}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {displayedProducts.length > 0 ? (
+                displayedProducts.slice(0, 6).map((prod) => {
+                  const stockCount = prod.stock ?? prod.countInStock ?? 0;
+                  const isLow = stockCount <= 10;
+                  return (
+                    <div
+                      key={prod._id || prod.slug}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '10px 12px',
+                        borderRadius: '12px',
+                        background: '#f8fafc',
+                        border: '1px solid #f1f5f9',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
+                        <img
+                          src={prod.images?.[0] || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100'}
+                          alt=""
+                          onError={handleProductImgError}
+                          style={{ width: '40px', height: '40px', borderRadius: '10px', objectFit: 'cover' }}
+                        />
+                        <div style={{ overflow: 'hidden' }}>
+                          <div style={{ fontWeight: 800, fontSize: '0.84rem', color: '#0f172a', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', maxWidth: '150px' }}>
+                            {prod.name}
+                          </div>
+                          <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                            {prod.brand || prod.categorySlug || 'Catalog'}
+                          </div>
+                        </div>
                       </div>
-                      <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
-                        {prod.brand || prod.category || 'Retail'}
-                      </div>
-                    </div>
-                  </div>
 
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontWeight: 900, fontSize: '0.85rem', color: '#0f172a' }}>
-                      {formatINR(prod.price)}
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontWeight: 900, fontSize: '0.88rem', color: '#0f172a' }}>
+                          {formatINR(prod.price || prod.discountPrice || 0)}
+                        </div>
+                        <div style={{ fontSize: '0.7rem', color: isLow ? '#dc2626' : '#059669', fontWeight: 800 }}>
+                          {stockCount} in stock
+                        </div>
+                      </div>
                     </div>
-                    <div style={{ fontSize: '0.7rem', color: prod.countInStock <= 10 ? '#dc2626' : '#059669', fontWeight: 800 }}>
-                      {prod.countInStock} in stock
-                    </div>
+                  );
+                })
+              ) : (
+                <div style={{ textAlign: 'center', padding: '30px 16px', background: '#f8fafc', borderRadius: '12px', border: '1px dashed #cbd5e1' }}>
+                  <ShoppingBag size={28} color="#94a3b8" style={{ margin: '0 auto 8px' }} />
+                  <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#475569' }}>
+                    Catalog Syncing
+                  </div>
+                  <div style={{ fontSize: '0.74rem', color: '#94a3b8', marginTop: '2px' }}>
+                    Add products or sync with live database
                   </div>
                 </div>
-              ))}
+              )}
             </div>
           </div>
 
@@ -1631,6 +2079,7 @@ const AdminDashboardPage = () => {
 
       {/* PLATFORM INFRASTRUCTURE & SLA TELEMETRY FOOTER */}
       <div
+        className="anim-card"
         style={{
           background: '#ffffff',
           borderRadius: '16px',
@@ -1654,6 +2103,180 @@ const AdminDashboardPage = () => {
           <span>● Avg Fulfillment SLA: <strong>1.8 Days</strong></span>
         </div>
       </div>
+
+      {/* ========================================================================= */}
+      {/* INSTANT SLIDE-OVER ECOSYSTEM QUICK-DRAWER (For Users, Vendors, and Riders) */}
+      {/* ========================================================================= */}
+      {ecosystemDrawerRole && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.5)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 110,
+            display: 'flex',
+            justifyContent: 'flex-end',
+          }}
+          onClick={closeEcosystemDrawer}
+        >
+          <div
+            style={{
+              width: '100%',
+              maxWidth: '460px',
+              background: '#ffffff',
+              height: '100%',
+              boxShadow: '-10px 0 35px rgba(0,0,0,0.18)',
+              padding: '24px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              animation: 'fadeInUp 0.25s ease',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div>
+              {/* Drawer Header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  {ecosystemDrawerRole === 'user' ? (
+                    <Users size={22} color="#2563eb" />
+                  ) : ecosystemDrawerRole === 'vendor' ? (
+                    <Store size={22} color="#d97706" />
+                  ) : (
+                    <Truck size={22} color="#0284c7" />
+                  )}
+                  <div>
+                    <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>
+                      {ecosystemDrawerRole === 'user'
+                        ? 'Customer Accounts'
+                        : ecosystemDrawerRole === 'vendor'
+                        ? 'Merchant & Vendor Directory'
+                        : 'Delivery Partner Fleet'}
+                    </h3>
+                    <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
+                      Master Inspection & Access Panel
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={closeEcosystemDrawer}
+                  style={{ background: '#f1f5f9', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              {/* Search in Drawer */}
+              <div style={{ position: 'relative', marginBottom: '16px' }}>
+                <Search size={15} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+                <input
+                  type="text"
+                  placeholder={`Search ${ecosystemDrawerRole}...`}
+                  value={drawerSearch}
+                  onChange={(e) => setDrawerSearch(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px 8px 34px',
+                    borderRadius: '10px',
+                    border: '1.5px solid #e2e8f0',
+                    fontSize: '0.82rem',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+
+              {/* User List in Drawer */}
+              <div style={{ maxHeight: 'calc(100vh - 240px)', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {drawerLoading ? (
+                  <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>
+                    <div className="spin-animation" style={{ width: '28px', height: '28px', borderRadius: '50%', border: '3px solid #e2e8f0', borderTopColor: '#2563eb', margin: '0 auto 10px' }} />
+                    Loading {ecosystemDrawerRole} records...
+                  </div>
+                ) : filteredDrawerUsers.length > 0 ? (
+                  filteredDrawerUsers.map((u) => (
+                    <div
+                      key={u._id}
+                      style={{
+                        padding: '12px',
+                        borderRadius: '12px',
+                        background: '#f8fafc',
+                        border: '1px solid #f1f5f9',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: '#334155' }}>
+                          {u.name ? u.name[0].toUpperCase() : 'U'}
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 800, fontSize: '0.86rem', color: '#0f172a' }}>
+                            {u.name || 'Member'}
+                          </div>
+                          <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                            {u.email}
+                          </div>
+                          {u.phone && (
+                            <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                              📞 {u.phone}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div style={{ textAlign: 'right' }}>
+                        <span
+                          style={{
+                            padding: '3px 8px',
+                            borderRadius: '999px',
+                            fontSize: '0.68rem',
+                            fontWeight: 800,
+                            background: u.isActive !== false ? '#dcfce7' : '#fee2e2',
+                            color: u.isActive !== false ? '#15803d' : '#dc2626',
+                          }}
+                        >
+                          {u.isActive !== false ? 'Active' : 'Suspended'}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div style={{ textAlign: 'center', padding: '30px', color: '#94a3b8' }}>
+                    No {ecosystemDrawerRole} records found.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Drawer Footer Actions */}
+            <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <Link
+                to={`/admin/users?role=${ecosystemDrawerRole}`}
+                onClick={closeEcosystemDrawer}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  padding: '10px',
+                  borderRadius: '10px',
+                  background: '#0f172a',
+                  color: '#ffffff',
+                  fontWeight: 800,
+                  fontSize: '0.82rem',
+                  textDecoration: 'none',
+                }}
+              >
+                <span>Open Full Management Console →</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

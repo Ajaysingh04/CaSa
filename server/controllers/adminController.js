@@ -64,6 +64,12 @@ exports.getDashboardStats = async (req, res, next) => {
         .select('name slug stock price discountPrice images brand categorySlug vendorName')
         .limit(10);
 
+      // Top selling / popular catalog products
+      const topProducts = await Product.find({ isActive: true })
+        .sort({ rating: -1, price: -1 })
+        .limit(6)
+        .select('name slug stock price discountPrice images brand categorySlug vendorName rating numReviews');
+
       // Recent 15 orders
       const rawRecentOrders = await Order.find()
         .populate('user', 'name email phone')
@@ -134,6 +140,7 @@ exports.getDashboardStats = async (req, res, next) => {
           cancellations,
           returnsCount,
           lowStockProducts,
+          topProducts,
           recentOrders,
           categoryBreakdown: categoryAgg,
           monthlySales: monthlySalesAgg,
@@ -167,6 +174,7 @@ exports.getDashboardStats = async (req, res, next) => {
       const netSettlementDisbursed = Math.max(0, actualRevenue - platformCommissions);
 
       const lowStockProducts = dataStore.products.filter(p => p.stock <= 20).slice(0, 10);
+      const topProducts = dataStore.products.slice(0, 6);
       const ordersByStatus = {};
       allOrders.forEach(o => {
         ordersByStatus[o.orderStatus] = (ordersByStatus[o.orderStatus] || 0) + 1;
@@ -196,6 +204,7 @@ exports.getDashboardStats = async (req, res, next) => {
           cancellations,
           returnsCount,
           lowStockProducts,
+          topProducts,
           recentOrders: allOrders.slice(0, 10),
           categoryBreakdown: [],
           monthlySales: [],
