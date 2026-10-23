@@ -655,6 +655,67 @@ ul, ol {
   animation: sectionFadeIn 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* Gentle floating micro-animation for floating docks and promotional badges */
+@keyframes subtleFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.animate-subtle-float {
+  animation: subtleFloat 3s ease-in-out infinite;
+}
+
+/* Glassmorphism interactive card */
+.glass-card-interactive {
+  background: rgba(255, 255, 255, 0.88) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(226, 232, 240, 0.8) !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.glass-card-interactive:hover {
+  background: rgba(255, 255, 255, 0.98) !important;
+  transform: translateY(-4px);
+  box-shadow: 0 16px 32px -6px rgba(15, 23, 42, 0.1), 0 4px 12px -2px rgba(15, 23, 42, 0.04);
+}
+
+/* Touch & tap feedback micro-animation */
+.tap-interactive {
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.tap-interactive:active {
+  transform: scale(0.96) !important;
+}
+
+/* Smooth pulse glow for active status badges */
+@keyframes statusRadarPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(37, 99, 235, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
+  }
+}
+
+.status-radar-indicator {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #2563eb;
+  animation: statusRadarPulse 2s infinite cubic-bezier(0.66, 0, 0, 1);
+}
+
+
 
 
 

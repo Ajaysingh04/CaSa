@@ -31,10 +31,18 @@ const RegisterPage = () => {
 
   const redirect = searchParams.get('redirect') || '/';
 
-  // If already logged in, redirect away from signup
+  // If already logged in, redirect away to respective portal
   useEffect(() => {
     if (user) {
-      navigate(user.role === 'admin' ? '/admin' : '/', { replace: true });
+      if (user.role === 'admin' || user.role === 'super_admin' || user.email === 'admin@casa.in' || user.email === 'casa@admin.com') {
+        navigate('/admin', { replace: true });
+      } else if (user.role === 'vendor' || user.email === 'vendor@casa.in') {
+        navigate('/vendor', { replace: true });
+      } else if (user.role === 'delivery' || user.role === 'delivery_partner' || user.email === 'delivery@casa.in') {
+        navigate('/delivery', { replace: true });
+      } else {
+        navigate('/', { replace: true });
+      }
     }
   }, [user, navigate]);
 

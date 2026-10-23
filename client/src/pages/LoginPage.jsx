@@ -95,13 +95,13 @@ const LoginPage = () => {
       }
       success(`Welcome back, ${res.user.name}!`);
       if (res.user.email === 'casa@admin.com' || res.user.email === 'admin@casa.in' || res.user.role === 'super_admin' || res.user.role === 'admin') {
-        navigate('/admin');
+        navigate('/admin', { replace: true });
       } else if (res.user.email === 'vendor@casa.in' || res.user.role === 'vendor') {
-        navigate('/vendor');
+        navigate('/vendor', { replace: true });
       } else if (res.user.email === 'delivery@casa.in' || res.user.role === 'delivery' || res.user.role === 'delivery_partner') {
-        navigate('/delivery');
+        navigate('/delivery', { replace: true });
       } else {
-        navigate(redirect);
+        navigate('/', { replace: true });
       }
     }
   };
@@ -128,11 +128,11 @@ const LoginPage = () => {
         sessionStorage.setItem('casa_prompt_language_modal', 'true');
       }
       success('Welcome to CASA! Your account was created successfully.');
-      navigate(redirect);
+      navigate('/', { replace: true });
     }
   };
 
-  // 1-Click Demo Fill & Instant Launch
+  // 1-Click Demo Fill & Instant Launch (Directly launches portal dashboards for vendor/delivery/admin and home for customer)
   const handleSelectRole = async (role, instantLaunch = false) => {
     setLoginRole(role);
     let email = 'rajesh@casa.in';
@@ -165,8 +165,8 @@ const LoginPage = () => {
       const res = await login({ email, password });
       setLoading(false);
       if (res.success) {
-        success(`Logged in as ${res.user.name || role}!`);
-        navigate(target);
+        success(`Welcome! Logged in as ${res.user.name || role}`);
+        navigate(target, { replace: true });
       }
     }
   };
@@ -216,8 +216,23 @@ const LoginPage = () => {
             font-size: 1.3rem !important;
           }
           .demo-buttons-row {
-            flex-direction: column !important;
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 8px !important;
           }
+        }
+        .demo-btn-interactive {
+          transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+                      box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+                      border-color 0.2s ease,
+                      background-color 0.2s ease !important;
+        }
+        .demo-btn-interactive:hover {
+          transform: translateY(-2px) scale(1.02) !important;
+          box-shadow: 0 6px 18px -3px rgba(15, 23, 42, 0.12) !important;
+        }
+        .demo-btn-interactive:active {
+          transform: scale(0.97) !important;
         }
         .custom-auth-input:focus-within {
           border-color: #2563eb !important;
@@ -430,7 +445,8 @@ const LoginPage = () => {
                     type="button"
                     onClick={() => handleSelectRole('customer', true)}
                     disabled={loading}
-                    title="1-Click Instant Login as Customer"
+                    title="1-Click Instant Login as Customer (Opens Home Page)"
+                    className="demo-btn-interactive"
                     style={{
                       ...demoBtn,
                       background: loginRole === 'customer' ? '#eff6ff' : '#ffffff',
@@ -439,13 +455,16 @@ const LoginPage = () => {
                       cursor: loading ? 'wait' : 'pointer',
                     }}
                   >
-                    <User size={13} /> Customer
+                    <User size={13} color="#2563eb" />
+                    <span>Customer</span>
+                    <span style={destinationBadge}>🏠 Home</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => handleSelectRole('vendor', true)}
                     disabled={loading}
-                    title="1-Click Instant Login as Vendor Hub"
+                    title="1-Click Instant Login as Vendor (Directly Opens Vendor Dashboard)"
+                    className="demo-btn-interactive"
                     style={{
                       ...demoBtn,
                       background: loginRole === 'vendor' ? '#f0fdf4' : '#ffffff',
@@ -454,13 +473,16 @@ const LoginPage = () => {
                       cursor: loading ? 'wait' : 'pointer',
                     }}
                   >
-                    <Store size={13} /> Vendor
+                    <Store size={13} color="#16a34a" />
+                    <span>Vendor</span>
+                    <span style={{ ...destinationBadge, background: '#dcfce7', color: '#166534' }}>⚡ Hub</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => handleSelectRole('delivery', true)}
                     disabled={loading}
-                    title="1-Click Instant Login as Delivery Partner"
+                    title="1-Click Instant Login as Delivery Partner (Directly Opens Delivery Dashboard)"
+                    className="demo-btn-interactive"
                     style={{
                       ...demoBtn,
                       background: loginRole === 'delivery' ? '#e0f2fe' : '#ffffff',
@@ -469,13 +491,16 @@ const LoginPage = () => {
                       cursor: loading ? 'wait' : 'pointer',
                     }}
                   >
-                    <Truck size={13} /> Delivery
+                    <Truck size={13} color="#0284c7" />
+                    <span>Delivery</span>
+                    <span style={{ ...destinationBadge, background: '#e0f2fe', color: '#0369a1' }}>🛵 Fleet</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => handleSelectRole('admin', true)}
                     disabled={loading}
-                    title="1-Click Instant Login as Admin"
+                    title="1-Click Instant Login as Admin (Directly Opens Admin Console)"
+                    className="demo-btn-interactive"
                     style={{
                       ...demoBtn,
                       background: loginRole === 'admin' ? '#f8fafc' : '#ffffff',
@@ -484,7 +509,9 @@ const LoginPage = () => {
                       cursor: loading ? 'wait' : 'pointer',
                     }}
                   >
-                    <ShieldCheck size={13} /> Admin
+                    <ShieldCheck size={13} color="#475569" />
+                    <span>Admin</span>
+                    <span style={{ ...destinationBadge, background: '#f1f5f9', color: '#0f172a' }}>🛠️ Console</span>
                   </button>
                 </div>
               </div>
@@ -1001,6 +1028,16 @@ const demoBtn = {
   border: '1px solid #e2e8f0',
   cursor: 'pointer',
   transition: 'all 0.15s ease',
+};
+
+const destinationBadge = {
+  fontSize: '0.62rem',
+  fontWeight: 800,
+  padding: '1px 5px',
+  borderRadius: '4px',
+  background: '#dbeafe',
+  color: '#1e40af',
+  marginLeft: 'auto',
 };
 
 const formContainerStyle = {

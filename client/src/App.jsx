@@ -57,7 +57,7 @@ const RouteLoadingFallback = () => (
   </div>
 );
 
-// Route guard: Accessible ONLY when logged out. If already logged in, redirect away.
+// Route guard: Accessible ONLY when logged out. If already logged in, redirect away to respective portal.
 const GuestRoute = ({ children }) => {
   const { user, loading } = useAuth();
   if (loading) {
@@ -68,7 +68,16 @@ const GuestRoute = ({ children }) => {
     );
   }
   if (user) {
-    return <Navigate to={user.role === 'admin' ? '/admin' : '/'} replace />;
+    if (user.role === 'admin' || user.role === 'super_admin' || user.email === 'admin@casa.in' || user.email === 'casa@admin.com') {
+      return <Navigate to="/admin" replace />;
+    }
+    if (user.role === 'vendor' || user.email === 'vendor@casa.in') {
+      return <Navigate to="/vendor" replace />;
+    }
+    if (user.role === 'delivery' || user.role === 'delivery_partner' || user.email === 'delivery@casa.in') {
+      return <Navigate to="/delivery" replace />;
+    }
+    return <Navigate to="/" replace />;
   }
   return children;
 };
