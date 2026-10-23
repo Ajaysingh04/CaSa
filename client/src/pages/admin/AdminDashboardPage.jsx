@@ -542,6 +542,88 @@ const AdminDashboardPage = () => {
         }
       `}</style>
 
+      {/* SUPER ADMIN ROOT MODE BANNER */}
+      {isSuperAdmin && (
+        <div
+          className="anim-card"
+          style={{
+            background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+            border: '1.5px solid #f59e0b',
+            borderRadius: '16px',
+            padding: '14px 20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '12px',
+            boxShadow: '0 8px 24px -6px rgba(245, 158, 11, 0.25)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div
+              style={{
+                width: '38px',
+                height: '38px',
+                borderRadius: '10px',
+                background: '#f59e0b',
+                color: '#0f172a',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1.25rem',
+                fontWeight: 900,
+                boxShadow: '0 2px 8px rgba(245, 158, 11, 0.4)',
+              }}
+            >
+              👑
+            </div>
+            <div>
+              <div style={{ fontSize: '0.94rem', fontWeight: 900, color: '#ffffff' }}>
+                Super Admin Console Active — {user?.email}
+              </div>
+              <div style={{ fontSize: '0.76rem', color: '#cbd5e1', marginTop: '2px' }}>
+                Full Root Privileges Enabled: You can add, edit, or delete any products, stores, users, delivery fleet, and platform settings.
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <Link
+              to="/"
+              style={{
+                background: '#f59e0b',
+                color: '#0f172a',
+                border: 'none',
+                padding: '6px 14px',
+                borderRadius: '8px',
+                fontSize: '0.76rem',
+                fontWeight: 900,
+                textDecoration: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                boxShadow: '0 2px 6px rgba(245, 158, 11, 0.3)',
+              }}
+            >
+              🛍️ Open Live Store (Edit Mode)
+            </Link>
+            <span
+              style={{
+                background: '#fef3c7',
+                color: '#b45309',
+                padding: '4px 10px',
+                borderRadius: '6px',
+                fontSize: '0.72rem',
+                fontWeight: 900,
+                border: '1px solid #fde68a',
+              }}
+            >
+              ⚡ FULL ROOT CONTROL
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* TOP HEADER ROW: Dashboard Title, Live Sync Status, Search, Export Buttons */}
       <div
         className="anim-card"

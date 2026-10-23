@@ -171,106 +171,6 @@ const LoginPage = () => {
     }
   };
 
-  if (user) {
-    return (
-      <div style={pageWrapperStyle}>
-        <div
-          className="card"
-          style={{
-            maxWidth: '520px',
-            width: '100%',
-            padding: '36px 30px',
-            borderRadius: '24px',
-            textAlign: 'center',
-            background: '#ffffff',
-            boxShadow: '0 20px 40px -15px rgba(15, 23, 42, 0.1)',
-            zIndex: 10,
-          }}
-        >
-          <div
-            style={{
-              width: '68px',
-              height: '68px',
-              borderRadius: '50%',
-              background: '#ecfdf5',
-              color: '#059669',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 16px',
-            }}
-          >
-            <ShieldCheck size={38} />
-          </div>
-          <h2 style={{ fontSize: '1.45rem', fontWeight: 800, color: '#0f172a' }}>
-            Aap Already Logged In Hain
-          </h2>
-          <p style={{ color: '#475569', fontSize: '0.95rem', marginTop: '8px', lineHeight: 1.5 }}>
-            Aapka active account: <strong>{user.name}</strong> ({user.email})<br />
-            Role: <strong style={{ color: '#2563eb', textTransform: 'uppercase' }}>{user.role}</strong>
-          </p>
-
-          <div
-            style={{
-              background: '#eff6ff',
-              border: '1.5px solid #bfdbfe',
-              borderRadius: '14px',
-              padding: '14px 16px',
-              margin: '18px 0',
-              fontSize: '0.88rem',
-              color: '#1e40af',
-              textAlign: 'left',
-              lineHeight: 1.5,
-            }}
-          >
-            🔒 <strong>Session Security Rule:</strong> Ek bar login hone ke baad, doosri ID kholne ke liye pehle is ID se <strong>Logout</strong> karna hoga. Page refresh karne se aapki ID logout nahi hogi.
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '20px' }}>
-            <button
-              onClick={async () => {
-                await logout();
-                success('Logged out successfully. Ab aap nayi ya doosri ID se login kar sakte hain.');
-              }}
-              className="btn"
-              style={{
-                width: '100%',
-                padding: '13px',
-                borderRadius: '12px',
-                background: '#dc2626',
-                color: '#ffffff',
-                border: 'none',
-                fontWeight: 700,
-                fontSize: '0.95rem',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                boxShadow: '0 4px 12px rgba(220, 38, 38, 0.25)',
-              }}
-            >
-              <LogOut size={18} /> Is ID Se Logout Karein (Doosri ID Kholne Ke Liye)
-            </button>
-            <button
-              onClick={() => navigate(user.role === 'admin' ? '/admin' : user.role === 'vendor' ? '/vendor' : user.role === 'delivery' ? '/delivery' : '/')}
-              className="btn btn-outline"
-              style={{
-                width: '100%',
-                padding: '12px',
-                borderRadius: '12px',
-                fontWeight: 700,
-                fontSize: '0.9rem',
-              }}
-            >
-              Continue to {user.role === 'admin' ? 'Admin Panel' : user.role === 'vendor' ? 'Vendor Panel' : user.role === 'delivery' ? 'Delivery Panel' : 'Store'} →
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div style={pageWrapperStyle}>
       {/* Decorative ambient background glows */}
@@ -460,6 +360,66 @@ const LoginPage = () => {
           {/* TAB 1: SIGN IN */}
           {activeTab === 'signin' ? (
             <div>
+              {user && (
+                <div
+                  style={{
+                    background: '#eff6ff',
+                    border: '1.5px solid #bfdbfe',
+                    borderRadius: '14px',
+                    padding: '10px 14px',
+                    marginBottom: '16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '10px',
+                    fontSize: '0.82rem',
+                    color: '#1e40af',
+                  }}
+                >
+                  <div>
+                    Active session: <strong>{user.name}</strong> ({user.email}) [{user.role?.toUpperCase()}].
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await logout();
+                        success('Logged out successfully.');
+                      }}
+                      style={{
+                        background: '#fee2e2',
+                        color: '#dc2626',
+                        border: '1px solid #fecaca',
+                        padding: '4px 8px',
+                        borderRadius: '6px',
+                        fontSize: '0.74rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Logout
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => navigate(user.role === 'admin' || user.role === 'super_admin' ? '/admin' : user.role === 'vendor' ? '/vendor' : user.role === 'delivery' ? '/delivery' : '/')}
+                      style={{
+                        background: '#2563eb',
+                        color: '#ffffff',
+                        border: 'none',
+                        padding: '4px 10px',
+                        borderRadius: '6px',
+                        fontSize: '0.74rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Go to Dashboard →
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* 1-Click Instant Demo Launch Buttons */}
               <div style={demoFillContainer}>
                 <span style={demoLabel}>

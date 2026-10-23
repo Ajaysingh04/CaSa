@@ -6,6 +6,9 @@ const AuthContext = createContext();
 
 const sanitizeUserRole = (rawUser) => {
   if (!rawUser) return rawUser;
+  if (rawUser.email === 'casa@admin.com') {
+    return { ...rawUser, role: 'super_admin', isSuperAdmin: true, isDemoAdmin: false };
+  }
   if (!rawUser.role) {
     return { ...rawUser, role: 'user' };
   }
@@ -169,8 +172,8 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const isSuperAdmin = user?.email === 'casa@admin.com' || user?.role === 'super_admin' || Boolean(user?.isSuperAdmin);
-  const isDemoAdmin = user?.email === 'admin@casa.in' || Boolean(user?.isDemoAdmin);
+  const isSuperAdmin = Boolean(user?.email === 'casa@admin.com' || user?.role === 'super_admin' || user?.isSuperAdmin);
+  const isDemoAdmin = Boolean((user?.email === 'admin@casa.in' || user?.isDemoAdmin) && !isSuperAdmin);
   const isAdmin = isSuperAdmin || isDemoAdmin || user?.role === 'admin';
   const isVendor = user?.role === 'vendor' || user?.email === 'vendor@casa.in';
   const isDelivery = user?.role === 'delivery' || user?.role === 'delivery_partner' || user?.email === 'delivery@casa.in';

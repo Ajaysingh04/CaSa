@@ -6,7 +6,7 @@ const User = require('../models/User');
 
 async function run() {
   try {
-    const uri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/casa-ecommerce';
+    const uri = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/casa-ecommerce';
     console.log('Connecting to:', uri);
     await mongoose.connect(uri);
 

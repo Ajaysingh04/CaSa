@@ -31,7 +31,11 @@ const sendTokenResponse = (user, statusCode, res) => {
 
   const { password, ...safeUser } = userObj;
   safeUser.isSuperAdmin = safeUser.email === 'casa@admin.com' || safeUser.role === 'super_admin';
-  safeUser.isDemoAdmin = safeUser.email === 'admin@casa.in' || Boolean(safeUser.isDemo);
+  safeUser.isDemoAdmin = (safeUser.email === 'admin@casa.in' || Boolean(safeUser.isDemo)) && !safeUser.isSuperAdmin;
+  if (safeUser.isSuperAdmin) {
+    safeUser.role = 'super_admin';
+    safeUser.isDemoAdmin = false;
+  }
 
   res
     .status(statusCode)

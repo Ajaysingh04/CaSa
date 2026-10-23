@@ -23,32 +23,20 @@ import { useAuth } from '../context/AuthContext';
 const AdminLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, isAdmin, isSuperAdmin, isDemoAdmin, login, logout } = useAuth();
-  const [connectingAdmin, setConnectingAdmin] = useState(!user || !isAdmin);
+  const { user, isAdmin, isSuperAdmin, isDemoAdmin, logout, loading } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  useEffect(() => {
-    if (!user || !isAdmin) {
-      setConnectingAdmin(true);
-      login({ email: 'admin@casa.in', password: 'Admin@Casa2026' })
-        .catch(() => null)
-        .finally(() => setConnectingAdmin(false));
-    } else {
-      setConnectingAdmin(false);
-    }
-  }, [user, isAdmin]);
 
   // Close mobile sidebar on route change
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [location.pathname]);
 
-  if (connectingAdmin) {
+  if (loading) {
     return (
       <div style={{ minHeight: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '14px' }}>
         <div className="spin-animation" style={{ width: '40px', height: '40px', borderRadius: '50%', border: '3px solid #e2e8f0', borderTopColor: '#0f172a' }} />
         <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#334155' }}>
-          Opening CASA Master Admin Console...
+          Opening CASA Admin Console...
         </div>
       </div>
     );
@@ -243,9 +231,15 @@ const AdminLayout = () => {
                 style={adminAvatar}
               />
               <span style={adminUserName}>{user?.name ? user.name.split(' ')[0] : 'Admin'}</span>
-              <span style={{ background: '#f1f5f9', color: '#334155', padding: '2px 7px', borderRadius: '4px', fontSize: '0.68rem', fontWeight: 800, border: '1px solid #e2e8f0' }}>
-                ADMIN
-              </span>
+              {isSuperAdmin ? (
+                <span style={{ background: '#fef3c7', color: '#b45309', padding: '3px 8px', borderRadius: '6px', fontSize: '0.68rem', fontWeight: 900, border: '1px solid #fde68a', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  👑 SUPER ADMIN
+                </span>
+              ) : (
+                <span style={{ background: '#f1f5f9', color: '#334155', padding: '2px 7px', borderRadius: '4px', fontSize: '0.68rem', fontWeight: 800, border: '1px solid #e2e8f0' }}>
+                  ADMIN
+                </span>
+              )}
               <button
                 onClick={() => {
                   logout();
