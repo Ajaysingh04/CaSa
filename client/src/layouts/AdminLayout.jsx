@@ -17,7 +17,6 @@ import {
   X,
   Store,
   Truck,
-  ExternalLink,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -140,9 +139,6 @@ const AdminLayout = () => {
           .admin-mobile-menu-btn {
             display: flex !important;
           }
-          .admin-portal-switchers-header {
-            display: none !important;
-          }
         }
         @media (min-width: 1025px) {
           .admin-mobile-backdrop {
@@ -151,21 +147,6 @@ const AdminLayout = () => {
           .admin-mobile-menu-btn {
             display: none !important;
           }
-        }
-        .portal-switch-pill {
-          display: inline-flex;
-          align-items: center;
-          gap: 5px;
-          padding: 5px 10px;
-          border-radius: 8px;
-          font-size: 0.74rem;
-          font-weight: 700;
-          text-decoration: none;
-          transition: all 0.18s ease;
-          border: 1px solid transparent;
-        }
-        .portal-switch-pill:hover {
-          transform: translateY(-1px);
         }
       `}</style>
 
@@ -229,70 +210,11 @@ const AdminLayout = () => {
           </nav>
         </div>
 
-        {/* Sidebar Footer: Master Ecosystem Direct Access */}
-        <div style={{ ...sidebarFooter, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '0 4px' }}>
-            Master Portals
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <Link
-              to="/"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '6px 10px',
-                borderRadius: '8px',
-                fontSize: '0.76rem',
-                fontWeight: 700,
-                color: '#1e293b',
-                background: '#f8fafc',
-                border: '1px solid #e2e8f0',
-                textDecoration: 'none',
-              }}
-            >
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>🛍️ Customer Store</span>
-              <ExternalLink size={12} color="#94a3b8" />
-            </Link>
-            <Link
-              to="/vendor"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '6px 10px',
-                borderRadius: '8px',
-                fontSize: '0.76rem',
-                fontWeight: 700,
-                color: '#b45309',
-                background: '#fef3c7',
-                border: '1px solid #fde68a',
-                textDecoration: 'none',
-              }}
-            >
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>🏪 Vendor Portal</span>
-              <ExternalLink size={12} color="#d97706" />
-            </Link>
-            <Link
-              to="/delivery"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '6px 10px',
-                borderRadius: '8px',
-                fontSize: '0.76rem',
-                fontWeight: 700,
-                color: '#0369a1',
-                background: '#e0f2fe',
-                border: '1px solid #bae6fd',
-                textDecoration: 'none',
-              }}
-            >
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>🛵 Delivery Fleet</span>
-              <ExternalLink size={12} color="#0284c7" />
-            </Link>
-          </div>
+        {/* Sidebar Footer: Back to Store */}
+        <div style={sidebarFooter}>
+          <Link to="/" style={storefrontSidebarBtn}>
+            <ArrowLeft size={14} /> Back to Store
+          </Link>
         </div>
       </aside>
 
@@ -314,33 +236,6 @@ const AdminLayout = () => {
 
           {/* User Profile & Actions in Top Row */}
           <div style={headerRight}>
-            <div className="admin-portal-switchers-header" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Link
-                to="/"
-                className="portal-switch-pill"
-                style={{ background: '#f8fafc', color: '#334155', border: '1px solid #e2e8f0' }}
-                title="Open Customer Shopping Experience"
-              >
-                🛍️ Store
-              </Link>
-              <Link
-                to="/vendor"
-                className="portal-switch-pill"
-                style={{ background: '#fef3c7', color: '#b45309', border: '1px solid #fde68a' }}
-                title="Open Merchant / Vendor Console"
-              >
-                🏪 Vendor
-              </Link>
-              <Link
-                to="/delivery"
-                className="portal-switch-pill"
-                style={{ background: '#e0f2fe', color: '#0369a1', border: '1px solid #bae6fd' }}
-                title="Open Delivery Partner Hub"
-              >
-                🛵 Delivery
-              </Link>
-            </div>
-
             <div style={adminUserPill}>
               <img
                 src={user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'}
