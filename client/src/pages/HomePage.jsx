@@ -5,6 +5,9 @@ import CategoryGrid from '../components/home/CategoryGrid';
 import DealsSection from '../components/home/DealsSection';
 import CategoryShowcase from '../components/home/CategoryShowcase';
 import ProductCard from '../components/product/ProductCard';
+import BrandShowcase from '../components/home/BrandShowcase';
+import TestimonialSection from '../components/home/TestimonialSection';
+import VipClubSection from '../components/home/VipClubSection';
 import { productService } from '../services/productService';
 import { Sparkles, TrendingUp, Award, Clock } from 'lucide-react';
 
@@ -116,6 +119,11 @@ const HomePage = () => {
 
   const bestsellers = products.filter((p) => p.isBestSeller).slice(0, 8);
   const trending = products.filter((p) => p.isTrending).slice(0, 8);
+
+  // Combine recently viewed with intelligent recommendations so the 4-card row is NEVER empty
+  const viewedIds = new Set(recentlyViewed.map((p) => p._id));
+  const fallbackRecommendations = products.filter((p) => !viewedIds.has(p._id)).slice(0, Math.max(0, 4 - recentlyViewed.length));
+  const personalizedPicks = [...recentlyViewed, ...fallbackRecommendations].slice(0, 4);
 
   return (
     <div style={{ paddingBottom: '60px' }}>
@@ -294,25 +302,40 @@ const HomePage = () => {
         allProducts={products}
       />
 
-      {/* 16. Recently Viewed Products (if any) */}
-      {recentlyViewed.length > 0 && (
-        <section style={{ ...curatedSectionStyle, background: '#f8fafc' }}>
+      {/* 16. Recently Viewed & Recommended For You (Always perfectly filled with 4 products, never empty!) */}
+      {personalizedPicks.length > 0 && (
+        <section style={{ ...curatedSectionStyle, background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
           <div className="container">
             <div className="section-header">
               <div>
                 <h2 className="section-title">
-                  <Clock size={20} color="#64748b" /> Recently Viewed by You
+                  <Clock size={20} color="#2563eb" /> {recentlyViewed.length > 0 ? 'Recently Viewed & Recommended' : 'Recommended For You'}
                 </h2>
+                <p style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '2px' }}>
+                  Handpicked collections tailored to your tastes and active browsing session
+                </p>
               </div>
+              <Link to="/products" className="section-link">
+                Explore Catalog →
+              </Link>
             </div>
             <div className="grid-products">
-              {recentlyViewed.map((p) => (
+              {personalizedPicks.map((p) => (
                 <ProductCard key={p._id} product={p} />
               ))}
             </div>
           </div>
         </section>
       )}
+
+      {/* 17. Official Partner Brands Showcase */}
+      <BrandShowcase />
+
+      {/* 18. Verified Shopper Reviews & Testimonials */}
+      <TestimonialSection />
+
+      {/* 19. CASA VIP Insider Club Discount Card */}
+      <VipClubSection />
     </div>
   );
 };
