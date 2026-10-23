@@ -138,6 +138,8 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
   const [isSaving, setIsSaving] = useState(false);
   const [copiedKey, setCopiedKey] = useState(null);
   const [orderFilter, setOrderFilter] = useState('ALL');
+  const [orderPage, setOrderPage] = useState(1);
+  const [ordersPerPage, setOrdersPerPage] = useState(3);
   const [productSearch, setProductSearch] = useState('');
   const [regionFilter, setRegionFilter] = useState('Weekly');
 
@@ -161,6 +163,10 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
   useEffect(() => {
     setProductPage(1);
   }, [productSearch, productStatusFilter, productCategoryFilter, productSortBy, productsPerPage]);
+
+  useEffect(() => {
+    setOrderPage(1);
+  }, [orderFilter, ordersPerPage]);
 
   // Add Product Modal & Form State
   const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
@@ -591,6 +597,18 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
   const filteredOrdersList = allVendorOrders.filter((o) =>
     orderFilter === 'ALL' ? true : (o.orderStatus === orderFilter || o.status === orderFilter)
   );
+
+  const totalOrdersCount = filteredOrdersList.length;
+  const totalOrderPages = Math.ceil(totalOrdersCount / ordersPerPage) || 1;
+  const safeCurrentOrderPage = Math.min(orderPage, totalOrderPages);
+  const startOrderIndex = (safeCurrentOrderPage - 1) * ordersPerPage;
+  const endOrderIndex = Math.min(startOrderIndex + ordersPerPage, totalOrdersCount);
+  const paginatedOrders = filteredOrdersList.slice(startOrderIndex, endOrderIndex);
+
+  const handleOrderPageChange = (newPage) => {
+    if (newPage < 1 || newPage > totalOrderPages) return;
+    setOrderPage(newPage);
+  };
 
   const defaultCatalog = [
     {
@@ -3389,170 +3407,308 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                     </button>
                   </div>
                 ) : (
-                  filteredOrdersList.map((ord) => (
-                  <div
-                    key={ord._id}
-                    style={{
-                      border: '1px solid #eef2f6',
-                      borderRadius: '16px',
-                      padding: '18px 20px',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      flexWrap: 'wrap',
-                      gap: '14px',
-                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.02)',
-                      background: '#ffffff',
-                    }}
-                  >
-                    <div style={{ flex: 1, minWidth: '280px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                        <span style={{ fontWeight: 900, fontSize: '0.98rem', color: '#1e1e24' }}>
-                          #{ord.orderNumber}
-                        </span>
-                        <span
-                          style={{
-                            padding: '3px 10px',
-                            borderRadius: '6px',
-                            fontSize: '0.72rem',
-                            fontWeight: 800,
-                            background: ord.orderStatus === 'Delivered' ? '#ecfdf5' : ord.orderStatus === 'Shipped' ? '#eff6ff' : '#fffbeb',
-                            color: ord.orderStatus === 'Delivered' ? '#10b981' : ord.orderStatus === 'Shipped' ? '#2563eb' : '#d97706',
-                          }}
-                        >
-                          {ord.orderStatus}
-                        </span>
-                        <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
-                          {formatDateTime(ord.createdAt)}
-                        </span>
-                      </div>
-
-                      {/* Buyer Details & Direct Contact */}
-                      <div style={{ marginTop: '8px', fontSize: '0.82rem', color: '#334155' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                          <span>Buyer: <strong>{ord.shippingAddress?.fullName || ord.user?.name || 'Customer'}</strong></span>
-                          {(ord.shippingAddress?.phone || ord.user?.phone) && (
-                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                              <a
-                                href={`tel:${ord.shippingAddress?.phone || ord.user?.phone}`}
-                                style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#2563eb', textDecoration: 'none', fontSize: '0.75rem', fontWeight: 700, background: '#eff6ff', padding: '2px 8px', borderRadius: '4px' }}
-                                title="Call Buyer"
-                              >
-                                <Phone size={11} />
-                                <span>{ord.shippingAddress?.phone || ord.user?.phone}</span>
-                              </a>
-                              <a
-                                href={`https://wa.me/91${(ord.shippingAddress?.phone || ord.user?.phone || '').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hello ${ord.shippingAddress?.fullName || 'Customer'}, regarding your CaSa order #${ord.orderNumber}...`)}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#16a34a', textDecoration: 'none', fontSize: '0.75rem', fontWeight: 700, background: '#f0fdf4', padding: '2px 8px', borderRadius: '4px' }}
-                                title="WhatsApp Buyer"
-                              >
-                                <MessageCircle size={11} />
-                                <span>WhatsApp</span>
-                              </a>
-                            </div>
-                          )}
-                        </div>
-                        <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '3px' }}>
-                          📍 Ship To: {ord.shippingAddress?.street}, {ord.shippingAddress?.city} - {ord.shippingAddress?.pincode}
-                        </div>
-                        <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>
-                          📦 Items: {ord.items?.map((it) => `${it.name} (x${it.quantity})`).join(', ')}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                      <div style={{ textAlign: 'right', minWidth: '90px' }}>
-                        <div style={{ fontSize: '1.05rem', fontWeight: 900, color: '#1e1e24' }}>
-                          {formatINR(ord.totalPrice)}
-                        </div>
-                        <span style={{ fontSize: '0.7rem', color: ord.isPaid ? '#10b981' : '#f59e0b', fontWeight: 800 }}>
-                          {ord.paymentMethod?.toUpperCase()} ({ord.isPaid ? 'PAID' : 'COD'})
-                        </span>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => setSelectedInvoiceOrder(ord)}
+                  <>
+                    {paginatedOrders.map((ord) => (
+                      <div
+                        key={ord._id}
                         style={{
-                          background: '#f4f6fa',
-                          border: 'none',
-                          padding: '8px 12px',
-                          borderRadius: '8px',
-                          fontSize: '0.76rem',
-                          fontWeight: 800,
-                          cursor: 'pointer',
-                          color: '#1e1e24',
-                          display: 'inline-flex',
+                          border: '1px solid #eef2f6',
+                          borderRadius: '16px',
+                          padding: '18px 20px',
+                          display: 'flex',
+                          justifyContent: 'space-between',
                           alignItems: 'center',
-                          gap: '4px',
+                          flexWrap: 'wrap',
+                          gap: '14px',
+                          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.02)',
+                          background: '#ffffff',
                         }}
                       >
-                        <Printer size={13} />
-                        Slip
-                      </button>
+                        <div style={{ flex: 1, minWidth: '280px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                            <span style={{ fontWeight: 900, fontSize: '0.98rem', color: '#1e1e24' }}>
+                              #{ord.orderNumber}
+                            </span>
+                            <span
+                              style={{
+                                padding: '3px 10px',
+                                borderRadius: '6px',
+                                fontSize: '0.72rem',
+                                fontWeight: 800,
+                                background: ord.orderStatus === 'Delivered' ? '#ecfdf5' : ord.orderStatus === 'Shipped' ? '#eff6ff' : '#fffbeb',
+                                color: ord.orderStatus === 'Delivered' ? '#10b981' : ord.orderStatus === 'Shipped' ? '#2563eb' : '#d97706',
+                              }}
+                            >
+                              {ord.orderStatus}
+                            </span>
+                            <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+                              {formatDateTime(ord.createdAt)}
+                            </span>
+                          </div>
 
-                      {['Confirmed', 'Processing', 'Pending'].includes(ord.orderStatus) && (
-                        <button
-                          type="button"
-                          onClick={() => handleUpdateOrderStatus(ord._id, 'Packed')}
-                          style={{
-                            background: '#1e1e24',
-                            color: '#ffffff',
-                            border: 'none',
-                            padding: '8px 14px',
-                            borderRadius: '8px',
-                            fontSize: '0.76rem',
-                            fontWeight: 800,
-                            cursor: 'pointer',
-                          }}
-                        >
-                          Pack Order
-                        </button>
-                      )}
+                          {/* Buyer Details & Direct Contact */}
+                          <div style={{ marginTop: '8px', fontSize: '0.82rem', color: '#334155' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                              <span>Buyer: <strong>{ord.shippingAddress?.fullName || ord.user?.name || 'Customer'}</strong></span>
+                              {(ord.shippingAddress?.phone || ord.user?.phone) && (
+                                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                  <a
+                                    href={`tel:${ord.shippingAddress?.phone || ord.user?.phone}`}
+                                    style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#2563eb', textDecoration: 'none', fontSize: '0.75rem', fontWeight: 700, background: '#eff6ff', padding: '2px 8px', borderRadius: '4px' }}
+                                    title="Call Buyer"
+                                  >
+                                    <Phone size={11} />
+                                    <span>{ord.shippingAddress?.phone || ord.user?.phone}</span>
+                                  </a>
+                                  <a
+                                    href={`https://wa.me/91${(ord.shippingAddress?.phone || ord.user?.phone || '').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hello ${ord.shippingAddress?.fullName || 'Customer'}, regarding your CaSa order #${ord.orderNumber}...`)}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#16a34a', textDecoration: 'none', fontSize: '0.75rem', fontWeight: 700, background: '#f0fdf4', padding: '2px 8px', borderRadius: '4px' }}
+                                    title="WhatsApp Buyer"
+                                  >
+                                    <MessageCircle size={11} />
+                                    <span>WhatsApp</span>
+                                  </a>
+                                </div>
+                              )}
+                            </div>
+                            <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '3px' }}>
+                              📍 Ship To: {ord.shippingAddress?.street}, {ord.shippingAddress?.city} - {ord.shippingAddress?.pincode}
+                            </div>
+                            <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>
+                              📦 Items: {ord.items?.map((it) => `${it.name} (x${it.quantity})`).join(', ')}
+                            </div>
+                          </div>
+                        </div>
 
-                      {ord.orderStatus === 'Packed' && (
-                        <button
-                          type="button"
-                          onClick={() => handleUpdateOrderStatus(ord._id, 'Shipped')}
-                          style={{
-                            background: '#2563eb',
-                            color: '#ffffff',
-                            border: 'none',
-                            padding: '8px 14px',
-                            borderRadius: '8px',
-                            fontSize: '0.76rem',
-                            fontWeight: 800,
-                            cursor: 'pointer',
-                          }}
-                        >
-                          Dispatch / Ship
-                        </button>
-                      )}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                          <div style={{ textAlign: 'right', minWidth: '90px' }}>
+                            <div style={{ fontSize: '1.05rem', fontWeight: 900, color: '#1e1e24' }}>
+                              {formatINR(ord.totalPrice)}
+                            </div>
+                            <span style={{ fontSize: '0.7rem', color: ord.isPaid ? '#10b981' : '#f59e0b', fontWeight: 800 }}>
+                              {ord.paymentMethod?.toUpperCase()} ({ord.isPaid ? 'PAID' : 'COD'})
+                            </span>
+                          </div>
 
-                      {ord.orderStatus === 'Shipped' && (
-                        <button
-                          type="button"
-                          onClick={() => handleUpdateOrderStatus(ord._id, 'Delivered')}
-                          style={{
-                            background: '#10b981',
-                            color: '#ffffff',
-                            border: 'none',
-                            padding: '8px 14px',
-                            borderRadius: '8px',
-                            fontSize: '0.76rem',
-                            fontWeight: 800,
-                            cursor: 'pointer',
-                          }}
-                        >
-                          Mark Delivered
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                )))}
+                          <button
+                            type="button"
+                            onClick={() => setSelectedInvoiceOrder(ord)}
+                            style={{
+                              background: '#f4f6fa',
+                              border: 'none',
+                              padding: '8px 12px',
+                              borderRadius: '8px',
+                              fontSize: '0.76rem',
+                              fontWeight: 800,
+                              cursor: 'pointer',
+                              color: '#1e1e24',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                            }}
+                          >
+                            <Printer size={13} />
+                            Slip
+                          </button>
+
+                          {['Confirmed', 'Processing', 'Pending'].includes(ord.orderStatus) && (
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateOrderStatus(ord._id, 'Packed')}
+                              style={{
+                                background: '#1e1e24',
+                                color: '#ffffff',
+                                border: 'none',
+                                padding: '8px 14px',
+                                borderRadius: '8px',
+                                fontSize: '0.76rem',
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                              }}
+                            >
+                              Pack Order
+                            </button>
+                          )}
+
+                          {ord.orderStatus === 'Packed' && (
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateOrderStatus(ord._id, 'Shipped')}
+                              style={{
+                                background: '#2563eb',
+                                color: '#ffffff',
+                                border: 'none',
+                                padding: '8px 14px',
+                                borderRadius: '8px',
+                                fontSize: '0.76rem',
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                              }}
+                            >
+                              Dispatch / Ship
+                            </button>
+                          )}
+
+                          {ord.orderStatus === 'Shipped' && (
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateOrderStatus(ord._id, 'Delivered')}
+                              style={{
+                                background: '#10b981',
+                                color: '#ffffff',
+                                border: 'none',
+                                padding: '8px 14px',
+                                borderRadius: '8px',
+                                fontSize: '0.76rem',
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                              }}
+                            >
+                              Mark Delivered
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* ENTERPRISE ORDERS & SHIPMENTS PAGINATION CONTROL BAR */}
+                    {totalOrdersCount > 0 && (
+                      <div
+                        style={{
+                          background: '#ffffff',
+                          border: '1px solid #eef2f6',
+                          borderRadius: '14px',
+                          padding: '12px 18px',
+                          marginTop: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          flexWrap: 'wrap',
+                          gap: '12px',
+                          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.02)',
+                        }}
+                      >
+                        {/* Summary Info */}
+                        <div style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600 }}>
+                          Showing <strong style={{ color: '#0f172a' }}>{startOrderIndex + 1}</strong> to{' '}
+                          <strong style={{ color: '#0f172a' }}>{endOrderIndex}</strong> of{' '}
+                          <strong style={{ color: '#0f172a' }}>{totalOrdersCount}</strong> Shipments (Page {safeCurrentOrderPage} of {totalOrderPages})
+                        </div>
+
+                        {/* Per-Page Selector */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 600 }}>Rows:</span>
+                          <div style={{ display: 'flex', gap: '4px' }}>
+                            {[3, 5, 10].map((num) => (
+                              <button
+                                key={num}
+                                type="button"
+                                onClick={() => {
+                                  setOrdersPerPage(num);
+                                  setOrderPage(1);
+                                }}
+                                style={{
+                                  padding: '4px 9px',
+                                  borderRadius: '6px',
+                                  border: ordersPerPage === num ? '1px solid #1e1e24' : '1px solid #e2e8f0',
+                                  background: ordersPerPage === num ? '#1e1e24' : '#ffffff',
+                                  color: ordersPerPage === num ? '#ffffff' : '#64748b',
+                                  fontSize: '0.72rem',
+                                  fontWeight: ordersPerPage === num ? 800 : 600,
+                                  cursor: 'pointer',
+                                  transition: 'all 0.15s ease',
+                                }}
+                              >
+                                {num}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Pagination Buttons (Prev / Page Pills / Next) */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <button
+                            type="button"
+                            onClick={() => handleOrderPageChange(safeCurrentOrderPage - 1)}
+                            disabled={safeCurrentOrderPage <= 1}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              padding: '6px 12px',
+                              borderRadius: '8px',
+                              border: '1px solid #e2e8f0',
+                              background: safeCurrentOrderPage <= 1 ? '#f8fafc' : '#ffffff',
+                              color: safeCurrentOrderPage <= 1 ? '#cbd5e1' : '#0f172a',
+                              fontSize: '0.76rem',
+                              fontWeight: 700,
+                              cursor: safeCurrentOrderPage <= 1 ? 'not-allowed' : 'pointer',
+                              transition: 'all 0.15s ease',
+                            }}
+                          >
+                            <ChevronLeft size={14} />
+                            <span>Previous</span>
+                          </button>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            {Array.from({ length: totalOrderPages }, (_, i) => i + 1).map((pNum) => {
+                              const isCurrent = safeCurrentOrderPage === pNum;
+                              return (
+                                <button
+                                  key={pNum}
+                                  type="button"
+                                  onClick={() => handleOrderPageChange(pNum)}
+                                  style={{
+                                    width: '32px',
+                                    height: '32px',
+                                    borderRadius: '8px',
+                                    border: isCurrent ? '1px solid #1e1e24' : '1px solid #e2e8f0',
+                                    background: isCurrent ? '#1e1e24' : '#ffffff',
+                                    color: isCurrent ? '#ffffff' : '#475569',
+                                    fontSize: '0.76rem',
+                                    fontWeight: isCurrent ? 800 : 600,
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    transition: 'all 0.15s ease',
+                                  }}
+                                >
+                                  {pNum}
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => handleOrderPageChange(safeCurrentOrderPage + 1)}
+                            disabled={safeCurrentOrderPage >= totalOrderPages}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              padding: '6px 12px',
+                              borderRadius: '8px',
+                              border: '1px solid #e2e8f0',
+                              background: safeCurrentOrderPage >= totalOrderPages ? '#f8fafc' : '#ffffff',
+                              color: safeCurrentOrderPage >= totalOrderPages ? '#cbd5e1' : '#0f172a',
+                              fontSize: '0.76rem',
+                              fontWeight: 700,
+                              cursor: safeCurrentOrderPage >= totalOrderPages ? 'not-allowed' : 'pointer',
+                              transition: 'all 0.15s ease',
+                            }}
+                          >
+                            <span>Next</span>
+                            <ChevronRight size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             </div>
           )}

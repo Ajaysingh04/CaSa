@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, Navigate } from 'react-router-dom';
 import AnnouncementBar from '../components/common/AnnouncementBar';
 import Header from '../components/common/Header';
 import CategoryNavbar from '../components/common/CategoryNavbar';
@@ -61,9 +61,20 @@ const MainLayout = () => {
   const isPersonalProfile = location.pathname === '/profile' && new URLSearchParams(location.search).get('personal') === 'true';
   const isVendorUser = user && (user.role === 'vendor' || user.email === 'vendor@casa.in');
   const isVendorPortal = location.pathname.startsWith('/vendor') || (location.pathname === '/profile' && isVendorUser && !isPersonalProfile);
+  
+  const isDeliveryUser = Boolean(
+    user && (user.role === 'delivery' || user.role === 'delivery_partner' || user.email === 'delivery@casa.in')
+  );
+  const isDeliveryPortal = location.pathname.startsWith('/delivery') || (location.pathname === '/profile' && isDeliveryUser && !isPersonalProfile);
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
 
-  if (isVendorPortal) {
+  // Delivery partner only needs the delivery dashboard — never the customer store
+  if (isDeliveryUser && !location.pathname.startsWith('/delivery') && !isAuthPage) {
+    return <Navigate to="/delivery" replace />;
+  }
+
+  // Standalone dedicated portal layout for Vendor & Delivery (No store header, No CategoryNavbar, No store Footer, No store Cart)
+  if (isVendorPortal || isDeliveryPortal) {
     return (
       <div style={{ minHeight: '100vh', width: '100%', maxWidth: '100vw', background: '#f4f6fa', overflowX: 'hidden' }}>
         <Outlet context={{ categories }} />
