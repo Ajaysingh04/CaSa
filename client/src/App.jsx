@@ -10,6 +10,7 @@ import { StoreProvider } from './context/StoreContext';
 // Layouts
 import MainLayout from './layouts/MainLayout';
 import AdminLayout from './layouts/AdminLayout';
+import ScrollToTop from './components/common/ScrollToTop';
 
 // Public & Customer Pages
 import HomePage from './pages/HomePage';
@@ -75,6 +76,7 @@ const CustomerCheckoutRoute = ({ children }) => {
 function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <ToastProvider>
         <AuthProvider>
           <NotificationProvider>

@@ -23,15 +23,30 @@ import { useAuth } from '../context/AuthContext';
 const AdminLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, isAdmin, isSuperAdmin, isDemoAdmin, logout, loading } = useAuth();
+  const { user, isAdmin, isSuperAdmin, isDemoAdmin, login, logout, loading } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [autoLoggingDemo, setAutoLoggingDemo] = useState(false);
 
   // Close mobile sidebar on route change
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [location.pathname]);
 
-  if (loading) {
+  // When /admin is opened directly without an active session, auto-open Demo Admin!
+  useEffect(() => {
+    if (!loading && !user && !autoLoggingDemo) {
+      setAutoLoggingDemo(true);
+      login({ email: 'admin@casa.in', password: 'Admin@Casa2026' })
+        .catch((err) => {
+          console.warn('Auto demo admin fallback:', err);
+        })
+        .finally(() => {
+          setAutoLoggingDemo(false);
+        });
+    }
+  }, [loading, user, autoLoggingDemo, login]);
+
+  if (loading || autoLoggingDemo) {
     return (
       <div style={{ minHeight: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '14px' }}>
         <div className="spin-animation" style={{ width: '40px', height: '40px', borderRadius: '50%', border: '3px solid #e2e8f0', borderTopColor: '#0f172a' }} />
@@ -56,8 +71,16 @@ const AdminLayout = () => {
             Master Administrative portal for platform governance, catalog approvals, coupon management, and revenue analytics.
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '24px' }}>
-            <Link to="/login?redirect=/admin" className="btn btn-primary btn-lg" style={{ width: '100%', justifyContent: 'center' }}>
-              Sign In to Admin Console
+            <button
+              type="button"
+              onClick={() => login({ email: 'admin@casa.in', password: 'Admin@Casa2026' })}
+              className="btn btn-primary btn-lg"
+              style={{ width: '100%', justifyContent: 'center' }}
+            >
+              Open Demo Admin Console →
+            </button>
+            <Link to="/login?redirect=/admin" className="btn btn-outline btn-md" style={{ width: '100%', justifyContent: 'center' }}>
+              Sign In with Super Admin Credentials
             </Link>
           </div>
         </div>
