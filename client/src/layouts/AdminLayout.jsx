@@ -20,6 +20,15 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
+const DEMO_ADMIN_USER = {
+  _id: 'demo-admin-id',
+  name: 'Admin Demo',
+  email: 'admin@casa.in',
+  role: 'admin',
+  isSuperAdmin: false,
+  isDemoAdmin: true,
+};
+
 const AdminLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -32,9 +41,9 @@ const AdminLayout = () => {
     setIsMobileMenuOpen(false);
   }, [location.pathname]);
 
-  // When /admin is opened directly without an active session, auto-open Demo Admin!
+  // When /admin is opened without an active admin session, auto-login Demo Admin silently in background
   useEffect(() => {
-    if (!loading && !user && !autoLoggingDemo) {
+    if (!loading && (!user || !isAdmin) && !autoLoggingDemo) {
       setAutoLoggingDemo(true);
       login({ email: 'admin@casa.in', password: 'Admin@Casa2026' })
         .catch((err) => {
@@ -44,49 +53,11 @@ const AdminLayout = () => {
           setAutoLoggingDemo(false);
         });
     }
-  }, [loading, user, autoLoggingDemo, login]);
+  }, [loading, user, isAdmin, autoLoggingDemo, login]);
 
-  if (loading || autoLoggingDemo) {
-    return (
-      <div style={{ minHeight: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '14px' }}>
-        <div className="spin-animation" style={{ width: '40px', height: '40px', borderRadius: '50%', border: '3px solid #e2e8f0', borderTopColor: '#0f172a' }} />
-        <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#334155' }}>
-          Opening CASA Admin Console...
-        </div>
-      </div>
-    );
-  }
-
-  if (!user || !isAdmin) {
-    return (
-      <div className="container" style={{ padding: '80px 16px', maxWidth: '480px', margin: '0 auto', textAlign: 'center' }}>
-        <div style={{ background: '#ffffff', borderRadius: '24px', border: '1px solid #fee2e2', padding: '40px 24px', boxShadow: '0 20px 40px -15px rgba(220, 38, 38, 0.12)' }}>
-          <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#fef2f2', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-            <Shield size={36} />
-          </div>
-          <h2 style={{ fontSize: '1.45rem', fontWeight: 900, marginTop: '0', color: '#0f172a' }}>
-            CASA Admin Console
-          </h2>
-          <p style={{ color: '#64748b', fontSize: '0.88rem', marginTop: '8px', lineHeight: 1.55 }}>
-            Master Administrative portal for platform governance, catalog approvals, coupon management, and revenue analytics.
-          </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '24px' }}>
-            <button
-              type="button"
-              onClick={() => login({ email: 'admin@casa.in', password: 'Admin@Casa2026' })}
-              className="btn btn-primary btn-lg"
-              style={{ width: '100%', justifyContent: 'center' }}
-            >
-              Open Demo Admin Console →
-            </button>
-            <Link to="/login?redirect=/admin" className="btn btn-outline btn-md" style={{ width: '100%', justifyContent: 'center' }}>
-              Sign In with Super Admin Credentials
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const effectiveUser = (user && isAdmin) ? user : DEMO_ADMIN_USER;
+  const effectiveIsSuperAdmin = effectiveUser.email === 'casa@admin.com';
+  const effectiveIsDemoAdmin = !effectiveIsSuperAdmin;
 
   // All Admin Options with Dashboard at the very top of the Left Menu
   const navTabs = [
@@ -249,18 +220,18 @@ const AdminLayout = () => {
           <div style={headerRight}>
             <div style={adminUserPill}>
               <img
-                src={user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'}
-                alt={user?.name || 'Admin'}
+                src={effectiveUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'}
+                alt={effectiveUser?.name || 'Admin'}
                 style={adminAvatar}
               />
-              <span style={adminUserName}>{user?.name ? user.name.split(' ')[0] : 'Admin'}</span>
-              {isSuperAdmin ? (
+              <span style={adminUserName}>{effectiveUser?.name ? effectiveUser.name.split(' ')[0] : 'Admin'}</span>
+              {effectiveIsSuperAdmin ? (
                 <span style={{ background: '#fef3c7', color: '#b45309', padding: '3px 8px', borderRadius: '6px', fontSize: '0.68rem', fontWeight: 900, border: '1px solid #fde68a', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                   👑 SUPER ADMIN
                 </span>
               ) : (
                 <span style={{ background: '#f1f5f9', color: '#334155', padding: '2px 7px', borderRadius: '4px', fontSize: '0.68rem', fontWeight: 800, border: '1px solid #e2e8f0' }}>
-                  ADMIN
+                  DEMO ADMIN
                 </span>
               )}
               <button
