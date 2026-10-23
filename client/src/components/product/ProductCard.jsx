@@ -1,17 +1,45 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, ShoppingCart, Check, Star } from 'lucide-react';
+import { Heart, ShoppingCart, Check, Star, Edit3 } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
+import { useAuth } from '../../context/AuthContext';
 import { formatINR, calculateDiscount } from '../../utils/formatters';
 
-const ProductCard = ({ product }) => {
+const ProductCard = ({ product: initialProduct }) => {
+  const { isSuperAdmin } = useAuth();
   const { addItem } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
+  const [product, setProduct] = useState(initialProduct);
+  const [isDeleted, setIsDeleted] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [justAdded, setJustAdded] = useState(false);
 
-  if (!product) return null;
+  useEffect(() => {
+    setProduct(initialProduct);
+    setIsDeleted(false);
+  }, [initialProduct]);
+
+  useEffect(() => {
+    const onUpdated = (e) => {
+      if (e.detail && product && (e.detail._id === product._id || e.detail.slug === product.slug)) {
+        setProduct((prev) => ({ ...prev, ...e.detail }));
+      }
+    };
+    const onDeleted = (e) => {
+      if (e.detail && product && (e.detail === product._id || e.detail === product.slug)) {
+        setIsDeleted(true);
+      }
+    };
+    window.addEventListener('casa:product-updated', onUpdated);
+    window.addEventListener('casa:product-deleted', onDeleted);
+    return () => {
+      window.removeEventListener('casa:product-updated', onUpdated);
+      window.removeEventListener('casa:product-deleted', onDeleted);
+    };
+  }, [product?._id, product?.slug]);
+
+  if (!product || isDeleted) return null;
 
   const inWishlist = isInWishlist(product._id);
   const discountPercent = calculateDiscount(product.price, product.discountPrice);
@@ -93,6 +121,40 @@ const ProductCard = ({ product }) => {
             </span>
           )}
         </div>
+
+        {/* Super Admin Instant Live Edit Button */}
+        {isSuperAdmin && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              window.dispatchEvent(new CustomEvent('casa:open-product-editor', { detail: product }));
+            }}
+            style={{
+              position: 'absolute',
+              bottom: '8px',
+              left: '8px',
+              zIndex: 15,
+              background: '#0f172a',
+              color: '#f59e0b',
+              border: '1.5px solid #f59e0b',
+              padding: '4px 9px',
+              borderRadius: '7px',
+              fontSize: '0.72rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              boxShadow: '0 4px 10px rgba(0, 0, 0, 0.35)',
+            }}
+            title="Super Admin: Edit this product live on store"
+          >
+            <Edit3 size={12} color="#f59e0b" />
+            <span>Edit</span>
+          </button>
+        )}
 
         {/* Wishlist Heart Button */}
         <button

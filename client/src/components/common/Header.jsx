@@ -810,7 +810,8 @@ const Header = ({ onToggleMobileMenu }) => {
                 !isDeliveryUser &&
                 (user.role === 'vendor' || user.email === 'vendor@casa.in')
               );
-              const isAdminUser = Boolean(isAdmin || user?.email === 'admin@casa.in' || user?.role === 'admin' || user?.role === 'super_admin');
+              const isSuperAdminUser = Boolean(user && (user.role === 'super_admin' || user.email === 'casa@admin.com'));
+              const isAdminUser = Boolean(isAdmin || user?.email === 'admin@casa.in' || user?.role === 'admin' || isSuperAdminUser);
 
               return (
                 <div style={userDropdownStyle} className="user-dropdown-card">
@@ -851,6 +852,10 @@ const Header = ({ onToggleMobileMenu }) => {
                           ) : isVendorUser ? (
                             <span style={{ ...adminBadgeStyle, background: 'rgba(56, 189, 248, 0.25)', color: '#38bdf8', borderColor: 'rgba(56, 189, 248, 0.4)' }}>
                               <Store size={11} /> VERIFIED VENDOR
+                            </span>
+                          ) : isSuperAdminUser ? (
+                            <span style={{ ...adminBadgeStyle, background: 'rgba(245, 158, 11, 0.25)', color: '#fef08a', borderColor: 'rgba(245, 158, 11, 0.45)' }}>
+                              👑 SUPER ADMIN
                             </span>
                           ) : isAdminUser ? (
                             <span style={adminBadgeStyle}>
@@ -912,6 +917,29 @@ const Header = ({ onToggleMobileMenu }) => {
                               <div style={{ ...menuItemSubStyle, color: '#1e40af' }}>Orders, catalog & merchant center</div>
                             </div>
                             <ChevronRight size={14} color="#2563eb" className="dropdown-menu-arrow" />
+                          </Link>
+                        ) : isSuperAdminUser ? (
+                          <Link
+                            to="/admin"
+                            onClick={() => setShowUserMenu(false)}
+                            className="dropdown-menu-item"
+                            style={{
+                              ...dropdownMenuItemStyle,
+                              width: '100%',
+                              border: 'none',
+                              background: '#0f172a',
+                              borderRadius: '12px',
+                              marginBottom: '6px',
+                            }}
+                          >
+                            <div style={{ ...menuIconBox, background: '#f59e0b', color: '#0f172a' }}>
+                              <Shield size={16} />
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                              <div style={{ ...menuItemTitleStyle, color: '#fde68a', fontWeight: 800 }}>👑 Super Admin Console</div>
+                              <div style={{ ...menuItemSubStyle, color: '#94a3b8' }}>Live store editing & full control</div>
+                            </div>
+                            <ChevronRight size={14} color="#f59e0b" className="dropdown-menu-arrow" />
                           </Link>
                         ) : isAdminUser ? (
                           <Link

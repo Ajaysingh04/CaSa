@@ -22,6 +22,7 @@ import { useToast } from '../context/ToastContext';
 import Breadcrumbs from '../components/common/Breadcrumbs';
 import RatingStars from '../components/common/RatingStars';
 import ProductCard from '../components/product/ProductCard';
+import SuperAdminEditModal from '../components/common/SuperAdminEditModal';
 import { formatINR, calculateDiscount, formatDate } from '../utils/formatters';
 import { PIN_CODES_DATA } from '../utils/constants';
 
@@ -30,10 +31,11 @@ const ProductDetailPage = () => {
   const navigate = useNavigate();
   const { addItem } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
-  const { user } = useAuth();
+  const { user, isSuperAdmin } = useAuth();
   const { success, error, info } = useToast();
 
   const [product, setProduct] = useState(null);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState('');
   const [selectedVariants, setSelectedVariants] = useState({});
@@ -113,6 +115,27 @@ const ProductDetailPage = () => {
     fetchProduct();
     window.scrollTo(0, 0);
   }, [slug]);
+
+  // Sync real-time updates when Super Admin modifies product live
+  useEffect(() => {
+    const onUpdated = (e) => {
+      if (e.detail && product && (e.detail._id === product._id || e.detail.slug === product.slug)) {
+        setProduct((prev) => ({ ...prev, ...e.detail }));
+        if (e.detail.images?.[0]) setSelectedImage(e.detail.images[0]);
+      }
+    };
+    const onDeleted = (e) => {
+      if (e.detail && product && (e.detail === product._id || e.detail === product.slug)) {
+        navigate('/products');
+      }
+    };
+    window.addEventListener('casa:product-updated', onUpdated);
+    window.addEventListener('casa:product-deleted', onDeleted);
+    return () => {
+      window.removeEventListener('casa:product-updated', onUpdated);
+      window.removeEventListener('casa:product-deleted', onDeleted);
+    };
+  }, [product?._id, product?.slug, navigate]);
 
   if (loading) {
     return (
@@ -275,6 +298,75 @@ const ProductDetailPage = () => {
         }
       `}</style>
       <Breadcrumbs items={breadcrumbs} />
+
+      {/* Super Admin Direct Live Store Editor Banner */}
+      {isSuperAdmin && (
+        <div
+          style={{
+            background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+            border: '1.5px solid #f59e0b',
+            borderRadius: '16px',
+            padding: '12px 20px',
+            margin: '16px 0 20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '12px',
+            boxShadow: '0 8px 24px -6px rgba(245, 158, 11, 0.25)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '1.25rem' }}>👑</span>
+            <div>
+              <div style={{ fontSize: '0.86rem', fontWeight: 900, color: '#ffffff' }}>
+                Super Admin Storefront Live Controls
+              </div>
+              <div style={{ fontSize: '0.74rem', color: '#94a3b8' }}>
+                You have root editing privileges on this product. Edit title, price, stock, or badges in real time.
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={() => setIsEditorOpen(true)}
+              style={{
+                background: '#f59e0b',
+                color: '#0f172a',
+                border: 'none',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                fontSize: '0.8rem',
+                fontWeight: 900,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 2px 6px rgba(245, 158, 11, 0.35)',
+              }}
+            >
+              <span>✏️ Edit This Product (Live)</span>
+            </button>
+            <Link
+              to={`/admin/products?search=${encodeURIComponent(product.name)}`}
+              style={{
+                background: 'rgba(255, 255, 255, 0.1)',
+                color: '#ffffff',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                padding: '8px 14px',
+                borderRadius: '8px',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                textDecoration: 'none',
+              }}
+            >
+              🛠️ View in Console →
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Main Product Layout */}
       <div className="pdp-main-grid">
@@ -695,6 +787,22 @@ const ProductDetailPage = () => {
             ))}
           </div>
         </section>
+      )}
+      {/* Super Admin Edit Modal */}
+      {product && (
+        <SuperAdminEditModal
+          isOpen={isEditorOpen}
+          product={product}
+          onClose={() => setIsEditorOpen(false)}
+          onProductSaved={(updated, isDel) => {
+            if (isDel) {
+              navigate('/products');
+            } else if (updated) {
+              setProduct(updated);
+              if (updated.images?.[0]) setSelectedImage(updated.images[0]);
+            }
+          }}
+        />
       )}
     </div>
   );

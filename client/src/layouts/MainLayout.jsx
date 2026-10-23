@@ -7,6 +7,7 @@ import CartDrawer from '../components/common/CartDrawer';
 import MobileCategoryDrawer from '../components/common/MobileCategoryDrawer';
 import LanguageModal from '../components/common/LanguageModal';
 import Footer from '../components/common/Footer';
+import SuperAdminStoreToolbar from '../components/common/SuperAdminStoreToolbar';
 import { categoryService } from '../services/categoryService';
 import { useStore } from '../context/StoreContext';
 import { useAuth } from '../context/AuthContext';
@@ -90,6 +91,7 @@ const MainLayout = () => {
         isOpen={isLanguageModalOpen}
         onClose={closeLanguageModal}
       />
+      <SuperAdminStoreToolbar />
     </div>
   );
 };
