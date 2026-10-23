@@ -416,8 +416,180 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
       }))
     : defaultRecentOrders;
 
-  const filteredOrdersList = orders.filter((o) =>
-    orderFilter === 'ALL' ? true : o.orderStatus === orderFilter
+  const defaultCustomerOrders = [
+    {
+      _id: 'ord-demo-1',
+      orderNumber: 'ORD-2026-9214',
+      orderStatus: 'Confirmed',
+      createdAt: new Date(Date.now() - 3600000 * 2).toISOString(),
+      shippingAddress: {
+        fullName: 'Priya Sharma',
+        phone: '+91 98234 56789',
+        street: 'B-402, Prestige Palms, 100ft Road',
+        locality: 'Indiranagar',
+        city: 'Bengaluru',
+        state: 'Karnataka',
+        pincode: '560038',
+      },
+      user: { name: 'Priya Sharma', phone: '+91 98234 56789' },
+      items: [
+        {
+          name: 'Pure Kanjivaram Silk Saree with Gold Zari Pallu',
+          quantity: 1,
+          price: 6499,
+          image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400&auto=format&fit=crop&q=80',
+        },
+      ],
+      totalPrice: 6499,
+      paymentMethod: 'razorpay',
+      isPaid: true,
+      tracking: { carrier: 'Delhivery Express', awbNumber: 'DLV-IND-92140' },
+    },
+    {
+      _id: 'ord-demo-2',
+      orderNumber: 'ORD-2026-8842',
+      orderStatus: 'Processing',
+      createdAt: new Date(Date.now() - 3600000 * 6).toISOString(),
+      shippingAddress: {
+        fullName: 'Amit Patel',
+        phone: '+91 98450 12345',
+        street: '14, Palm Avenue, Bodakdev',
+        locality: 'SG Highway',
+        city: 'Ahmedabad',
+        state: 'Gujarat',
+        pincode: '380054',
+      },
+      user: { name: 'Amit Patel', phone: '+91 98450 12345' },
+      items: [
+        {
+          name: 'Traditional Royal Banarasi Katan Silk Saree',
+          quantity: 1,
+          price: 12999,
+          image: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=400&auto=format&fit=crop&q=80',
+        },
+      ],
+      totalPrice: 12999,
+      paymentMethod: 'razorpay',
+      isPaid: true,
+      tracking: { carrier: 'Blue Dart Air Express', awbNumber: 'BLU-AMD-88421' },
+    },
+    {
+      _id: 'ord-demo-3',
+      orderNumber: 'ORD-2026-7731',
+      orderStatus: 'Packed',
+      createdAt: new Date(Date.now() - 3600000 * 18).toISOString(),
+      shippingAddress: {
+        fullName: 'Sneha Roy',
+        phone: '+91 97112 98765',
+        street: 'Flat 7B, Silver Oak Heights, Salt Lake Sector 5',
+        locality: 'Bidhannagar',
+        city: 'Kolkata',
+        state: 'West Bengal',
+        pincode: '700091',
+      },
+      user: { name: 'Sneha Roy', phone: '+91 97112 98765' },
+      items: [
+        {
+          name: 'Designer Embroidered Wedding Anarkali Gown Set',
+          quantity: 1,
+          price: 4899,
+          image: 'https://images.unsplash.com/photo-1594223274512-ad4803739b7c?w=400&auto=format&fit=crop&q=80',
+        },
+      ],
+      totalPrice: 4899,
+      paymentMethod: 'cod',
+      isPaid: false,
+      tracking: { carrier: 'Delhivery Surface Pro', awbNumber: 'DLV-KOL-77319' },
+    },
+    {
+      _id: 'ord-demo-4',
+      orderNumber: 'ORD-2026-6519',
+      orderStatus: 'Shipped',
+      createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
+      shippingAddress: {
+        fullName: 'Vikram Malhotra',
+        phone: '+91 98200 45678',
+        street: 'Penthouse 1204, Lodha Bellissimo, Mahalaxmi',
+        locality: 'Lower Parel',
+        city: 'Mumbai',
+        state: 'Maharashtra',
+        pincode: '400011',
+      },
+      user: { name: 'Vikram Malhotra', phone: '+91 98200 45678' },
+      items: [
+        {
+          name: 'Maheshwari Handcrafted Zari Border Dupatta',
+          quantity: 2,
+          price: 1899,
+          image: 'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=400&auto=format&fit=crop&q=80',
+        },
+      ],
+      totalPrice: 3798,
+      paymentMethod: 'razorpay',
+      isPaid: true,
+      tracking: { carrier: 'Blue Dart Apex Express', awbNumber: 'BLU-BOM-65194' },
+    },
+    {
+      _id: 'ord-demo-5',
+      orderNumber: 'ORD-2026-5104',
+      orderStatus: 'Delivered',
+      createdAt: new Date(Date.now() - 86400000 * 4).toISOString(),
+      shippingAddress: {
+        fullName: 'Sunita Jain',
+        phone: '+91 94140 11223',
+        street: 'Bungalow 22, Civil Lines',
+        locality: 'Near High Court',
+        city: 'Jaipur',
+        state: 'Rajasthan',
+        pincode: '302006',
+      },
+      user: { name: 'Sunita Jain', phone: '+91 94140 11223' },
+      items: [
+        {
+          name: 'Chanderi Pure Silk Handloom Saree with Zari Pallu',
+          quantity: 1,
+          price: 5499,
+          image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400&auto=format&fit=crop&q=80',
+        },
+      ],
+      totalPrice: 5499,
+      paymentMethod: 'razorpay',
+      isPaid: true,
+      tracking: { carrier: 'Delhivery Express Logistics', awbNumber: 'DLV-JAI-51047' },
+    },
+    {
+      _id: 'ord-demo-6',
+      orderNumber: 'ORD-2026-4022',
+      orderStatus: 'Delivered',
+      createdAt: new Date(Date.now() - 86400000 * 5).toISOString(),
+      shippingAddress: {
+        fullName: 'Pooja Kulkarni',
+        phone: '+91 98811 77665',
+        street: 'Row House 4, Prabhat Road Lane 9',
+        locality: 'Deccan Gymkhana',
+        city: 'Pune',
+        state: 'Maharashtra',
+        pincode: '411004',
+      },
+      user: { name: 'Pooja Kulkarni', phone: '+91 98811 77665' },
+      items: [
+        {
+          name: 'Handcrafted Tussar Silk Kurti & Palazzo Set',
+          quantity: 1,
+          price: 3299,
+          image: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=400&auto=format&fit=crop&q=80',
+        },
+      ],
+      totalPrice: 3299,
+      paymentMethod: 'razorpay',
+      isPaid: true,
+      tracking: { carrier: 'Blue Dart Surface', awbNumber: 'BLU-PUN-40228' },
+    },
+  ];
+
+  const allVendorOrders = orders.length > 0 ? orders : defaultCustomerOrders;
+  const filteredOrdersList = allVendorOrders.filter((o) =>
+    orderFilter === 'ALL' ? true : (o.orderStatus === orderFilter || o.status === orderFilter)
   );
 
   const defaultCatalog = [
@@ -3130,31 +3302,94 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                   </span>
                 </div>
 
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  {['ALL', 'Confirmed', 'Processing', 'Packed', 'Shipped', 'Delivered'].map((st) => (
-                    <button
-                      key={st}
-                      type="button"
-                      onClick={() => setOrderFilter(st)}
-                      style={{
-                        padding: '6px 12px',
-                        borderRadius: '8px',
-                        border: 'none',
-                        background: orderFilter === st ? '#1e1e24' : '#f4f6fa',
-                        color: orderFilter === st ? '#ffffff' : '#64748b',
-                        fontSize: '0.76rem',
-                        fontWeight: 800,
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {st}
-                    </button>
-                  ))}
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {['ALL', 'Confirmed', 'Processing', 'Packed', 'Shipped', 'Delivered'].map((st) => {
+                    const count = st === 'ALL'
+                      ? allVendorOrders.length
+                      : allVendorOrders.filter((o) => o.orderStatus === st || o.status === st).length;
+
+                    return (
+                      <button
+                        key={st}
+                        type="button"
+                        onClick={() => setOrderFilter(st)}
+                        style={{
+                          padding: '6px 12px',
+                          borderRadius: '8px',
+                          border: 'none',
+                          background: orderFilter === st ? '#1e1e24' : '#f4f6fa',
+                          color: orderFilter === st ? '#ffffff' : '#64748b',
+                          fontSize: '0.76rem',
+                          fontWeight: 800,
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        <span>{st}</span>
+                        <span
+                          style={{
+                            fontSize: '0.68rem',
+                            padding: '1px 6px',
+                            borderRadius: '9999px',
+                            background: orderFilter === st ? 'rgba(255,255,255,0.2)' : '#e2e8f0',
+                            color: orderFilter === st ? '#ffffff' : '#475569',
+                          }}
+                        >
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {filteredOrdersList.map((ord) => (
+                {filteredOrdersList.length === 0 ? (
+                  <div
+                    style={{
+                      background: '#ffffff',
+                      border: '1px dashed #cbd5e1',
+                      borderRadius: '16px',
+                      padding: '48px 24px',
+                      textAlign: 'center',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '12px',
+                    }}
+                  >
+                    <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Package size={28} color="#64748b" />
+                    </div>
+                    <strong style={{ fontSize: '1.05rem', color: '#1e1e24' }}>
+                      No Shipments in "{orderFilter}" Status
+                    </strong>
+                    <p style={{ fontSize: '0.825rem', color: '#64748b', maxWidth: '380px', margin: 0 }}>
+                      There are currently no customer shipments matching this filter.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setOrderFilter('ALL')}
+                      style={{
+                        marginTop: '8px',
+                        background: '#1e1e24',
+                        color: '#ffffff',
+                        border: 'none',
+                        padding: '8px 18px',
+                        borderRadius: '8px',
+                        fontSize: '0.8rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      View All Orders ({allVendorOrders.length})
+                    </button>
+                  </div>
+                ) : (
+                  filteredOrdersList.map((ord) => (
                   <div
                     key={ord._id}
                     style={{
@@ -3317,7 +3552,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                       )}
                     </div>
                   </div>
-                ))}
+                )))}
               </div>
             </div>
           )}
