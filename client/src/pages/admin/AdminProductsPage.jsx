@@ -26,10 +26,12 @@ import { adminService } from '../../services/adminService';
 import { productService } from '../../services/productService';
 import { categoryService } from '../../services/categoryService';
 import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../context/AuthContext';
 import { formatINR } from '../../utils/formatters';
 
 const AdminProductsPage = () => {
   const { success, error } = useToast();
+  const { isDemoAdmin } = useAuth();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -228,6 +230,11 @@ const AdminProductsPage = () => {
   ].filter(Boolean).length;
 
   const handleApprovalChange = async (productId, status) => {
+    if (isDemoAdmin) {
+      error('🔒 Demo Admin Mode: Product approvals and changes are disabled. Please login as Super Admin (casa@admin.com).');
+      return;
+    }
+
     let rejectionReason = '';
     if (status === 'rejected') {
       rejectionReason = window.prompt('Enter reason for rejecting this product listing:') || 'Content/listing policy rejection';
@@ -251,6 +258,11 @@ const AdminProductsPage = () => {
 
   const handleCreateProduct = async (e) => {
     e.preventDefault();
+    if (isDemoAdmin) {
+      error('🔒 Demo Admin Mode: Adding products is disabled. Please login as Super Admin (casa@admin.com).');
+      return;
+    }
+
     try {
       await adminService.createProduct({
         ...formData,
@@ -285,6 +297,11 @@ const AdminProductsPage = () => {
   };
 
   const handleDeleteProduct = async (id, name) => {
+    if (isDemoAdmin) {
+      error('🔒 Demo Admin Mode: Removing products is disabled. Please login as Super Admin (casa@admin.com).');
+      return;
+    }
+
     if (!window.confirm(`Are you sure you want to remove "${name}" from the catalog?`)) return;
     try {
       await adminService.deleteProduct(id);

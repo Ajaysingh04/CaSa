@@ -94,7 +94,7 @@ const LoginPage = () => {
         sessionStorage.setItem('casa_prompt_language_modal', 'true');
       }
       success(`Welcome back, ${res.user.name}!`);
-      if (res.user.email === 'admin@casa.in' || res.user.role === 'admin') {
+      if (res.user.email === 'casa@admin.com' || res.user.email === 'admin@casa.in' || res.user.role === 'super_admin' || res.user.role === 'admin') {
         navigate('/admin');
       } else if (res.user.email === 'vendor@casa.in' || res.user.role === 'vendor') {
         navigate('/vendor');
@@ -151,6 +151,10 @@ const LoginPage = () => {
       email = 'delivery@casa.in';
       password = 'Delivery@Casa2026';
       target = '/delivery';
+    } else if (role === 'superadmin') {
+      email = 'casa@admin.com';
+      password = 'CaSa@appsica';
+      target = '/admin';
     } else {
       email = 'admin@casa.in';
       password = 'Admin@Casa2026';
@@ -515,17 +519,37 @@ const LoginPage = () => {
                     type="button"
                     onClick={() => handleSelectRole('admin', true)}
                     disabled={loading}
-                    title="1-Click Instant Login as Admin Console"
+                    title="1-Click Instant Login as Demo Admin (View-Only)"
                     style={{
                       ...demoBtn,
-                      background: loginRole === 'admin' ? '#f5f3ff' : '#ffffff',
-                      borderColor: loginRole === 'admin' ? '#7c3aed' : '#e2e8f0',
-                      color: loginRole === 'admin' ? '#6d28d9' : '#475569',
+                      background: loginRole === 'admin' ? '#f8fafc' : '#ffffff',
+                      borderColor: loginRole === 'admin' ? '#64748b' : '#e2e8f0',
+                      color: loginRole === 'admin' ? '#0f172a' : '#64748b',
                       cursor: loading ? 'wait' : 'pointer',
                     }}
                   >
-                    <ShieldCheck size={13} /> Admin
+                    <ShieldCheck size={13} /> Demo Admin
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSelectRole('superadmin', true)}
+                    disabled={loading}
+                    title="1-Click Instant Login as Super Admin (Full Add/Edit/Delete Control)"
+                    style={{
+                      ...demoBtn,
+                      background: loginRole === 'superadmin' ? '#0f172a' : '#fef3c7',
+                      borderColor: loginRole === 'superadmin' ? '#0f172a' : '#f59e0b',
+                      color: loginRole === 'superadmin' ? '#ffffff' : '#b45309',
+                      fontWeight: 800,
+                      cursor: loading ? 'wait' : 'pointer',
+                    }}
+                  >
+                    <span>👑 Super Admin</span>
+                  </button>
+                </div>
+                <div style={{ marginTop: '8px', fontSize: '0.72rem', color: '#64748b', lineHeight: 1.4 }}>
+                  • <strong>Demo Admin (admin@casa.in):</strong> View-only demo inspection mode.<br />
+                  • <strong>Super Admin (casa@admin.com):</strong> Root control to add, edit, or delete vendors, users, delivery, and products.
                 </div>
               </div>
 

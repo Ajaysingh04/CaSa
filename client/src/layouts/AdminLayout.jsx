@@ -24,9 +24,21 @@ import { useAuth } from '../context/AuthContext';
 const AdminLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, isAdmin, login, logout } = useAuth();
+  const { user, isAdmin, isSuperAdmin, isDemoAdmin, login, logout } = useAuth();
   const [connectingAdmin, setConnectingAdmin] = useState(!user || !isAdmin);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const handleLoginSuperAdmin = async () => {
+    setConnectingAdmin(true);
+    await login({ email: 'casa@admin.com', password: 'CaSa@appsica' });
+    setConnectingAdmin(false);
+  };
+
+  const handleLoginDemoAdmin = async () => {
+    setConnectingAdmin(true);
+    await login({ email: 'admin@casa.in', password: 'Admin@Casa2026' });
+    setConnectingAdmin(false);
+  };
 
   useEffect(() => {
     if (!user || !isAdmin) {
@@ -70,15 +82,18 @@ const AdminLayout = () => {
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '24px' }}>
             <button
-              onClick={async () => {
-                setConnectingAdmin(true);
-                await login({ email: 'admin@casa.in', password: 'Admin@Casa2026' });
-                setConnectingAdmin(false);
-              }}
+              onClick={handleLoginSuperAdmin}
               className="btn btn-primary btn-lg"
               style={{ width: '100%', justifyContent: 'center', background: '#0f172a', borderColor: '#0f172a' }}
             >
-              ⚡ 1-Click Enter Admin Console
+              👑 Enter as Super Admin (casa@admin.com)
+            </button>
+            <button
+              onClick={handleLoginDemoAdmin}
+              className="btn btn-outline"
+              style={{ width: '100%', justifyContent: 'center' }}
+            >
+              👁️ Enter as Demo Admin (Read-Only)
             </button>
             <Link to="/login?redirect=/admin" className="btn btn-outline" style={{ width: '100%', justifyContent: 'center' }}>
               Sign In with Other Account
@@ -339,6 +354,15 @@ const AdminLayout = () => {
                 style={adminAvatar}
               />
               <span style={adminUserName}>{user?.name ? user.name.split(' ')[0] : 'Admin'}</span>
+              {isSuperAdmin ? (
+                <span style={{ background: '#fef3c7', color: '#b45309', padding: '2px 7px', borderRadius: '4px', fontSize: '0.68rem', fontWeight: 900, border: '1px solid #fde68a' }}>
+                  👑 SUPER ADMIN
+                </span>
+              ) : (
+                <span style={{ background: '#f1f5f9', color: '#64748b', padding: '2px 7px', borderRadius: '4px', fontSize: '0.68rem', fontWeight: 800, border: '1px solid #e2e8f0' }}>
+                  🔒 DEMO (READ ONLY)
+                </span>
+              )}
               <button
                 onClick={() => {
                   logout();
@@ -352,6 +376,82 @@ const AdminLayout = () => {
             </div>
           </div>
         </header>
+
+        {/* DEMO ADMIN READ-ONLY BANNER */}
+        {isDemoAdmin && (
+          <div
+            style={{
+              background: '#fffbeb',
+              borderBottom: '1.5px solid #fde68a',
+              padding: '10px 24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '12px',
+              fontSize: '0.82rem',
+              color: '#92400e',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '1.1rem' }}>🔒</span>
+              <span>
+                <strong>Demo Admin Mode (Read-Only):</strong> You are inspecting the live store in demo view. Adding, editing, and deleting data is disabled.
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '0.76rem', color: '#b45309' }}>
+                For Full Add/Edit/Delete access: <strong>casa@admin.com</strong>
+              </span>
+              <button
+                onClick={handleLoginSuperAdmin}
+                style={{
+                  background: '#0f172a',
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '5px 12px',
+                  borderRadius: '6px',
+                  fontSize: '0.76rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+              >
+                <span>⚡ 1-Click Switch to Super Admin</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* SUPER ADMIN ROOT ACCESS BANNER */}
+        {isSuperAdmin && (
+          <div
+            style={{
+              background: '#f0fdf4',
+              borderBottom: '1px solid #bbf7d0',
+              padding: '8px 24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              fontSize: '0.78rem',
+              color: '#166534',
+              flexWrap: 'wrap',
+              gap: '8px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700 }}>
+              <span>👑</span>
+              <span>
+                Super Admin Root Mode Active: Full Control enabled to Add, Edit, Delete and Manage Website, Vendors, Users, and Delivery Fleet.
+              </span>
+            </div>
+            <span style={{ fontSize: '0.74rem', background: '#dcfce7', color: '#15803d', padding: '2px 8px', borderRadius: '4px', fontWeight: 800 }}>
+              Root User: {user?.email}
+            </span>
+          </div>
+        )}
 
         {/* Main Content Viewport */}
         <main style={mainContentArea}>

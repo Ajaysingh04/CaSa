@@ -88,15 +88,28 @@ const authorize = (...roles) => {
   };
 };
 
-// Dedicated super-admin permission level for root administrative operations
-const requireSuperAdmin = (req, res, next) => {
-  if (!req.user || req.user.role !== 'super_admin') {
+// Middleware to block Demo Admin from modifying anything (read-only mode)
+const forbidDemoAdminMutations = (req, res, next) => {
+  const isDemo = req.user?.email === 'admin@casa.in' || req.user?.isDemoAdmin;
+  if (isDemo && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
     return res.status(403).json({
       success: false,
-      message: 'Access Denied: This operation requires dedicated Super Admin privileges.'
+      message: 'Demo Admin is in READ-ONLY mode. Changes cannot be made. To add, edit, or delete data across vendors, users, delivery, or website, please login as Super Admin (casa@admin.com).'
     });
   }
   next();
 };
 
-module.exports = { protect, authorize, requireSuperAdmin };
+// Dedicated super-admin permission level for root administrative operations
+const requireSuperAdmin = (req, res, next) => {
+  const isSuper = req.user && (req.user.role === 'super_admin' || req.user.email === 'casa@admin.com');
+  if (!isSuper) {
+    return res.status(403).json({
+      success: false,
+      message: 'Access Denied: This operation requires dedicated Super Admin privileges (casa@admin.com).'
+    });
+  }
+  next();
+};
+
+module.exports = { protect, authorize, requireSuperAdmin, forbidDemoAdminMutations };

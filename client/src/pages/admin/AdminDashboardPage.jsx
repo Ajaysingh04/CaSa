@@ -45,6 +45,8 @@ import {
 import { adminService } from '../../services/adminService';
 import { formatINR, formatDate, formatDateTime } from '../../utils/formatters';
 import { getSocket } from '../../services/socketService';
+import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 
 // Helper to generate smooth cubic Bezier SVG path
 function getSmoothPath(points) {
@@ -65,6 +67,8 @@ function getSmoothPath(points) {
 }
 
 const AdminDashboardPage = () => {
+  const { user, isSuperAdmin, isDemoAdmin, login } = useAuth();
+  const { error: toastError, success: toastSuccess } = useToast();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -909,21 +913,54 @@ const AdminDashboardPage = () => {
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '18px' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <ShieldCheck size={20} color="#38bdf8" />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <ShieldCheck size={20} color={isSuperAdmin ? '#4ade80' : '#38bdf8'} />
               <h2 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0, letterSpacing: '-0.01em', color: '#ffffff' }}>
                 Supreme Ecosystem Command Center
               </h2>
-              <span style={{ padding: '2px 8px', borderRadius: '6px', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', fontSize: '0.7rem', fontWeight: 800, border: '1px solid rgba(56, 189, 248, 0.3)' }}>
-                Full Access Granted
-              </span>
+              {isSuperAdmin ? (
+                <span style={{ padding: '3px 10px', borderRadius: '6px', background: 'rgba(34, 197, 94, 0.2)', color: '#4ade80', fontSize: '0.72rem', fontWeight: 800, border: '1px solid rgba(34, 197, 94, 0.4)' }}>
+                  👑 Super Admin (Full Add/Edit/Delete Control)
+                </span>
+              ) : (
+                <span style={{ padding: '3px 10px', borderRadius: '6px', background: 'rgba(239, 68, 68, 0.2)', color: '#fca5a5', fontSize: '0.72rem', fontWeight: 800, border: '1px solid rgba(239, 68, 68, 0.4)' }}>
+                  🔒 Demo Admin (Read-Only Mode)
+                </span>
+              )}
             </div>
             <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: '4px 0 0 0' }}>
-              Admin has full control to test, simulate, inspect, and manage Customer, Vendor, and Delivery Fleet portals.
+              {isSuperAdmin
+                ? 'Root Administrator privileges active: You can add, edit, or delete any products, merchant stores, users, delivery fleet, or website settings.'
+                : 'Demo Admin mode is view-only. To modify data across vendors, users, or delivery, please switch to Super Admin (casa@admin.com).'}
             </p>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            {isDemoAdmin && (
+              <button
+                type="button"
+                onClick={async () => {
+                  await login({ email: 'casa@admin.com', password: 'CaSa@appsica' });
+                  toastSuccess('Switched to Super Admin! Full add, edit, and delete permissions enabled.');
+                }}
+                style={{
+                  background: '#f59e0b',
+                  color: '#0f172a',
+                  border: 'none',
+                  padding: '7px 14px',
+                  borderRadius: '8px',
+                  fontSize: '0.78rem',
+                  fontWeight: 900,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  boxShadow: '0 2px 6px rgba(245, 158, 11, 0.35)',
+                }}
+              >
+                <span>⚡ 1-Click Switch to Super Admin</span>
+              </button>
+            )}
             <Link
               to="/admin/users"
               style={{

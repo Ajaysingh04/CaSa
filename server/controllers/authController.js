@@ -30,6 +30,8 @@ const sendTokenResponse = (user, statusCode, res) => {
   };
 
   const { password, ...safeUser } = userObj;
+  safeUser.isSuperAdmin = safeUser.email === 'casa@admin.com' || safeUser.role === 'super_admin';
+  safeUser.isDemoAdmin = safeUser.email === 'admin@casa.in' || Boolean(safeUser.isDemo);
 
   res
     .status(statusCode)
@@ -131,10 +133,18 @@ exports.switchRole = async (req, res, next) => {
 };
 
 const DEMO_ACCOUNTS = {
+  'casa@admin.com': {
+    name: 'CASA Super Admin',
+    password: 'CaSa@appsica',
+    role: 'super_admin',
+    phone: '+91 99999 88888',
+    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&auto=format&fit=crop&q=80'
+  },
   'admin@casa.in': {
-    name: 'CASA Executive Admin',
+    name: 'CASA Demo Admin',
     password: 'Admin@Casa2026',
     role: 'admin',
+    isDemo: true,
     phone: '+91 98765 43210',
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80'
   },
@@ -271,6 +281,10 @@ exports.getMe = async (req, res, next) => {
       if (getDBStatus()) {
         await User.findByIdAndUpdate(user._id, { role: 'user' });
       }
+    }
+    if (user) {
+      user.isSuperAdmin = user.email === 'casa@admin.com' || user.role === 'super_admin';
+      user.isDemoAdmin = user.email === 'admin@casa.in' || Boolean(user.isDemo);
     }
     res.status(200).json({
       success: true,

@@ -34,9 +34,11 @@ import {
   Store,
 } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../context/AuthContext';
 
 const AdminUsersPage = () => {
   const { success, error } = useToast();
+  const { isSuperAdmin, isDemoAdmin } = useAuth();
   const [users, setUsers] = useState([]);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -79,6 +81,11 @@ const AdminUsersPage = () => {
   }, []);
 
   const handleToggleRole = async (targetUser) => {
+    if (isDemoAdmin) {
+      error('🔒 Demo Admin Mode: Modifying user roles is disabled. Please login as Super Admin (casa@admin.com).');
+      return;
+    }
+
     const newRole = targetUser.role === 'admin' ? 'user' : 'admin';
     const confirmMsg =
       newRole === 'admin'
@@ -102,6 +109,11 @@ const AdminUsersPage = () => {
   };
 
   const handleToggleStatus = async (targetUser) => {
+    if (isDemoAdmin) {
+      error('🔒 Demo Admin Mode: Account status changes are disabled. Please login as Super Admin (casa@admin.com).');
+      return;
+    }
+
     const isCurrentlyActive = targetUser.isActive !== false;
     let reason = '';
     if (isCurrentlyActive) {
@@ -138,6 +150,11 @@ const AdminUsersPage = () => {
   };
 
   const handleVendorApproval = async (targetUser, status) => {
+    if (isDemoAdmin) {
+      error('🔒 Demo Admin Mode: Vendor approvals and suspensions are disabled. Please login as Super Admin (casa@admin.com).');
+      return;
+    }
+
     let reason = '';
     if (status === 'rejected' || status === 'suspended') {
       reason = window.prompt(`Enter reason for ${status} vendor status:`);
@@ -171,6 +188,11 @@ const AdminUsersPage = () => {
   };
 
   const handleDeleteUser = async (targetUser) => {
+    if (isDemoAdmin) {
+      error('🔒 Demo Admin Mode: Deleting accounts is disabled in demo mode. Please login as Super Admin (casa@admin.com).');
+      return;
+    }
+
     if (
       !window.confirm(
         `Are you sure you want to delete "${targetUser.name}" (${targetUser.email})? This action cannot be undone.`

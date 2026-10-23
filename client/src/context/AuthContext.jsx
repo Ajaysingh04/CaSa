@@ -169,8 +169,9 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const isSuperAdmin = user?.email === 'admin@casa.in' || user?.role === 'super_admin';
-  const isAdmin = user?.email === 'admin@casa.in' || user?.role === 'admin' || user?.role === 'super_admin';
+  const isSuperAdmin = user?.email === 'casa@admin.com' || user?.role === 'super_admin' || Boolean(user?.isSuperAdmin);
+  const isDemoAdmin = user?.email === 'admin@casa.in' || Boolean(user?.isDemoAdmin);
+  const isAdmin = isSuperAdmin || isDemoAdmin || user?.role === 'admin';
   const isVendor = user?.role === 'vendor' || user?.email === 'vendor@casa.in';
   const isDelivery = user?.role === 'delivery' || user?.role === 'delivery_partner' || user?.email === 'delivery@casa.in';
 
@@ -180,6 +181,7 @@ export const AuthProvider = ({ children }) => {
         user,
         loading,
         isSuperAdmin,
+        isDemoAdmin,
         isAdmin,
         isVendor,
         isDelivery,
