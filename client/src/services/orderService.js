@@ -16,6 +16,11 @@ export const orderService = {
     return response.data.data;
   },
 
+  publicTrackOrder: async (query) => {
+    const response = await api.get(`/orders/public/track/${encodeURIComponent(query)}`);
+    return response.data.data;
+  },
+
   cancelOrder: async (id, reason) => {
     const response = await api.put(`/orders/${id}/cancel`, { reason });
     return response.data.data;

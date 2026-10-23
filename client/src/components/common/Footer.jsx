@@ -163,13 +163,16 @@ const Footer = () => {
 
         {/* Customer Care & Policies */}
         <div style={footerColStyle}>
-          <h4 style={footerColTitle}>Customer Care & Portals</h4>
+          <h4 style={footerColTitle}>Customer Care & Support</h4>
           <ul style={footerListStyle}>
-            <li><Link to="/orders" style={footerLink}>Track Your Order</Link></li>
+            <li>
+              <Link to="/track-order" style={{ ...footerLink, color: '#38bdf8', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <span>🚚 Track Your Order</span>
+              </Link>
+            </li>
+            <li><Link to="/orders" style={footerLink}>My Order History</Link></li>
             <li><Link to="/profile" style={footerLink}>Manage Account & Addresses</Link></li>
             <li><Link to="/wishlist" style={footerLink}>My Wishlist</Link></li>
-            <li><Link to="/vendor" style={{ ...footerLink, color: '#f59e0b', fontWeight: 700 }}>⚡ Sell on CASA (Vendor Hub)</Link></li>
-            <li><Link to="/delivery" style={{ ...footerLink, color: '#10b981', fontWeight: 700 }}>⚡ Delivery Partner Fleet</Link></li>
             <li>
               <button
                 type="button"

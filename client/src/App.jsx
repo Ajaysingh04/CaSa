@@ -27,6 +27,7 @@ const WishlistPage = lazy(() => import('./pages/WishlistPage'));
 const UserProfilePage = lazy(() => import('./pages/UserProfilePage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage'));
+const TrackOrderPage = lazy(() => import('./pages/TrackOrderPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 // Multi-Portal Hubs: Vendor & Delivery
@@ -120,6 +121,7 @@ function App() {
                         <Route path="order-success/:orderId" element={<OrderConfirmationPage />} />
                         <Route path="orders" element={<OrderHistoryPage />} />
                         <Route path="orders/:id" element={<OrderDetailPage />} />
+                        <Route path="track-order" element={<TrackOrderPage />} />
                         <Route path="wishlist" element={<WishlistPage />} />
                         <Route path="profile" element={<UserProfilePage />} />
                         <Route

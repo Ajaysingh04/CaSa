@@ -4,12 +4,16 @@ const {
   createOrder,
   getMyOrders,
   getOrderById,
+  publicTrackOrder,
   updateOrderStatus,
   updateItemShipmentStatus,
   cancelOrder,
   requestReturn
 } = require('../controllers/orderController');
 const { protect } = require('../middleware/auth');
+
+// Public tracking endpoint (accessible to guests and authenticated users)
+router.get('/public/track/:query', publicTrackOrder);
 
 router.use(protect);
 
