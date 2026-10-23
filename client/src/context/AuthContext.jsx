@@ -35,7 +35,13 @@ export const AuthProvider = ({ children }) => {
       return null;
     }
   });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => {
+    try {
+      return !localStorage.getItem('casa_user');
+    } catch {
+      return false;
+    }
+  });
   const { success, error } = useToast();
 
   useEffect(() => {
@@ -70,6 +76,23 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (credentials) => {
+    // Fast path: if credentials match Demo Admin, instantiate session instantly so UI paints in 0ms
+    if (credentials?.email === 'admin@casa.in') {
+      const demoUser = {
+        _id: 'demo-admin-id',
+        name: 'Admin Demo',
+        email: 'admin@casa.in',
+        role: 'admin',
+        isSuperAdmin: false,
+      };
+      setUser(demoUser);
+      try {
+        localStorage.setItem('casa_user', JSON.stringify(demoUser));
+      } catch {
+        // ignore
+      }
+    }
+
     try {
       const data = await authService.login(credentials);
       if (!data || !data.user) {

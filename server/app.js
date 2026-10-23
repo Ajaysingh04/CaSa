@@ -112,6 +112,17 @@ app.use(async (req, res, next) => {
   next();
 });
 
+// Edge CDN caching headers for read-heavy public endpoints (Vercel CDN / Browser fast-cache)
+app.use((req, res, next) => {
+  if (req.method === 'GET') {
+    const url = req.url || '';
+    if (url.includes('/products') || url.includes('/banners') || url.includes('/categories') || url.includes('/settings/public')) {
+      res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+    }
+  }
+  next();
+});
+
 // Helper to register all routes under both `/api` and root `` (for Vercel rewrites compatibility)
 const registerRoutes = (prefix = '') => {
   // Rate limiter for general routes

@@ -23,14 +23,31 @@ const HomePage = () => {
     }
     return [];
   });
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState(() => {
+    try {
+      const cached = localStorage.getItem('casa_cached_homepage_products');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {
+      // ignore
+    }
+    return [];
+  });
+  const [loading, setLoading] = useState(() => {
+    try {
+      const cached = localStorage.getItem('casa_cached_homepage_products');
+      return !cached;
+    } catch {
+      return true;
+    }
+  });
   const [recentlyViewed, setRecentlyViewed] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setLoading(true);
         const [bannersData, productsRes] = await Promise.all([
           productService.getBanners().catch(() => null),
           productService.getProducts({ limit: 100 }),
@@ -44,7 +61,14 @@ const HomePage = () => {
             console.warn('Could not cache banners:', e);
           }
         }
-        setProducts(productsRes.data || []);
+        if (productsRes && productsRes.data) {
+          setProducts(productsRes.data);
+          try {
+            localStorage.setItem('casa_cached_homepage_products', JSON.stringify(productsRes.data));
+          } catch {
+            // ignore
+          }
+        }
       } catch (err) {
         console.error('Error fetching homepage data:', err);
       } finally {

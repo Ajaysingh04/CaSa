@@ -69,8 +69,21 @@ function getSmoothPath(points) {
 const AdminDashboardPage = () => {
   const { user, isSuperAdmin, isDemoAdmin, login } = useAuth();
   const { error: toastError, success: toastSuccess } = useToast();
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState(() => {
+    try {
+      const cached = localStorage.getItem('casa_cached_admin_stats');
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [loading, setLoading] = useState(() => {
+    try {
+      return !localStorage.getItem('casa_cached_admin_stats');
+    } catch {
+      return true;
+    }
+  });
   const [refreshing, setRefreshing] = useState(false);
   const [searchFilter, setSearchFilter] = useState('');
   const [selectedOrderTab, setSelectedOrderTab] = useState('All');
@@ -89,11 +102,17 @@ const AdminDashboardPage = () => {
 
   const fetchStats = async (isManual = false) => {
     if (isManual) setRefreshing(true);
-    else setLoading(true);
 
     try {
       const data = await adminService.getStats();
-      setStats(data);
+      if (data) {
+        setStats(data);
+        try {
+          localStorage.setItem('casa_cached_admin_stats', JSON.stringify(data));
+        } catch {
+          // ignore
+        }
+      }
     } catch (err) {
       console.error('Error fetching admin dashboard stats:', err);
     } finally {
