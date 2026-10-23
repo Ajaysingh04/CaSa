@@ -983,7 +983,23 @@ const Header = ({ onToggleMobileMenu }) => {
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={menuItemTitleStyle}>My Orders & Purchases</div>
-                          <div style={menuItemSubStyle}>Track shipments & view invoices</div>
+                          <div style={menuItemSubStyle}>View order history & invoices</div>
+                        </div>
+                        <ChevronRight size={14} className="dropdown-menu-arrow" />
+                      </Link>
+
+                      <Link
+                        to="/track-order"
+                        onClick={() => setShowUserMenu(false)}
+                        className="dropdown-menu-item"
+                        style={dropdownMenuItemStyle}
+                      >
+                        <div style={{ ...menuIconBox, background: '#eff6ff', color: '#2563eb' }}>
+                          <Truck size={16} />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ ...menuItemTitleStyle, color: '#1d4ed8' }}>Live Shipment Tracker</div>
+                          <div style={menuItemSubStyle}>Real-time AWB & delivery radar</div>
                         </div>
                         <ChevronRight size={14} className="dropdown-menu-arrow" />
                       </Link>
@@ -1107,6 +1123,27 @@ const Header = ({ onToggleMobileMenu }) => {
                         style={{ color: '#1d4ed8', fontWeight: 700 }}
                       >
                         Start here
+                      </Link>
+                    </div>
+                    <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid #f1f5f9' }}>
+                      <Link
+                        to="/track-order"
+                        onClick={() => setShowUserMenu(false)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          fontSize: '0.82rem',
+                          fontWeight: 700,
+                          color: '#2563eb',
+                          textDecoration: 'none',
+                          padding: '6px 8px',
+                          borderRadius: '8px',
+                          background: '#eff6ff',
+                        }}
+                      >
+                        <Truck size={16} color="#2563eb" />
+                        <span>🚚 Track Your Order / Shipment</span>
                       </Link>
                     </div>
                   </div>

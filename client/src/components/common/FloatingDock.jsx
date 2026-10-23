@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Headphones, Laptop, ShieldCheck, Tag, X } from 'lucide-react';
+import { Truck, Laptop, ShieldCheck, Tag, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const FloatingDock = () => {
@@ -7,12 +7,12 @@ const FloatingDock = () => {
 
   const dockItems = [
     {
-      id: 'support',
-      icon: Headphones,
-      label: '24/7 Support',
-      sub: 'Chat with an expert',
-      link: '/contact',
-      color: '#3b82f6',
+      id: 'track',
+      icon: Truck,
+      label: 'Track Order',
+      sub: 'Live AWB & Delivery Status',
+      link: '/track-order',
+      color: '#2563eb',
     },
     {
       id: 'gadgets',

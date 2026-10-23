@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { X, ChevronDown, ChevronRight, User, Package, Heart, Shield, ShoppingBag } from 'lucide-react';
+import { X, ChevronDown, ChevronRight, User, Package, Heart, Shield, ShoppingBag, Truck } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const MobileCategoryDrawer = ({ isOpen, onClose, categories = [] }) => {
@@ -49,27 +49,47 @@ const MobileCategoryDrawer = ({ isOpen, onClose, categories = [] }) => {
               <Link to="/orders" onClick={onClose} style={quickLinkItem}>
                 <Package size={16} /> My Orders
               </Link>
+              <Link to="/track-order" onClick={onClose} style={{ ...quickLinkItem, color: '#2563eb', fontWeight: 700 }}>
+                <Truck size={16} color="#2563eb" /> Track Order
+              </Link>
               <Link to="/wishlist" onClick={onClose} style={quickLinkItem}>
                 <Heart size={16} /> Wishlist
               </Link>
             </>
           ) : (
-            <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
+              <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                <Link
+                  to="/login"
+                  onClick={onClose}
+                  className="btn btn-primary btn-sm"
+                  style={{ flex: 1 }}
+                >
+                  Sign In
+                </Link>
+                <Link
+                  to="/register"
+                  onClick={onClose}
+                  className="btn btn-outline btn-sm"
+                  style={{ flex: 1 }}
+                >
+                  Register
+                </Link>
+              </div>
               <Link
-                to="/login"
+                to="/track-order"
                 onClick={onClose}
-                className="btn btn-primary btn-sm"
-                style={{ flex: 1 }}
+                style={{
+                  ...quickLinkItem,
+                  color: '#2563eb',
+                  fontWeight: 700,
+                  justifyContent: 'center',
+                  background: '#eff6ff',
+                  borderRadius: '8px',
+                  padding: '7px',
+                }}
               >
-                Sign In
-              </Link>
-              <Link
-                to="/register"
-                onClick={onClose}
-                className="btn btn-outline btn-sm"
-                style={{ flex: 1 }}
-              >
-                Register
+                <Truck size={15} color="#2563eb" /> Track Shipment / Order
               </Link>
             </div>
           )}
