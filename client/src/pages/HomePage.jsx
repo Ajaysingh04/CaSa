@@ -147,19 +147,31 @@ const HomePage = () => {
       />
 
       {/* 6. Promotional Mid-Page Banner */}
-      <div className="container" style={{ margin: '24px auto' }}>
-        <div style={promoBannerStyle}>
+      <div className="container" style={{ margin: '16px auto' }}>
+        <style>{`
+          @media (max-width: 640px) {
+            .promo-banner-card {
+              padding: 22px 18px !important;
+              border-radius: 14px !important;
+            }
+            .promo-banner-title {
+              font-size: 1.25rem !important;
+              line-height: 1.25 !important;
+            }
+          }
+        `}</style>
+        <div style={promoBannerStyle} className="promo-banner-card">
           <div style={{ maxWidth: '520px', zIndex: 2 }}>
             <span style={promoBadgeStyle}>
               <Sparkles size={14} color="#f59e0b" /> FESTIVE EXCLUSIVE COUPON
             </span>
-            <h3 style={promoTitleStyle}>
+            <h3 style={promoTitleStyle} className="promo-banner-title">
               Flat ₹200 OFF on Orders Above ₹1,499
             </h3>
-            <p style={{ fontSize: '0.9rem', color: '#cbd5e1', marginBottom: '16px' }}>
-              Use coupon code <strong style={{ color: '#fbbf24', fontSize: '1rem' }}>CASA200</strong> at checkout to redeem instant discount on top of festive sales.
+            <p style={{ fontSize: '0.85rem', color: '#cbd5e1', marginBottom: '14px', lineHeight: 1.4 }}>
+              Use coupon code <strong style={{ color: '#fbbf24', fontSize: '0.95rem' }}>CASA200</strong> at checkout to redeem instant discount on top of festive sales.
             </p>
-            <Link to="/products" className="btn btn-gold btn-sm">
+            <Link to="/products" className="btn btn-gold btn-sm" style={{ fontWeight: 700 }}>
               Claim Offer & Shop Now
             </Link>
           </div>

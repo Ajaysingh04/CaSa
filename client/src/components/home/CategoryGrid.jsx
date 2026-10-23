@@ -6,7 +6,7 @@ const CategoryGrid = ({ categories = [] }) => {
   if (!categories || categories.length === 0) return null;
 
   return (
-    <section style={sectionWrapper}>
+    <section style={sectionWrapper} className="category-section-wrapper">
       {/* Component Specific Keyframe Animations & Hover Effects */}
       <style>{`
         @keyframes catEntrance {
@@ -96,10 +96,76 @@ const CategoryGrid = ({ categories = [] }) => {
           border-color: #bfdbfe !important;
         }
 
+        .category-mobile-track {
+          display: none;
+        }
+
         .category-grid-responsive {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
           gap: 12px;
+        }
+
+        @media (max-width: 639px) {
+          .category-section-wrapper {
+            padding: 16px 0 20px !important;
+          }
+          .category-mobile-track {
+            display: flex !important;
+            gap: 14px;
+            overflow-x: auto;
+            padding: 4px 4px 14px;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+          }
+          .category-mobile-track::-webkit-scrollbar {
+            display: none;
+          }
+          .category-mobile-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            flex-shrink: 0;
+            width: 72px;
+          }
+          .category-mobile-avatar {
+            width: 62px;
+            height: 62px;
+            border-radius: 50%;
+            overflow: hidden;
+            background: #ffffff;
+            border: 2px solid #e2e8f0;
+            box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+          }
+          .category-mobile-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+          }
+          .category-mobile-item:active .category-mobile-avatar {
+            transform: scale(0.94);
+            border-color: #2563eb;
+          }
+          .category-mobile-name {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #1e293b;
+            text-align: center;
+            line-height: 1.15;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+          }
+          .category-grid-responsive {
+            display: none !important;
+          }
         }
 
         @media (min-width: 640px) {
@@ -133,7 +199,27 @@ const CategoryGrid = ({ categories = [] }) => {
           </Link>
         </div>
 
-        {/* 15 Categories Grid with Staggered Entrance and Hover Animations */}
+        {/* Mobile Horizontal App-Style Category Track */}
+        <div className="category-mobile-track touch-scroll-x">
+          {categories.map((cat) => (
+            <Link
+              key={cat._id}
+              to={`/category/${cat.slug}`}
+              className="category-mobile-item"
+            >
+              <div className="category-mobile-avatar">
+                <img
+                  src={cat.slug === 'mens-fashion' ? 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=400&auto=format&fit=crop&q=80' : cat.image}
+                  alt={cat.name}
+                  loading="lazy"
+                />
+              </div>
+              <span className="category-mobile-name">{cat.name}</span>
+            </Link>
+          ))}
+        </div>
+
+        {/* 15 Categories Grid for Tablet & Desktop */}
         <div className="category-grid-responsive">
           {categories.map((cat, idx) => (
             <Link

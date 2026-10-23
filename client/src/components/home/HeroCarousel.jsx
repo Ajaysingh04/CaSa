@@ -313,44 +313,68 @@ const HeroCarousel = ({ banners = [], loading = false }) => {
           background: rgba(255, 255, 255, 0.35) !important;
         }
 
-        /* Mobile specific: image sits wide open at the top, text smoothly docks at the bottom */
+        /* Mobile specific: sleek app-style card banner with zero overlapping arrows and perfect legibility */
         @media (max-width: 768px) {
+          .hero-nav-arrow {
+            display: none !important; /* Hide intrusive desktop arrow circles on mobile swipe */
+          }
           .hero-slide-container {
-            min-height: 440px;
-            align-items: flex-end;
+            min-height: 220px !important;
+            max-height: 260px !important;
+            height: 54vw !important;
+            align-items: flex-end !important;
+            border-radius: 16px !important;
+            margin: 8px 12px 12px !important;
+            overflow: hidden !important;
+            box-shadow: 0 6px 20px -3px rgba(15, 23, 42, 0.28) !important;
           }
           .hero-bg-overlay {
-            background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.08) 35%, rgba(8, 14, 28, 0.76) 68%, rgba(8, 14, 28, 0.94) 100%) !important;
+            background: linear-gradient(180deg, rgba(8, 14, 28, 0.05) 0%, rgba(8, 14, 28, 0.45) 42%, rgba(8, 14, 28, 0.92) 100%) !important;
           }
           .hero-content-padding {
-            padding: 20px 16px 46px !important;
-            width: 100%;
+            padding: 12px 14px 24px !important;
+            width: 100% !important;
           }
           .hero-content-box {
-            max-width: 100%;
-            gap: 10px;
+            max-width: 100% !important;
+            gap: 6px !important;
+          }
+          .hero-tag-badge-group {
+            gap: 6px !important;
+          }
+          .hero-tag-badge-group > span {
+            padding: 2px 7px !important;
+            font-size: 0.65rem !important;
           }
           .hero-title {
-            font-size: 1.65rem !important;
-            line-height: 1.2 !important;
+            font-size: 1.22rem !important;
+            line-height: 1.18 !important;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9) !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
           }
           .hero-subtitle {
-            font-size: 0.85rem !important;
-            line-height: 1.4 !important;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
+            font-size: 0.74rem !important;
+            line-height: 1.3 !important;
+            color: #e2e8f0 !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 1 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
           }
-          .hero-nav-arrow {
-            width: 36px !important;
-            height: 36px !important;
+          .hero-btn-main {
+            padding: 5px 13px !important;
+            font-size: 0.75rem !important;
+            border-radius: 9999px !important;
+            margin-top: 2px !important;
+            gap: 5px !important;
           }
-          .hero-nav-prev {
-            left: 8px !important;
-          }
-          .hero-nav-next {
-            right: 8px !important;
+          .hero-dots-container {
+            bottom: 7px !important;
+            padding: 2px 8px !important;
+            transform: translateX(-50%) scale(0.85) !important;
           }
         }
       `}</style>
@@ -381,7 +405,7 @@ const HeroCarousel = ({ banners = [], loading = false }) => {
         <div className="container hero-content-padding" style={contentContainerStyle}>
           <div className="hero-content-box animate-slide-up" key={currentBanner._id || currentIndex}>
             {/* Tag & Badge Row */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <div className="hero-tag-badge-group" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
               {currentBanner.tag && (
                 <span style={tagStyle}>
                   <Flame size={13} color="#f97316" />
@@ -444,7 +468,7 @@ const HeroCarousel = ({ banners = [], loading = false }) => {
             </button>
 
             {/* Slide Dots and Counter */}
-            <div style={dotsContainerStyle}>
+            <div className="hero-dots-container" style={dotsContainerStyle}>
               {activeBanners.map((_, idx) => (
                 <button
                   key={idx}

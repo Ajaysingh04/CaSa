@@ -330,15 +330,21 @@ const Header = ({ onToggleMobileMenu }) => {
           }
           .header-search-form {
             width: 100% !important;
-            border-radius: 10px !important;
-            box-shadow: 0 1px 4px rgba(15, 23, 42, 0.05) !important;
+            border-radius: 9999px !important;
+            box-shadow: 0 1px 6px rgba(15, 23, 42, 0.06) !important;
+            background: #f8fafc !important;
+            border: 1.5px solid #e2e8f0 !important;
+            overflow: hidden !important;
           }
           .header-search-input {
-            padding: 9px 14px !important;
-            font-size: 0.875rem !important;
+            padding: 7px 14px !important;
+            font-size: 0.84rem !important;
+            background: transparent !important;
           }
           .header-search-btn {
-            padding: 9px 16px !important;
+            padding: 7px 14px !important;
+            border-radius: 9999px !important;
+            margin: 2px !important;
           }
         }
 

@@ -16,15 +16,37 @@ const AnnouncementBar = () => {
             display: flex;
           }
         }
+        @media (max-width: 640px) {
+          .announcement-wrapper {
+            padding: 4px 8px !important;
+          }
+          .announcement-badge-group {
+            justify-content: center !important;
+            gap: 6px !important;
+            flex-wrap: nowrap !important;
+            width: 100% !important;
+          }
+          .announcement-pill {
+            font-size: 0.64rem !important;
+            padding: 1px 6px !important;
+            flex-shrink: 0 !important;
+          }
+          .announcement-text {
+            font-size: 0.72rem !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+          }
+        }
       `}</style>
-      <div className="container" style={innerStyle}>
-        <div style={badgeGroup}>
-          <span style={pillStyle}>
-            <Sparkles size={13} style={{ color: '#fbbf24' }} />
-            <span>FESTIVAL SALE IS LIVE</span>
+      <div className="container announcement-wrapper" style={innerStyle}>
+        <div className="announcement-badge-group" style={badgeGroup}>
+          <span className="announcement-pill" style={pillStyle}>
+            <Sparkles size={12} style={{ color: '#fbbf24' }} />
+            <span>FESTIVAL SALE</span>
           </span>
-          <span style={textStyle}>
-            Get up to 70% Off + Flat ₹200 OFF with code <strong style={{ color: '#fbbf24' }}>CASA200</strong>
+          <span className="announcement-text" style={textStyle}>
+            Up to 70% Off + Flat ₹200 OFF with code <strong style={{ color: '#fbbf24' }}>CASA200</strong>
           </span>
         </div>
         <div className="announcement-features-group">

@@ -95,7 +95,7 @@ ul, ol {
   width: 100%;
   max-width: 1380px;
   margin: 0 auto;
-  padding: 0 1rem;
+  padding: 0 0.75rem;
 }
 
 @media (min-width: 640px) {
@@ -117,6 +117,29 @@ ul, ol {
   justify-content: space-between;
   margin-bottom: 1.25rem;
   gap: 1rem;
+}
+
+@media (max-width: 640px) {
+  .section-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    margin-bottom: 12px !important;
+    gap: 8px !important;
+  }
+  .section-title {
+    font-size: 1.15rem !important;
+    gap: 5px !important;
+    white-space: nowrap !important;
+  }
+  .section-header p {
+    display: none !important;
+  }
+  .section-link {
+    font-size: 0.74rem !important;
+    padding: 3px 8px !important;
+    white-space: nowrap !important;
+  }
 }
 
 .section-title {
@@ -298,7 +321,7 @@ ul, ol {
 .grid-products {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
+  gap: 0.65rem;
   width: 100%;
 }
 
