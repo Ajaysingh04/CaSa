@@ -446,7 +446,7 @@ const productsData = [
     rating: 4.5,
     numReviews: 240,
     images: [
-      "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?w=800&auto=format&fit=crop&q=80"
+      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=800&auto=format&fit=crop&q=80"
     ],
     variants: [
       { name: "Size", options: ["S", "M", "L", "XL", "XXL"] }
@@ -1235,7 +1235,7 @@ const productsData = [
     rating: 4.7,
     numReviews: 940,
     images: [
-      "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=800&auto=format&fit=crop&q=80"
+      "https://images.unsplash.com/photo-1536304929831-ee1ca9d44906?w=800&auto=format&fit=crop&q=80"
     ],
     variants: [
       { name: "Pack Size", options: ["1 kg", "5 kg", "10 kg"] }
@@ -1265,7 +1265,7 @@ const productsData = [
     rating: 4.8,
     numReviews: 210,
     images: [
-      "https://images.unsplash.com/photo-1584735935682-2f2b69dff9d2?w=800&auto=format&fit=crop&q=80"
+      "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=800&auto=format&fit=crop&q=80"
     ],
     variants: [
       { name: "Weight Pair", options: ["5kg x 2", "7.5kg x 2", "10kg x 2", "15kg x 2"] }

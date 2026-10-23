@@ -629,6 +629,12 @@ async function runValidationSuite() {
   console.log('================================================================');
 
   if (getDBStatus()) {
+    if (testProduct && testProduct._id) {
+      await Product.findByIdAndDelete(testProduct._id).catch(() => {});
+    }
+    if (createdOrder && createdOrder._id) {
+      await Order.findByIdAndDelete(createdOrder._id).catch(() => {});
+    }
     await mongoose.connection.close();
   }
 }

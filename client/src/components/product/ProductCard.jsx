@@ -6,6 +6,20 @@ import { useWishlist } from '../../context/WishlistContext';
 import { useAuth } from '../../context/AuthContext';
 import { formatINR, calculateDiscount } from '../../utils/formatters';
 
+const CATEGORY_FALLBACK_IMAGES = {
+  electronics: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop&q=80',
+  'womens-fashion': 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop&q=80',
+  'mens-fashion': 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=600&auto=format&fit=crop&q=80',
+  'home-and-kitchen': 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=600&auto=format&fit=crop&q=80',
+  'beauty-and-personal-care': 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=600&auto=format&fit=crop&q=80',
+  footwear: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&auto=format&fit=crop&q=80',
+  'grocery-and-daily-essentials': 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=600&auto=format&fit=crop&q=80',
+  'sports-and-fitness': 'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=600&auto=format&fit=crop&q=80',
+  default: 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=600&auto=format&fit=crop&q=80',
+};
+
+const getFallbackImage = (categorySlug) => CATEGORY_FALLBACK_IMAGES[categorySlug] || CATEGORY_FALLBACK_IMAGES.default;
+
 const ProductCard = ({ product: initialProduct }) => {
   const { isSuperAdmin } = useAuth();
   const { addItem } = useCart();
@@ -97,14 +111,14 @@ const ProductCard = ({ product: initialProduct }) => {
       {/* Top Image Container */}
       <Link to={`/product/${product.slug}`} className="card-img-wrap" style={imageContainerStyle}>
         <img
-          src={product.images?.[0] || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80'}
+          src={product.images?.[0] || getFallbackImage(product.categorySlug)}
           alt={product.name}
           className="card-img-zoom"
           style={imageStyle}
           loading="lazy"
           onError={(e) => {
             e.target.onerror = null;
-            e.target.src = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80';
+            e.target.src = getFallbackImage(product.categorySlug);
           }}
         />
 
