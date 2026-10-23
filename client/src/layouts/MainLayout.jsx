@@ -56,7 +56,9 @@ const MainLayout = () => {
   }, [user, openLanguageModal]);
 
   const location = useLocation();
-  const isVendorPortal = location.pathname.startsWith('/vendor') || (location.pathname === '/profile' && user?.email === 'vendor@casa.in');
+  const isPersonalProfile = location.pathname === '/profile' && new URLSearchParams(location.search).get('personal') === 'true';
+  const isVendorUser = user && (user.role === 'vendor' || user.email === 'vendor@casa.in');
+  const isVendorPortal = location.pathname.startsWith('/vendor') || (location.pathname === '/profile' && isVendorUser && !isPersonalProfile);
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
 
   if (isVendorPortal) {

@@ -170,14 +170,16 @@ const ProductDetailPage = () => {
     }
 
     const isNonCustomer =
-      user.role === 'vendor' ||
-      user.role === 'delivery' ||
-      user.role === 'delivery_partner' ||
-      user.role === 'admin' ||
-      user.role === 'super_admin' ||
-      user.email === 'vendor@casa.in' ||
-      user.email === 'delivery@casa.in' ||
-      user.email === 'admin@casa.in';
+      user.email !== 'rajesh@casa.in' && (
+        user.role === 'vendor' ||
+        user.role === 'delivery' ||
+        user.role === 'delivery_partner' ||
+        user.role === 'admin' ||
+        user.role === 'super_admin' ||
+        user.email === 'vendor@casa.in' ||
+        user.email === 'delivery@casa.in' ||
+        user.email === 'admin@casa.in'
+      );
 
     if (isNonCustomer) {
       error(`Orders can only be placed from a Customer account. You are currently logged in with a ${user.role || 'partner'} account.`);

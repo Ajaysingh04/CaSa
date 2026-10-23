@@ -96,9 +96,9 @@ const LoginPage = () => {
       success(`Welcome back, ${res.user.name}!`);
       if (res.user.email === 'admin@casa.in' || res.user.role === 'admin') {
         navigate('/admin');
-      } else if (res.user.email === 'vendor@casa.in') {
+      } else if (res.user.email === 'vendor@casa.in' || res.user.role === 'vendor') {
         navigate('/vendor');
-      } else if (res.user.email === 'delivery@casa.in' || ((res.user.role === 'delivery' || res.user.role === 'delivery_partner') && res.user.email !== 'ajaysinghbanafer1@gmail.com')) {
+      } else if (res.user.email === 'delivery@casa.in' || res.user.role === 'delivery' || res.user.role === 'delivery_partner') {
         navigate('/delivery');
       } else {
         navigate(redirect);

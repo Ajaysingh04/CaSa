@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ShieldCheck,
@@ -9,11 +9,14 @@ import {
   MapPin,
   Mail,
   Phone,
+  Store,
+  X,
 } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 
 const Footer = () => {
   const { storeName, storeTagline, supportPhone, supportEmail, primaryColor } = useStore();
+  const [policyModal, setPolicyModal] = useState(null); // 'privacy' | 'terms' | null
   return (
     <footer style={footerWrapperStyle}>
       <style>{`
@@ -160,14 +163,31 @@ const Footer = () => {
 
         {/* Customer Care & Policies */}
         <div style={footerColStyle}>
-          <h4 style={footerColTitle}>Customer Care</h4>
+          <h4 style={footerColTitle}>Customer Care & Portals</h4>
           <ul style={footerListStyle}>
             <li><Link to="/orders" style={footerLink}>Track Your Order</Link></li>
             <li><Link to="/profile" style={footerLink}>Manage Account & Addresses</Link></li>
             <li><Link to="/wishlist" style={footerLink}>My Wishlist</Link></li>
-            <li><Link to="/products" style={footerLink}>Festival Deals & Coupons</Link></li>
-            <li><span style={{ ...footerLink, color: '#64748b' }}>Privacy Policy</span></li>
-            <li><span style={{ ...footerLink, color: '#64748b' }}>Terms & Conditions</span></li>
+            <li><Link to="/vendor" style={{ ...footerLink, color: '#f59e0b', fontWeight: 700 }}>⚡ Sell on CASA (Vendor Hub)</Link></li>
+            <li><Link to="/delivery" style={{ ...footerLink, color: '#10b981', fontWeight: 700 }}>⚡ Delivery Partner Fleet</Link></li>
+            <li>
+              <button
+                type="button"
+                onClick={() => setPolicyModal('privacy')}
+                style={{ ...footerLinkBtn }}
+              >
+                Privacy Policy
+              </button>
+            </li>
+            <li>
+              <button
+                type="button"
+                onClick={() => setPolicyModal('terms')}
+                style={{ ...footerLinkBtn }}
+              >
+                Terms & Conditions
+              </button>
+            </li>
           </ul>
         </div>
       </div>
@@ -189,6 +209,128 @@ const Footer = () => {
           </div>
         </div>
       </div>
+
+      {/* Legal & Policy Interactive Modal */}
+      {policyModal && (
+        <div
+          onClick={() => setPolicyModal(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.75)',
+            backdropFilter: 'blur(6px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999,
+            padding: '20px',
+            boxSizing: 'border-box',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#ffffff',
+              color: '#0f172a',
+              borderRadius: '20px',
+              maxWidth: '680px',
+              width: '100%',
+              maxHeight: '85vh',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
+              overflow: 'hidden',
+              border: '1px solid #e2e8f0',
+            }}
+          >
+            {/* Modal Header */}
+            <div
+              style={{
+                padding: '20px 24px',
+                borderBottom: '1px solid #e2e8f0',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                background: '#f8fafc',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <ShieldCheck size={22} color="#1d4ed8" />
+                <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: '#0f172a' }}>
+                  {policyModal === 'privacy' ? 'CASA Privacy & Data Protection Policy' : 'CASA Terms & Conditions of Service'}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPolicyModal(null)}
+                style={{
+                  background: '#f1f5f9',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '34px',
+                  height: '34px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  color: '#64748b',
+                }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div style={{ padding: '24px', overflowY: 'auto', fontSize: '0.9rem', lineHeight: 1.7, color: '#334155' }}>
+              {policyModal === 'privacy' ? (
+                <>
+                  <p><strong>1. Information Collection:</strong> At CASA, we value your privacy. We collect customer information including name, delivery addresses, phone number, and transaction identifiers solely to process and deliver your marketplace orders securely.</p>
+                  <p><strong>2. Payment Security:</strong> CASA does NOT store your raw debit/credit card numbers or UPI MPINs. All digital transactions are processed through PCI-DSS Level 1 certified gateways (Razorpay) using AES-256 bank-grade encryption.</p>
+                  <p><strong>3. Data Protection & Sharing:</strong> Your personal details are strictly shared with verified logistics and delivery partners solely for the purpose of shipping and package tracking. We never sell or rent your personal information to third-party advertisers.</p>
+                  <p><strong>4. Cookie Usage:</strong> Session cookies are utilized solely to keep your authentication session intact, maintain your shopping cart items, and provide personalized language preferences.</p>
+                  <p><strong>5. User Rights:</strong> You have full rights to inspect, update, or request deletion of your account and personal data at any time via your Account Profile.</p>
+                </>
+              ) : (
+                <>
+                  <p><strong>1. Acceptance of Terms:</strong> By accessing CASA or placing orders, you agree to comply with our commercial terms, buyer guarantees, and marketplace guidelines.</p>
+                  <p><strong>2. Pricing & Catalog:</strong> All prices listed on CASA include applicable Goods and Services Tax (GST) within India. While we strive for 100% price accuracy, discrepancies caused by technological errors will be promptly resolved with order cancellation and full refund.</p>
+                  <p><strong>3. Order Cancellation & Returns:</strong> Orders can be cancelled anytime before dispatch from the Order Detail dashboard. CASA provides a 7-day hassle-free return window on eligible consumer products for doorstep pickup and instant refund.</p>
+                  <p><strong>4. Multi-Vendor Platform:</strong> Products are listed by certified regional Indian merchants and artisans. Each merchant undergoes GSTIN and KYC verification prior to listing products on CASA.</p>
+                  <p><strong>5. Dispute Resolution:</strong> Any queries or disputes can be raised 24/7 with our customer care desk at {supportEmail || 'support@casa.in'} or {supportPhone || '+91 9876543210'}.</p>
+                </>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div
+              style={{
+                padding: '16px 24px',
+                borderTop: '1px solid #e2e8f0',
+                display: 'flex',
+                justifyContent: 'flex-end',
+                background: '#f8fafc',
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setPolicyModal(null)}
+                style={{
+                  background: '#1d4ed8',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '10px',
+                  padding: '10px 22px',
+                  fontWeight: 700,
+                  fontSize: '0.88rem',
+                  cursor: 'pointer',
+                }}
+              >
+                Close & Acknowledge
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </footer>
   );
 };
@@ -276,6 +418,18 @@ const footerLink = {
   color: '#94a3b8',
   textDecoration: 'none',
   transition: 'color 0.15s',
+};
+
+const footerLinkBtn = {
+  background: 'none',
+  border: 'none',
+  padding: 0,
+  fontSize: '0.85rem',
+  color: '#94a3b8',
+  textAlign: 'left',
+  cursor: 'pointer',
+  transition: 'color 0.15s',
+  fontFamily: 'inherit',
 };
 
 const bottomBarStyle = {

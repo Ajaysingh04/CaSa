@@ -51,14 +51,16 @@ const CartDrawer = () => {
     }
 
     const isNonCustomer =
-      user.role === 'vendor' ||
-      user.role === 'delivery' ||
-      user.role === 'delivery_partner' ||
-      user.role === 'admin' ||
-      user.role === 'super_admin' ||
-      user.email === 'vendor@casa.in' ||
-      user.email === 'delivery@casa.in' ||
-      user.email === 'admin@casa.in';
+      user.email !== 'rajesh@casa.in' && (
+        user.role === 'vendor' ||
+        user.role === 'delivery' ||
+        user.role === 'delivery_partner' ||
+        user.role === 'admin' ||
+        user.role === 'super_admin' ||
+        user.email === 'vendor@casa.in' ||
+        user.email === 'delivery@casa.in' ||
+        user.email === 'admin@casa.in'
+      );
 
     if (isNonCustomer) {
       closeDrawer();

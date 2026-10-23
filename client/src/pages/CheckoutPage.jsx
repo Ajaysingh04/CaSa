@@ -32,21 +32,17 @@ import { formatINR } from '../utils/formatters';
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, logout, switchRole } = useAuth();
   const { items, totals, coupon, applyCoupon, removeCoupon, refreshCart } = useCart();
   const { success, error, info } = useToast();
 
-  const isNonCustomer =
-    user && (
-      user.role === 'vendor' ||
-      user.role === 'delivery' ||
-      user.role === 'delivery_partner' ||
-      user.role === 'admin' ||
-      user.role === 'super_admin' ||
-      user.email === 'vendor@casa.in' ||
-      user.email === 'delivery@casa.in' ||
-      user.email === 'admin@casa.in'
-    );
+  const isCustomer =
+    !user ||
+    user.role === 'user' ||
+    user.role === 'customer' ||
+    user.email === 'rajesh@casa.in';
+
+  const isNonCustomer = Boolean(user && !isCustomer);
 
   const [addresses, setAddresses] = useState([]);
   const [selectedAddressId, setSelectedAddressId] = useState(null);
@@ -359,24 +355,39 @@ const CheckoutPage = () => {
             You are currently signed in as a <strong>{roleLabel}</strong> ({user.email}). Partner and administrative accounts cannot place orders.
           </p>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxWidth: '360px', margin: '0 auto' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxWidth: '380px', margin: '0 auto' }}>
+            <button
+              type="button"
+              onClick={async () => {
+                if (switchRole) {
+                  const res = await switchRole('user');
+                  if (res?.success) {
+                    success('Switched to Customer account! You can now place your order.');
+                  }
+                }
+              }}
+              className="btn btn-primary btn-lg"
+              style={{ width: '100%', justifyContent: 'center', background: '#10b981', borderColor: '#10b981' }}
+            >
+              ⚡ 1-Click Switch to Customer Account
+            </button>
             <button
               type="button"
               onClick={async () => {
                 if (logout) await logout();
                 navigate('/login?redirect=/checkout');
               }}
-              className="btn btn-primary btn-lg"
-              style={{ width: '100%', justifyContent: 'center' }}
-            >
-              Sign In with Customer Account
-            </button>
-            <Link
-              to={portalLink}
               className="btn btn-outline btn-lg"
               style={{ width: '100%', justifyContent: 'center' }}
             >
-              Go to {roleLabel} Dashboard
+              Sign In with Another Account
+            </button>
+            <Link
+              to={portalLink}
+              className="btn btn-secondary btn-lg"
+              style={{ width: '100%', justifyContent: 'center' }}
+            >
+              Return to {roleLabel} Dashboard
             </Link>
           </div>
         </div>

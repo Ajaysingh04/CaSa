@@ -722,8 +722,8 @@ const Header = ({ onToggleMobileMenu }) => {
             </div>
           )}
 
-          {/* Direct Vendor Portal Shortcut - STRICTLY for designated vendor account */}
-          {user && user.email === 'vendor@casa.in' && (
+          {/* Direct Vendor Portal Shortcut */}
+          {user && (user.role === 'vendor' || user.email === 'vendor@casa.in') && (
             <Link
               to="/vendor"
               style={{
@@ -800,15 +800,15 @@ const Header = ({ onToggleMobileMenu }) => {
               const isDeliveryUser = Boolean(
                 user && (
                   user.email === 'delivery@casa.in' ||
-                  (user.role === 'delivery' && user.email !== 'ajaysinghbanafer1@gmail.com') ||
-                  (user.role === 'delivery_partner' && user.email !== 'ajaysinghbanafer1@gmail.com') ||
+                  user.role === 'delivery' ||
+                  user.role === 'delivery_partner' ||
                   (user.name && user.name.toLowerCase().includes('express'))
                 )
               );
               const isVendorUser = Boolean(
                 user &&
                 !isDeliveryUser &&
-                user.email === 'vendor@casa.in'
+                (user.role === 'vendor' || user.email === 'vendor@casa.in')
               );
               const isAdminUser = Boolean(isAdmin || user?.email === 'admin@casa.in' || user?.role === 'admin' || user?.role === 'super_admin');
 

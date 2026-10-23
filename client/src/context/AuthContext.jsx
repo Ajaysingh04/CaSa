@@ -6,15 +6,8 @@ const AuthContext = createContext();
 
 const sanitizeUserRole = (rawUser) => {
   if (!rawUser) return rawUser;
-  const isSpecialStaff =
-    rawUser.email === 'vendor@casa.in' ||
-    rawUser.email === 'delivery@casa.in' ||
-    rawUser.email === 'admin@casa.in';
-
-  if (!isSpecialStaff) {
-    if (rawUser.role === 'vendor' || rawUser.role === 'delivery' || rawUser.role === 'delivery_partner' || rawUser.role === 'admin') {
-      return { ...rawUser, role: 'user' };
-    }
+  if (!rawUser.role) {
+    return { ...rawUser, role: 'user' };
   }
   return rawUser;
 };
@@ -178,8 +171,8 @@ export const AuthProvider = ({ children }) => {
 
   const isSuperAdmin = user?.email === 'admin@casa.in' || user?.role === 'super_admin';
   const isAdmin = user?.email === 'admin@casa.in' || user?.role === 'admin' || user?.role === 'super_admin';
-  const isVendor = user?.email === 'vendor@casa.in';
-  const isDelivery = user?.email === 'delivery@casa.in' || (user?.role === 'delivery' && user?.email !== 'ajaysinghbanafer1@gmail.com');
+  const isVendor = user?.role === 'vendor' || user?.email === 'vendor@casa.in';
+  const isDelivery = user?.role === 'delivery' || user?.role === 'delivery_partner' || user?.email === 'delivery@casa.in';
 
   return (
     <AuthContext.Provider

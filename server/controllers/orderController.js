@@ -21,19 +21,14 @@ exports.createOrder = async (req, res, next) => {
     const userId = req.user._id;
 
     // Strict Role Validation: Only Customer/User accounts can place orders
-    const requesterRole = req.user?.role;
-    const requesterEmail = req.user?.email;
-    const isRestrictedRole =
-      requesterRole === 'vendor' ||
-      requesterRole === 'delivery' ||
-      requesterRole === 'delivery_partner' ||
-      requesterRole === 'admin' ||
-      requesterRole === 'super_admin' ||
-      requesterEmail === 'vendor@casa.in' ||
-      requesterEmail === 'delivery@casa.in' ||
-      requesterEmail === 'admin@casa.in';
+    const requesterRole = req.user?.role || 'user';
+    const requesterEmail = req.user?.email || '';
+    const isCustomer =
+      requesterRole === 'user' ||
+      requesterRole === 'customer' ||
+      requesterEmail === 'rajesh@casa.in';
 
-    if (isRestrictedRole) {
+    if (!isCustomer) {
       return res.status(403).json({
         success: false,
         message: 'Orders can only be placed by Customer accounts. Vendor, delivery, and administrator accounts cannot place orders.'
