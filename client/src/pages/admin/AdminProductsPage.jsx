@@ -231,7 +231,7 @@ const AdminProductsPage = () => {
 
   const handleApprovalChange = async (productId, status) => {
     if (isDemoAdmin) {
-      error('🔒 Demo Admin Mode: Product approvals and changes are disabled. Please login as Super Admin (casa@admin.com).');
+      error('Action restricted: Modifying product listings is disabled.');
       return;
     }
 
@@ -259,7 +259,7 @@ const AdminProductsPage = () => {
   const handleCreateProduct = async (e) => {
     e.preventDefault();
     if (isDemoAdmin) {
-      error('🔒 Demo Admin Mode: Adding products is disabled. Please login as Super Admin (casa@admin.com).');
+      error('Action restricted: Adding new products is disabled.');
       return;
     }
 
@@ -298,7 +298,7 @@ const AdminProductsPage = () => {
 
   const handleDeleteProduct = async (id, name) => {
     if (isDemoAdmin) {
-      error('🔒 Demo Admin Mode: Removing products is disabled. Please login as Super Admin (casa@admin.com).');
+      error('Action restricted: Removing products from catalog is disabled.');
       return;
     }
 

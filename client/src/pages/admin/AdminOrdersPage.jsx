@@ -97,7 +97,7 @@ const AdminOrdersPage = () => {
 
   const handleAssignRider = async (orderId, riderId) => {
     if (isDemoAdmin) {
-      error('🔒 Demo Admin Mode: Assigning delivery riders is disabled. Please login as Super Admin (casa@admin.com).');
+      error('Action restricted: Assigning delivery partners is disabled.');
       return;
     }
 
@@ -127,7 +127,7 @@ const AdminOrdersPage = () => {
 
   const handleAdminOverride = async (orderId, newStatus) => {
     if (isDemoAdmin) {
-      error('🔒 Demo Admin Mode: Overriding order status is disabled. Please login as Super Admin (casa@admin.com).');
+      error('Action restricted: Overriding order status is disabled.');
       return;
     }
 
@@ -154,7 +154,7 @@ const AdminOrdersPage = () => {
 
   const handleReturnAction = async (orderId, action) => {
     if (isDemoAdmin) {
-      error('🔒 Demo Admin Mode: Returns and refund processing is disabled. Please login as Super Admin (casa@admin.com).');
+      error('Action restricted: Returns and refund processing is disabled.');
       return;
     }
 

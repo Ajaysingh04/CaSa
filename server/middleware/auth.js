@@ -94,7 +94,7 @@ const forbidDemoAdminMutations = (req, res, next) => {
   if (isDemo && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
     return res.status(403).json({
       success: false,
-      message: 'Demo Admin is in READ-ONLY mode. Changes cannot be made. To add, edit, or delete data across vendors, users, delivery, or website, please login as Super Admin (casa@admin.com).'
+      message: 'Action restricted: This account has read-only administrative access. Modifications are disabled.'
     });
   }
   next();
@@ -106,7 +106,7 @@ const requireSuperAdmin = (req, res, next) => {
   if (!isSuper) {
     return res.status(403).json({
       success: false,
-      message: 'Access Denied: This operation requires dedicated Super Admin privileges (casa@admin.com).'
+      message: 'Access Denied: This operation requires elevated administrator privileges.'
     });
   }
   next();

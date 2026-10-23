@@ -151,10 +151,6 @@ const LoginPage = () => {
       email = 'delivery@casa.in';
       password = 'Delivery@Casa2026';
       target = '/delivery';
-    } else if (role === 'superadmin') {
-      email = 'casa@admin.com';
-      password = 'CaSa@appsica';
-      target = '/admin';
     } else {
       email = 'admin@casa.in';
       password = 'Admin@Casa2026';
@@ -519,7 +515,7 @@ const LoginPage = () => {
                     type="button"
                     onClick={() => handleSelectRole('admin', true)}
                     disabled={loading}
-                    title="1-Click Instant Login as Demo Admin (View-Only)"
+                    title="1-Click Instant Login as Admin"
                     style={{
                       ...demoBtn,
                       background: loginRole === 'admin' ? '#f8fafc' : '#ffffff',
@@ -528,28 +524,8 @@ const LoginPage = () => {
                       cursor: loading ? 'wait' : 'pointer',
                     }}
                   >
-                    <ShieldCheck size={13} /> Demo Admin
+                    <ShieldCheck size={13} /> Admin
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => handleSelectRole('superadmin', true)}
-                    disabled={loading}
-                    title="1-Click Instant Login as Super Admin (Full Add/Edit/Delete Control)"
-                    style={{
-                      ...demoBtn,
-                      background: loginRole === 'superadmin' ? '#0f172a' : '#fef3c7',
-                      borderColor: loginRole === 'superadmin' ? '#0f172a' : '#f59e0b',
-                      color: loginRole === 'superadmin' ? '#ffffff' : '#b45309',
-                      fontWeight: 800,
-                      cursor: loading ? 'wait' : 'pointer',
-                    }}
-                  >
-                    <span>👑 Super Admin</span>
-                  </button>
-                </div>
-                <div style={{ marginTop: '8px', fontSize: '0.72rem', color: '#64748b', lineHeight: 1.4 }}>
-                  • <strong>Demo Admin (admin@casa.in):</strong> View-only demo inspection mode.<br />
-                  • <strong>Super Admin (casa@admin.com):</strong> Root control to add, edit, or delete vendors, users, delivery, and products.
                 </div>
               </div>
 

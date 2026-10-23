@@ -82,7 +82,7 @@ const AdminUsersPage = () => {
 
   const handleToggleRole = async (targetUser) => {
     if (isDemoAdmin) {
-      error('🔒 Demo Admin Mode: Modifying user roles is disabled. Please login as Super Admin (casa@admin.com).');
+      error('Action restricted: Modifying user roles is disabled.');
       return;
     }
 
@@ -110,7 +110,7 @@ const AdminUsersPage = () => {
 
   const handleToggleStatus = async (targetUser) => {
     if (isDemoAdmin) {
-      error('🔒 Demo Admin Mode: Account status changes are disabled. Please login as Super Admin (casa@admin.com).');
+      error('Action restricted: Modifying account status is disabled.');
       return;
     }
 
@@ -151,7 +151,7 @@ const AdminUsersPage = () => {
 
   const handleVendorApproval = async (targetUser, status) => {
     if (isDemoAdmin) {
-      error('🔒 Demo Admin Mode: Vendor approvals and suspensions are disabled. Please login as Super Admin (casa@admin.com).');
+      error('Action restricted: Vendor approvals and status modifications are disabled.');
       return;
     }
 
@@ -189,7 +189,7 @@ const AdminUsersPage = () => {
 
   const handleDeleteUser = async (targetUser) => {
     if (isDemoAdmin) {
-      error('🔒 Demo Admin Mode: Deleting accounts is disabled in demo mode. Please login as Super Admin (casa@admin.com).');
+      error('Action restricted: Deleting accounts is disabled.');
       return;
     }
 
