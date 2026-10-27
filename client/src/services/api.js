@@ -64,8 +64,12 @@ api.interceptors.response.use(
 
     if (error.response && error.response.status === 401) {
       const url = error.config?.url || '';
-      // Only clear storage when the token validation check itself is rejected
-      if (url.includes('/auth/me')) {
+      const message = error.response.data?.message || '';
+      if (
+        url.includes('/auth/me') ||
+        message.includes('no longer exists') ||
+        message.includes('Token verification failed')
+      ) {
         localStorage.removeItem('casa_token');
         localStorage.removeItem('casa_user');
       }

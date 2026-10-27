@@ -96,11 +96,6 @@ const AdminOrdersPage = () => {
   }, []);
 
   const handleAssignRider = async (orderId, riderId) => {
-    if (isDemoAdmin) {
-      error('Action restricted: Assigning delivery partners is disabled.');
-      return;
-    }
-
     if (!riderId) {
       error('Please select a delivery partner to assign');
       return;
@@ -126,11 +121,6 @@ const AdminOrdersPage = () => {
   };
 
   const handleAdminOverride = async (orderId, newStatus) => {
-    if (isDemoAdmin) {
-      error('Action restricted: Overriding order status is disabled.');
-      return;
-    }
-
     const reason = window.prompt(`Enter mandatory audit reason for administratively overriding status to "${newStatus}":`);
     if (!reason || !reason.trim()) {
       error('Administrative override aborted: An audit reason is mandatory.');
@@ -153,11 +143,6 @@ const AdminOrdersPage = () => {
   };
 
   const handleReturnAction = async (orderId, action) => {
-    if (isDemoAdmin) {
-      error('Action restricted: Returns and refund processing is disabled.');
-      return;
-    }
-
     let refundAmount = null;
     let reason = '';
 

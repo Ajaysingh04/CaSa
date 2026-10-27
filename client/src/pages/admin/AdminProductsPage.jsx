@@ -230,11 +230,6 @@ const AdminProductsPage = () => {
   ].filter(Boolean).length;
 
   const handleApprovalChange = async (productId, status) => {
-    if (isDemoAdmin) {
-      error('Action restricted: Modifying product listings is disabled.');
-      return;
-    }
-
     let rejectionReason = '';
     if (status === 'rejected') {
       rejectionReason = window.prompt('Enter reason for rejecting this product listing:') || 'Content/listing policy rejection';
@@ -258,10 +253,6 @@ const AdminProductsPage = () => {
 
   const handleCreateProduct = async (e) => {
     e.preventDefault();
-    if (isDemoAdmin) {
-      error('Action restricted: Adding new products is disabled.');
-      return;
-    }
 
     try {
       await adminService.createProduct({
@@ -297,11 +288,6 @@ const AdminProductsPage = () => {
   };
 
   const handleDeleteProduct = async (id, name) => {
-    if (isDemoAdmin) {
-      error('Action restricted: Removing products from catalog is disabled.');
-      return;
-    }
-
     if (!window.confirm(`Are you sure you want to remove "${name}" from the catalog?`)) return;
     try {
       await adminService.deleteProduct(id);

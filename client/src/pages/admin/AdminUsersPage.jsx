@@ -113,11 +113,6 @@ const AdminUsersPage = () => {
   }, []);
 
   const handleToggleRole = async (targetUser) => {
-    if (isDemoAdmin) {
-      error('Action restricted: Modifying user roles is disabled in demo mode.');
-      return;
-    }
-
     const newRole = targetUser.role === 'admin' ? 'user' : 'admin';
     const confirmMsg =
       newRole === 'admin'
@@ -141,11 +136,6 @@ const AdminUsersPage = () => {
   };
 
   const handleToggleAccountStatus = async (targetUser) => {
-    if (isDemoAdmin) {
-      error('Action restricted: Modifying account status is disabled in demo mode.');
-      return;
-    }
-
     const isCurrentlyActive = targetUser.isActive !== false;
     let reason = '';
     if (isCurrentlyActive) {
@@ -179,11 +169,6 @@ const AdminUsersPage = () => {
   };
 
   const handleVendorApproval = async (targetUser, status) => {
-    if (isDemoAdmin) {
-      error('Action restricted: Vendor approvals and status modifications are disabled in demo mode.');
-      return;
-    }
-
     let reason = '';
     if (status === 'rejected' || status === 'suspended') {
       reason = window.prompt(`Enter reason for ${status} vendor status:`);
@@ -217,11 +202,6 @@ const AdminUsersPage = () => {
   };
 
   const handleDeleteUser = async (targetUser) => {
-    if (isDemoAdmin) {
-      error('Action restricted: Deleting accounts is disabled in demo mode.');
-      return;
-    }
-
     if (
       !window.confirm(
         `Are you sure you want to delete "${targetUser.name}" (${targetUser.email})? This action cannot be undone.`

@@ -22,11 +22,10 @@ const {
   updateSettings,
   getAuditLogs
 } = require('../controllers/adminController');
-const { protect, authorize, requireSuperAdmin, forbidDemoAdminMutations } = require('../middleware/auth');
+const { protect, authorize, requireSuperAdmin } = require('../middleware/auth');
 
 router.use(protect);
 router.use(authorize('admin', 'super_admin'));
-router.use(forbidDemoAdminMutations);
 
 // Admin Dashboard stats & Audit trail
 router.get('/stats', getDashboardStats);

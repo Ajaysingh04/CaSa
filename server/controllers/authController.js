@@ -4,9 +4,13 @@ const User = require('../models/User');
 const { getDBStatus } = require('../config/db');
 const dataStore = require('../services/dataStore');
 
-const generateToken = (id) => {
+const generateToken = (userOrId, email, role) => {
+  const payload =
+    typeof userOrId === 'object' && userOrId !== null
+      ? { id: userOrId._id || userOrId.id, email: userOrId.email, role: userOrId.role }
+      : { id: userOrId, email, role };
   return jwt.sign(
-    { id },
+    payload,
     process.env.JWT_SECRET || 'casa_super_secret_jwt_key_2026_dev_secure',
     { expiresIn: '30d' }
   );
@@ -20,7 +24,7 @@ const sendTokenResponse = (user, statusCode, res) => {
     userObj.role = 'user';
   }
 
-  const token = generateToken(userObj._id);
+  const token = generateToken(userObj._id, userObj.email, userObj.role);
 
   const cookieOptions = {
     expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),

@@ -53,6 +53,7 @@ import {
   Filter,
   Trash2,
   AlertTriangle,
+  Layers,
 } from 'lucide-react';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
@@ -60,6 +61,7 @@ import { useAuth } from '../../context/AuthContext';
 import { vendorService } from '../../services/vendorService';
 import { formatINR, formatDate, formatDateTime } from '../../utils/formatters';
 import VendorStoreSettings from './VendorStoreSettings';
+import VendorCategoriesSection from './VendorCategoriesSection';
 
 const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
   const { switchRole, logout } = useAuth();
@@ -80,6 +82,8 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
       products: 'products',
       stock: 'products',
       catalog: 'products',
+      categories: 'categories',
+      category: 'categories',
       transactions: 'transactions',
       payouts: 'transactions',
       finances: 'transactions',
@@ -90,7 +94,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
     return map[clean] || 'dashboard';
   };
 
-  // Active Sidebar Tab: 'dashboard' | 'products' | 'orders' | 'transactions' | 'settings' | 'kyc'
+  // Active Sidebar Tab: 'dashboard' | 'products' | 'categories' | 'orders' | 'transactions' | 'settings' | 'kyc'
   const [activeTab, setActiveTab] = useState(() => {
     const qTab = new URLSearchParams(window.location.search).get('tab');
     return getNormalizedTab(routeTab || qTab);
@@ -112,6 +116,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
       dashboard: 'CaSa Vendor Hub • Merchant Dashboard & Metrics',
       orders: 'CaSa Vendor Hub • Customer Shipments & Orders',
       products: 'CaSa Vendor Hub • Products & Stock Catalog',
+      categories: 'CaSa Vendor Hub • Categories & Departments',
       transactions: 'CaSa Vendor Hub • Payouts & Finances Ledger',
       settings: 'CaSa Vendor Hub • Store & Operations Settings',
       kyc: 'CaSa Vendor Hub • Verified Merchant KYC & Hub Info',
@@ -1528,6 +1533,15 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
 
               <button
                 type="button"
+                onClick={() => handleTabChange('categories')}
+                className={`myshop-nav-item ${activeTab === 'categories' ? 'active' : ''}`}
+              >
+                <Layers size={18} />
+                <span>Categories</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => handleTabChange('orders')}
                 className={`myshop-nav-item ${activeTab === 'orders' ? 'active' : ''}`}
               >
@@ -2559,6 +2573,28 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={() => handleTabChange('categories')}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      background: '#eff6ff',
+                      color: '#2563eb',
+                      border: '1px solid #bfdbfe',
+                      padding: '9px 16px',
+                      borderRadius: '10px',
+                      fontSize: '0.82rem',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    <Layers size={16} />
+                    <span>Manage Categories</span>
+                  </button>
+
                   <button
                     type="button"
                     onClick={() => setIsAddProductModalOpen(true)}
@@ -4549,6 +4585,11 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                 </div>
               </div>
             </div>
+          )}
+
+          {/* ================= TAB 7: CATEGORIES & DEPARTMENTS MANAGEMENT ================= */}
+          {activeTab === 'categories' && (
+            <VendorCategoriesSection />
           )}
         </main>
       </div>
