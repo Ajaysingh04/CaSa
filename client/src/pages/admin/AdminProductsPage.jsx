@@ -276,13 +276,30 @@ const AdminProductsPage = () => {
     }
   };
 
+  const currentCategorySubcategories = useMemo(() => {
+    const cat = categories.find((c) => c.slug === formData.categorySlug);
+    return cat?.subcategories || [];
+  }, [categories, formData.categorySlug]);
+
+  const handleCategoryChange = (slug) => {
+    const matchedCat = categories.find((c) => c.slug === slug);
+    const firstSub = matchedCat?.subcategories?.[0]?.name || 'General';
+    setFormData((prev) => ({
+      ...prev,
+      categorySlug: slug,
+      subcategory: firstSub,
+    }));
+  };
+
   const openCreateModal = () => {
     setEditingProduct(null);
+    const initialCat = categories[0];
+    const initialSub = initialCat?.subcategories?.[0]?.name || 'General';
     setFormData({
       name: '',
       brand: '',
-      categorySlug: categories[0]?.slug || 'electronics',
-      subcategory: '',
+      categorySlug: initialCat?.slug || 'electronics',
+      subcategory: initialSub,
       description: '',
       shortDescription: '',
       price: '',
@@ -301,11 +318,15 @@ const AdminProductsPage = () => {
   const openEditModal = (p) => {
     setEditingProduct(p);
     const existingImg = (p.images && p.images[0]) || p.imageUrl || '';
+    const catSlug = p.categorySlug || p.category?.slug || categories[0]?.slug || 'electronics';
+    const matchedCat = categories.find((c) => c.slug === catSlug);
+    const fallbackSub = p.subcategory || matchedCat?.subcategories?.[0]?.name || 'General';
+
     setFormData({
       name: p.name || '',
       brand: p.brand || '',
-      categorySlug: p.categorySlug || p.category?.slug || categories[0]?.slug || 'electronics',
-      subcategory: p.subcategory || '',
+      categorySlug: catSlug,
+      subcategory: fallbackSub,
       description: p.description || '',
       shortDescription: p.shortDescription || '',
       price: p.price || '',
@@ -428,8 +449,15 @@ const AdminProductsPage = () => {
       imagePreview ||
       'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop&q=80';
 
+    const finalSub =
+      (formData.subcategory && formData.subcategory.trim()) ||
+      currentCategorySubcategories[0]?.name ||
+      categories.find((c) => c.slug === formData.categorySlug)?.name ||
+      'General';
+
     const payload = {
       ...formData,
+      subcategory: finalSub,
       price: mrp,
       discountPrice: disc,
       stock: Number(formData.stock) || 0,
@@ -1454,7 +1482,7 @@ const AdminProductsPage = () => {
                   <label style={formLabel}>Department / Category *</label>
                   <select
                     value={formData.categorySlug}
-                    onChange={(e) => setFormData({ ...formData, categorySlug: e.target.value })}
+                    onChange={(e) => handleCategoryChange(e.target.value)}
                     style={formInput}
                   >
                     {categories.map((c) => (
@@ -1464,6 +1492,31 @@ const AdminProductsPage = () => {
                     ))}
                   </select>
                 </div>
+              </div>
+
+              <div>
+                <label style={formLabel}>Subcategory Taxonomy *</label>
+                {currentCategorySubcategories.length > 0 ? (
+                  <select
+                    value={formData.subcategory}
+                    onChange={(e) => setFormData({ ...formData, subcategory: e.target.value })}
+                    style={formInput}
+                  >
+                    {currentCategorySubcategories.map((s, idx) => (
+                      <option key={s.slug || idx} value={s.name}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    placeholder="e.g. Jeans, Casual Wear"
+                    value={formData.subcategory}
+                    onChange={(e) => setFormData({ ...formData, subcategory: e.target.value })}
+                    style={formInput}
+                  />
+                )}
               </div>
 
               {/* SECTION 2: PRICING & INVENTORY */}

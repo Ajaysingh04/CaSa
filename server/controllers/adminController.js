@@ -698,13 +698,18 @@ exports.createProduct = async (req, res, next) => {
         category = await Category.findOne();
       }
 
+      const safeSubcategory =
+        subcategory && typeof subcategory === 'string' && subcategory.trim()
+          ? subcategory.trim()
+          : (category?.subcategories?.[0]?.name || category?.name || 'General');
+
       const product = await Product.create({
         name,
         slug,
         brand,
         category: category?._id,
         categorySlug: category?.slug || categorySlug,
-        subcategory,
+        subcategory: safeSubcategory,
         description,
         shortDescription: shortDescription || '',
         price: Number(price),
@@ -722,13 +727,18 @@ exports.createProduct = async (req, res, next) => {
 
       return res.status(201).json({ success: true, data: product });
     } else {
+      const safeSubcategory =
+        subcategory && typeof subcategory === 'string' && subcategory.trim()
+          ? subcategory.trim()
+          : 'General';
+
       const newProduct = {
         _id: dataStore.generateId(),
         name,
         slug,
         brand,
         categorySlug,
-        subcategory,
+        subcategory: safeSubcategory,
         description,
         shortDescription: shortDescription || '',
         price: Number(price),

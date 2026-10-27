@@ -41,7 +41,7 @@ const productSchema = new mongoose.Schema(
     },
     subcategory: {
       type: String,
-      required: [true, 'Subcategory is required'],
+      default: 'General',
       trim: true
     },
     description: {
