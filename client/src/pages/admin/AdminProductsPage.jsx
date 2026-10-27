@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Plus,
@@ -21,6 +21,13 @@ import {
   DollarSign,
   ArrowUpDown,
   Sparkles,
+  UploadCloud,
+  Image as ImageIcon,
+  Edit2,
+  Check,
+  Flame,
+  RefreshCw,
+  FileText,
 } from 'lucide-react';
 import { adminService } from '../../services/adminService';
 import { productService } from '../../services/productService';
@@ -29,6 +36,15 @@ import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
 import { formatINR } from '../../utils/formatters';
 
+const PRESET_SAMPLE_IMAGES = [
+  { label: 'Denim Jeans', url: 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=800&auto=format&fit=crop&q=80' },
+  { label: 'Casual T-Shirt', url: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80' },
+  { label: 'Sneakers', url: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&auto=format&fit=crop&q=80' },
+  { label: 'Wireless Audio', url: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&auto=format&fit=crop&q=80' },
+  { label: 'Smartwatch', url: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop&q=80' },
+  { label: 'Home Living', url: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?w=800&auto=format&fit=crop&q=80' },
+];
+
 const AdminProductsPage = () => {
   const { success, error } = useToast();
   const { isDemoAdmin } = useAuth();
@@ -36,6 +52,15 @@ const AdminProductsPage = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
+
+  // Modal Editing & File Upload States
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [imageMode, setImageMode] = useState('upload'); // 'upload' | 'url'
+  const [imagePreview, setImagePreview] = useState('');
+  const [imageFileInfo, setImageFileInfo] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const fileInputRef = useRef(null);
 
   // Filter States (Migrated & supercharged for Admin)
   const [search, setSearch] = useState('');
@@ -251,39 +276,180 @@ const AdminProductsPage = () => {
     }
   };
 
-  const handleCreateProduct = async (e) => {
+  const openCreateModal = () => {
+    setEditingProduct(null);
+    setFormData({
+      name: '',
+      brand: '',
+      categorySlug: categories[0]?.slug || 'electronics',
+      subcategory: '',
+      description: '',
+      shortDescription: '',
+      price: '',
+      discountPrice: '',
+      stock: '',
+      imageUrl: '',
+      isFeatured: false,
+      isBestSeller: false,
+    });
+    setImagePreview('');
+    setImageFileInfo(null);
+    setImageMode('upload');
+    setShowAddModal(true);
+  };
+
+  const openEditModal = (p) => {
+    setEditingProduct(p);
+    const existingImg = (p.images && p.images[0]) || p.imageUrl || '';
+    setFormData({
+      name: p.name || '',
+      brand: p.brand || '',
+      categorySlug: p.categorySlug || p.category?.slug || categories[0]?.slug || 'electronics',
+      subcategory: p.subcategory || '',
+      description: p.description || '',
+      shortDescription: p.shortDescription || '',
+      price: p.price || '',
+      discountPrice: p.discountPrice || '',
+      stock: p.stock ?? '',
+      imageUrl: existingImg,
+      isFeatured: Boolean(p.isFeatured),
+      isBestSeller: Boolean(p.isBestSeller),
+    });
+    setImagePreview(existingImg);
+    setImageFileInfo(null);
+    setImageMode(existingImg.startsWith('data:') ? 'upload' : 'url');
+    setShowAddModal(true);
+  };
+
+  const handleFileSelect = (file) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      error('Please select an image file (PNG, JPG, WEBP, etc.)');
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      error('Image size exceeds 8MB limit. Please upload a smaller image.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target.result;
+      setImagePreview(dataUrl);
+      setFormData((prev) => ({ ...prev, imageUrl: dataUrl }));
+      setImageFileInfo({
+        name: file.name,
+        size: (file.size / 1024).toFixed(1) + ' KB',
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFileSelect(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setImagePreview('');
+    setFormData((prev) => ({ ...prev, imageUrl: '' }));
+    setImageFileInfo(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleSelectPresetImage = (url) => {
+    setImagePreview(url);
+    setFormData((prev) => ({ ...prev, imageUrl: url }));
+    setImageFileInfo(null);
+  };
+
+  const discountInfo = useMemo(() => {
+    const mrp = Number(formData.price) || 0;
+    const discount = Number(formData.discountPrice) || 0;
+    if (mrp > 0 && discount > 0 && discount < mrp) {
+      const saved = mrp - discount;
+      const pct = Math.round((saved / mrp) * 100);
+      return { isValid: true, saved, pct, isInvalid: false };
+    }
+    if (mrp > 0 && discount > mrp) {
+      return { isValid: false, isInvalid: true };
+    }
+    return { isValid: false, isInvalid: false };
+  }, [formData.price, formData.discountPrice]);
+
+  const stockIndicator = useMemo(() => {
+    const stockVal = Number(formData.stock);
+    if (formData.stock === '' || isNaN(stockVal)) return null;
+    if (stockVal === 0) return { label: 'Out of Stock', color: '#ef4444', bg: '#fef2f2' };
+    if (stockVal <= 10) return { label: 'Low Stock Alert', color: '#f59e0b', bg: '#fffbeb' };
+    return { label: 'Healthy Stock Level', color: '#10b981', bg: '#f0fdf4' };
+  }, [formData.stock]);
+
+  const handleSaveProduct = async (e) => {
     e.preventDefault();
 
+    if (!formData.name.trim()) {
+      error('Product title is required');
+      return;
+    }
+    if (!formData.brand.trim()) {
+      error('Brand name is required');
+      return;
+    }
+    if (!formData.price || Number(formData.price) <= 0) {
+      error('Please enter a valid MRP price');
+      return;
+    }
+
+    const mrp = Number(formData.price);
+    const disc = formData.discountPrice ? Number(formData.discountPrice) : null;
+    if (disc && disc > mrp) {
+      error('Discounted price cannot be higher than MRP price');
+      return;
+    }
+
+    setIsSubmitting(true);
+    const finalImage =
+      formData.imageUrl ||
+      imagePreview ||
+      'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop&q=80';
+
+    const payload = {
+      ...formData,
+      price: mrp,
+      discountPrice: disc,
+      stock: Number(formData.stock) || 0,
+      images: [finalImage],
+    };
+
     try {
-      await adminService.createProduct({
-        ...formData,
-        price: Number(formData.price),
-        discountPrice: formData.discountPrice ? Number(formData.discountPrice) : null,
-        stock: Number(formData.stock),
-        images: [
-          formData.imageUrl ||
-            'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop&q=80',
-        ],
-      });
-      success('Product added to catalog successfully!');
+      if (editingProduct) {
+        await adminService.updateProduct(editingProduct._id, payload);
+        success(`Product "${formData.name}" updated successfully!`);
+      } else {
+        await adminService.createProduct(payload);
+        success('Product added to catalog successfully!');
+      }
       setShowAddModal(false);
-      setFormData({
-        name: '',
-        brand: '',
-        categorySlug: 'electronics',
-        subcategory: 'Laptops',
-        description: '',
-        shortDescription: '',
-        price: '',
-        discountPrice: '',
-        stock: '',
-        imageUrl: '',
-        isFeatured: false,
-        isBestSeller: false,
-      });
       fetchProducts();
     } catch (err) {
-      error(err.response?.data?.message || 'Failed to add product');
+      error(err.response?.data?.message || 'Failed to save product');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -305,6 +471,55 @@ const AdminProductsPage = () => {
         @keyframes fadeInSlide {
           0% { opacity: 0; transform: translateY(12px); }
           100% { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes modalScaleIn {
+          0% { opacity: 0; transform: scale(0.96) translateY(8px); }
+          100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .admin-modal-card-box {
+          animation: modalScaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .admin-dropzone {
+          border: 2px dashed #cbd5e1;
+          background: #f8fafc;
+          border-radius: 12px;
+          padding: 22px 16px;
+          text-align: center;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .admin-dropzone:hover, .admin-dropzone.dragging {
+          border-color: #2563eb !important;
+          background: #eff6ff !important;
+          transform: translateY(-1px);
+        }
+
+        @media (max-width: 640px) {
+          .admin-form-col-2 {
+            grid-template-columns: 1fr !important;
+            gap: 12px !important;
+          }
+          .admin-form-col-3 {
+            grid-template-columns: 1fr !important;
+            gap: 12px !important;
+          }
+          .admin-modal-card-box {
+            padding: 16px !important;
+            margin: 8px !important;
+            max-height: 94vh !important;
+          }
+          .admin-modal-footer-btns {
+            flex-direction: column-reverse !important;
+            width: 100% !important;
+          }
+          .admin-modal-footer-btns button {
+            width: 100% !important;
+            justify-content: center !important;
+          }
         }
 
         .admin-stat-card {
@@ -356,7 +571,7 @@ const AdminProductsPage = () => {
 
         <div style={{ display: 'flex', gap: '10px' }}>
           <button
-            onClick={() => setShowAddModal(true)}
+            onClick={openCreateModal}
             className="btn btn-primary"
             style={addProductBtn}
           >
@@ -1062,6 +1277,24 @@ const AdminProductsPage = () => {
                             </button>
                           )}
                           <button
+                            onClick={() => openEditModal(p)}
+                            style={{
+                              padding: '6px',
+                              borderRadius: '8px',
+                              border: '1.5px solid #e2e8f0',
+                              background: '#ffffff',
+                              color: '#2563eb',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              transition: 'all 0.15s ease',
+                            }}
+                            title="Edit product SKU"
+                          >
+                            <Edit2 size={15} />
+                          </button>
+                          <button
                             onClick={() => handleDeleteProduct(p._id, p.name)}
                             style={deleteBtnStyle}
                             title="Delete product"
@@ -1136,50 +1369,82 @@ const AdminProductsPage = () => {
         )}
       </div>
 
-      {/* 7. Add Product Modal */}
+      {/* 7. Executive Add/Edit Product Modal */}
       {showAddModal && (
         <div style={modalOverlay}>
-          <div style={modalBackdrop} onClick={() => setShowAddModal(false)} />
-          <div style={modalBox}>
+          <div style={modalBackdrop} onClick={() => !isSubmitting && setShowAddModal(false)} />
+          <div
+            className="admin-modal-card-box"
+            style={{
+              ...modalBox,
+              maxWidth: '680px',
+              padding: '28px',
+              borderRadius: '20px',
+              overflowY: 'auto',
+              maxHeight: '90vh',
+            }}
+          >
+            {/* Header */}
             <div style={modalHeader}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={modalIconCircle}>
-                  <Plus size={20} color="#2563eb" />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div
+                  style={{
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '12px',
+                    background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#2563eb',
+                    border: '1px solid #bfdbfe',
+                    flexShrink: 0,
+                  }}
+                >
+                  {editingProduct ? <Edit2 size={22} /> : <Plus size={22} />}
                 </div>
                 <div>
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: '#0f172a' }}>
-                    Add Product to Catalog
+                  <h3 style={{ fontSize: '1.3rem', fontWeight: 900, margin: 0, color: '#0f172a', letterSpacing: '-0.02em' }}>
+                    {editingProduct ? `Edit Product: ${editingProduct.name}` : 'Add Product to Catalog'}
                   </h3>
-                  <p style={{ fontSize: '0.78rem', color: '#64748b', margin: '2px 0 0' }}>
-                    Publish a new SKU directly to the CASA marketplace
+                  <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '2px 0 0', fontWeight: 500 }}>
+                    {editingProduct
+                      ? 'Update listing specs, pricing margins, and catalog merchandising'
+                      : 'Publish a new SKU directly to the CASA marketplace catalog'}
                   </p>
                 </div>
               </div>
-              <button onClick={() => setShowAddModal(false)} style={modalCloseBtn}>
+              <button
+                type="button"
+                onClick={() => !isSubmitting && setShowAddModal(false)}
+                style={modalCloseBtn}
+                title="Close"
+              >
                 <X size={18} color="#64748b" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateProduct} style={modalForm}>
+            <form onSubmit={handleSaveProduct} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+              {/* SECTION 1: ESSENTIAL DETAILS */}
               <div>
                 <label style={formLabel}>Product Title *</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Sony WH-1000XM5 Wireless Headphones"
+                  placeholder="e.g. Jara Comfort Stretch Denim Jeans"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   style={formInput}
                 />
               </div>
 
-              <div style={formTwoCol}>
+              <div className="admin-form-col-2" style={formTwoCol}>
                 <div>
                   <label style={formLabel}>Brand Name *</label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Sony"
+                    placeholder="e.g. Jara"
                     value={formData.brand}
                     onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
                     style={formInput}
@@ -1201,94 +1466,496 @@ const AdminProductsPage = () => {
                 </div>
               </div>
 
-              <div style={formThreeCol}>
-                <div>
-                  <label style={formLabel}>MRP Price (₹) *</label>
-                  <input
-                    type="number"
-                    required
-                    placeholder="2499"
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                    style={formInput}
-                  />
+              {/* SECTION 2: PRICING & INVENTORY */}
+              <div
+                style={{
+                  background: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '14px',
+                  padding: '16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px' }}>
+                  <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Pricing & Inventory Stock
+                  </span>
+                  {discountInfo.isValid && (
+                    <span
+                      style={{
+                        fontSize: '0.72rem',
+                        fontWeight: 800,
+                        color: '#059669',
+                        background: '#ecfdf5',
+                        border: '1px solid #a7f3d0',
+                        padding: '2px 8px',
+                        borderRadius: '6px',
+                      }}
+                    >
+                      ✓ Save ₹{discountInfo.saved} ({discountInfo.pct}% OFF)
+                    </span>
+                  )}
+                  {discountInfo.isInvalid && (
+                    <span
+                      style={{
+                        fontSize: '0.72rem',
+                        fontWeight: 800,
+                        color: '#dc2626',
+                        background: '#fef2f2',
+                        border: '1px solid #fecaca',
+                        padding: '2px 8px',
+                        borderRadius: '6px',
+                      }}
+                    >
+                      ⚠ Discount price cannot exceed MRP
+                    </span>
+                  )}
                 </div>
-                <div>
-                  <label style={formLabel}>Discounted Price (₹)</label>
-                  <input
-                    type="number"
-                    placeholder="1999"
-                    value={formData.discountPrice}
-                    onChange={(e) => setFormData({ ...formData, discountPrice: e.target.value })}
-                    style={formInput}
-                  />
-                </div>
-                <div>
-                  <label style={formLabel}>Initial Stock *</label>
-                  <input
-                    type="number"
-                    required
-                    placeholder="50"
-                    value={formData.stock}
-                    onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
-                    style={formInput}
-                  />
+
+                <div className="admin-form-col-3" style={formThreeCol}>
+                  <div>
+                    <label style={formLabel}>MRP Price (₹) *</label>
+                    <input
+                      type="number"
+                      required
+                      min="1"
+                      placeholder="2499"
+                      value={formData.price}
+                      onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                      style={formInput}
+                    />
+                  </div>
+                  <div>
+                    <label style={formLabel}>Discounted Price (₹)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder="1999"
+                      value={formData.discountPrice}
+                      onChange={(e) => setFormData({ ...formData, discountPrice: e.target.value })}
+                      style={formInput}
+                    />
+                  </div>
+                  <div>
+                    <label style={formLabel}>Initial Stock *</label>
+                    <input
+                      type="number"
+                      required
+                      min="0"
+                      placeholder="50"
+                      value={formData.stock}
+                      onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                      style={formInput}
+                    />
+                    {stockIndicator && (
+                      <span
+                        style={{
+                          display: 'inline-block',
+                          marginTop: '4px',
+                          fontSize: '0.68rem',
+                          fontWeight: 700,
+                          color: stockIndicator.color,
+                          background: stockIndicator.bg,
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                        }}
+                      >
+                        {stockIndicator.label}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              <div>
-                <label style={formLabel}>Image URL (Unsplash or CDN)</label>
-                <input
-                  type="url"
-                  placeholder="https://images.unsplash.com/..."
-                  value={formData.imageUrl}
-                  onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                  style={formInput}
-                />
+              {/* SECTION 3: IMAGE UPLOAD & MEDIA */}
+              <div
+                style={{
+                  background: '#ffffff',
+                  border: '1.5px solid #e2e8f0',
+                  borderRadius: '14px',
+                  padding: '16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                  <div>
+                    <label style={{ ...formLabel, margin: 0 }}>Product Imagery & Photo *</label>
+                    <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                      Upload directly from your device or paste an image URL
+                    </span>
+                  </div>
+
+                  {/* Mode switcher tabs */}
+                  <div
+                    style={{
+                      display: 'inline-flex',
+                      background: '#f1f5f9',
+                      borderRadius: '8px',
+                      padding: '3px',
+                      gap: '4px',
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setImageMode('upload')}
+                      style={{
+                        border: 'none',
+                        background: imageMode === 'upload' ? '#ffffff' : 'transparent',
+                        color: imageMode === 'upload' ? '#2563eb' : '#64748b',
+                        fontWeight: 700,
+                        fontSize: '0.75rem',
+                        padding: '5px 12px',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        boxShadow: imageMode === 'upload' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      <UploadCloud size={14} />
+                      <span>Upload File</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setImageMode('url')}
+                      style={{
+                        border: 'none',
+                        background: imageMode === 'url' ? '#ffffff' : 'transparent',
+                        color: imageMode === 'url' ? '#2563eb' : '#64748b',
+                        fontWeight: 700,
+                        fontSize: '0.75rem',
+                        padding: '5px 12px',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        boxShadow: imageMode === 'url' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      <ImageIcon size={14} />
+                      <span>Image URL</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* UPLOAD MODE */}
+                {imageMode === 'upload' && (
+                  <div>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      accept="image/*"
+                      onChange={(e) => handleFileSelect(e.target.files?.[0])}
+                      style={{ display: 'none' }}
+                    />
+
+                    {!imagePreview ? (
+                      <div
+                        className={`admin-dropzone ${isDragging ? 'dragging' : ''}`}
+                        onClick={() => fileInputRef.current?.click()}
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                      >
+                        <div
+                          style={{
+                            width: '50px',
+                            height: '50px',
+                            borderRadius: '14px',
+                            background: '#eff6ff',
+                            color: '#2563eb',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            margin: '0 auto 10px',
+                          }}
+                        >
+                          <UploadCloud size={26} />
+                        </div>
+                        <div style={{ fontSize: '0.86rem', fontWeight: 700, color: '#0f172a' }}>
+                          Drag & drop product photo here, or <span style={{ color: '#2563eb', textDecoration: 'underline' }}>Browse from Computer</span>
+                        </div>
+                        <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '4px' }}>
+                          Supports high-res PNG, JPG, JPEG, WEBP up to 8MB
+                        </div>
+                      </div>
+                    ) : (
+                      /* Preview Card */
+                      <div
+                        style={{
+                          background: '#f8fafc',
+                          border: '1.5px solid #bfdbfe',
+                          borderRadius: '12px',
+                          padding: '12px 14px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '14px',
+                          flexWrap: 'wrap',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <img
+                            src={imagePreview}
+                            alt="Uploaded preview"
+                            style={{
+                              width: '64px',
+                              height: '64px',
+                              borderRadius: '10px',
+                              objectFit: 'cover',
+                              border: '1px solid #e2e8f0',
+                              boxShadow: '0 2px 6px rgba(0,0,0,0.06)',
+                            }}
+                          />
+                          <div>
+                            <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0f172a' }}>
+                              {imageFileInfo?.name || 'Product Photo Uploaded'}
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
+                              {imageFileInfo?.size && (
+                                <span style={{ fontSize: '0.7rem', color: '#64748b', background: '#e2e8f0', padding: '1px 6px', borderRadius: '4px' }}>
+                                  {imageFileInfo.size}
+                                </span>
+                              )}
+                              <span style={{ fontSize: '0.7rem', color: '#16a34a', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                                <Check size={11} /> Ready to publish
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            style={{
+                              background: '#eff6ff',
+                              color: '#2563eb',
+                              border: '1px solid #bfdbfe',
+                              padding: '6px 12px',
+                              borderRadius: '8px',
+                              fontSize: '0.75rem',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            Change Photo
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleRemoveImage}
+                            style={{
+                              background: '#fef2f2',
+                              color: '#dc2626',
+                              border: '1px solid #fecaca',
+                              padding: '6px 12px',
+                              borderRadius: '8px',
+                              fontSize: '0.75rem',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* URL MODE */}
+                {imageMode === 'url' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                      <input
+                        type="url"
+                        placeholder="https://images.unsplash.com/photo-..."
+                        value={formData.imageUrl}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setFormData({ ...formData, imageUrl: val });
+                          setImagePreview(val);
+                        }}
+                        style={{ ...formInput, flex: 1 }}
+                      />
+                      {imagePreview && (
+                        <img
+                          src={imagePreview}
+                          alt="Thumbnail preview"
+                          onError={(e) => {
+                            e.target.src = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop&q=80';
+                          }}
+                          style={{
+                            width: '42px',
+                            height: '42px',
+                            borderRadius: '8px',
+                            objectFit: 'cover',
+                            border: '1px solid #e2e8f0',
+                            flexShrink: 0,
+                          }}
+                        />
+                      )}
+                    </div>
+
+                    {/* Quick Preset Buttons */}
+                    <div>
+                      <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700 }}>Quick 1-Click Sample Photos:</span>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '4px' }}>
+                        {PRESET_SAMPLE_IMAGES.map((p, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => handleSelectPresetImage(p.url)}
+                            style={{
+                              fontSize: '0.7rem',
+                              background: formData.imageUrl === p.url ? '#eff6ff' : '#f8fafc',
+                              color: formData.imageUrl === p.url ? '#2563eb' : '#475569',
+                              border: formData.imageUrl === p.url ? '1px solid #bfdbfe' : '1px solid #e2e8f0',
+                              padding: '3px 8px',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              fontWeight: 600,
+                            }}
+                          >
+                            {p.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
+              {/* SECTION 4: PRODUCT DESCRIPTION */}
               <div>
-                <label style={formLabel}>Description</label>
+                <label style={formLabel}>Product Description & Highlights</label>
                 <textarea
-                  rows={2}
-                  placeholder="Key product highlights, warranty, and features..."
+                  rows={3}
+                  placeholder="Key product highlights, material specs, fabric care, and premium features..."
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  style={{ ...formInput, height: '65px' }}
+                  style={{ ...formInput, minHeight: '75px', fontFamily: 'inherit', resize: 'vertical' }}
                 />
               </div>
 
-              <div style={{ display: 'flex', gap: '20px', marginTop: '4px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.825rem', fontWeight: 600 }}>
+              {/* SECTION 5: MERCHANDISING FLAGS */}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                  gap: '12px',
+                }}
+              >
+                <label
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '12px 14px',
+                    borderRadius: '12px',
+                    border: formData.isBestSeller ? '1.5px solid #2563eb' : '1.5px solid #e2e8f0',
+                    background: formData.isBestSeller ? '#eff6ff' : '#ffffff',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
                   <input
                     type="checkbox"
                     checked={formData.isBestSeller}
                     onChange={(e) => setFormData({ ...formData, isBestSeller: e.target.checked })}
-                    style={{ accentColor: '#2563eb' }}
+                    style={{ width: '17px', height: '17px', accentColor: '#2563eb', cursor: 'pointer' }}
                   />
-                  Mark as Best Seller
+                  <div>
+                    <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <Flame size={14} color="#f97316" />
+                      <span>Best Seller Badge</span>
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '1px' }}>
+                      Boosts listing in Best Sellers shelves
+                    </div>
+                  </div>
                 </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.825rem', fontWeight: 600 }}>
+
+                <label
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '12px 14px',
+                    borderRadius: '12px',
+                    border: formData.isFeatured ? '1.5px solid #2563eb' : '1.5px solid #e2e8f0',
+                    background: formData.isFeatured ? '#eff6ff' : '#ffffff',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
                   <input
                     type="checkbox"
                     checked={formData.isFeatured}
                     onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
-                    style={{ accentColor: '#2563eb' }}
+                    style={{ width: '17px', height: '17px', accentColor: '#2563eb', cursor: 'pointer' }}
                   />
-                  Mark as Featured
+                  <div>
+                    <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <Sparkles size={14} color="#eab308" />
+                      <span>Featured Showcase</span>
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '1px' }}>
+                      Highlights on homepage showcases
+                    </div>
+                  </div>
                 </label>
               </div>
 
-              <div style={modalActions}>
+              {/* FOOTER ACTIONS */}
+              <div className="admin-modal-footer-btns" style={modalActions}>
                 <button
                   type="button"
+                  disabled={isSubmitting}
                   onClick={() => setShowAddModal(false)}
                   style={modalCancelBtn}
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary" style={{ padding: '12px 24px', borderRadius: '10px' }}>
-                  Save & Publish Product
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="btn btn-primary"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '12px 24px',
+                    borderRadius: '10px',
+                    fontWeight: 800,
+                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                    boxShadow: '0 4px 14px rgba(37, 99, 235, 0.3)',
+                  }}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <RefreshCw size={16} className="animate-spin" />
+                      <span>Saving & Publishing SKU...</span>
+                    </>
+                  ) : editingProduct ? (
+                    <>
+                      <Check size={16} />
+                      <span>Save Product Changes</span>
+                    </>
+                  ) : (
+                    <>
+                      <Plus size={16} />
+                      <span>Save & Publish Product</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>
