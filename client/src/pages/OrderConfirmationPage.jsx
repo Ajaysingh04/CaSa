@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import confetti from 'canvas-confetti';
-import { CheckCircle, Package, ArrowRight, Truck, MapPin } from 'lucide-react';
+import { CheckCircle, Package, ArrowRight, Truck, MapPin, ShieldCheck } from 'lucide-react';
 import { orderService } from '../services/orderService';
 import { formatINR, formatDate } from '../utils/formatters';
 
@@ -132,6 +132,75 @@ const OrderConfirmationPage = () => {
             {order.shippingAddress?.street}, {order.shippingAddress?.city}, {order.shippingAddress?.state} - <strong>{order.shippingAddress?.pincode}</strong>
           </div>
         </div>
+
+        {/* CaSa Secure Doorstep Handover OTP Card */}
+        {order.deliveryProofOtp && (
+          <div
+            style={{
+              background: '#f0fdf4',
+              border: '1.5px dashed #22c55e',
+              borderRadius: '16px',
+              padding: '16px 20px',
+              marginTop: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '12px',
+              textAlign: 'left'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '10px',
+                  background: '#dcfce7',
+                  color: '#15803d',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}
+              >
+                <ShieldCheck size={24} />
+              </div>
+              <div>
+                <strong style={{ fontSize: '0.95rem', color: '#15803d', display: 'block' }}>
+                  Doorstep Delivery Handover OTP
+                </strong>
+                <span style={{ fontSize: '0.78rem', color: '#166534' }}>
+                  Provide this 4-digit secret code to your courier partner at the doorstep to verify delivery.
+                </span>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '6px' }}>
+              {order.deliveryProofOtp.split('').map((digit, i) => (
+                <span
+                  key={i}
+                  style={{
+                    width: '34px',
+                    height: '42px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: '#ffffff',
+                    border: '1.5px solid #86efac',
+                    borderRadius: '8px',
+                    fontSize: '1.3rem',
+                    fontWeight: 900,
+                    color: '#15803d',
+                    boxShadow: '0 2px 4px rgba(22, 101, 52, 0.08)'
+                  }}
+                >
+                  {digit}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Purchased Items List */}
         <div style={{ marginTop: '24px', textAlign: 'left' }}>

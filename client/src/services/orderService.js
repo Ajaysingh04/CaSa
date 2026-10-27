@@ -41,4 +41,9 @@ export const orderService = {
     const response = await api.post('/payments/verify', paymentData);
     return response.data;
   },
+
+  submitDeliveryFeedback: async (orderId, feedbackData) => {
+    const response = await api.post(`/orders/${orderId}/delivery-feedback`, feedbackData);
+    return response.data.data;
+  },
 };

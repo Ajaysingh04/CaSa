@@ -8,7 +8,8 @@ const {
   updateOrderStatus,
   updateItemShipmentStatus,
   cancelOrder,
-  requestReturn
+  requestReturn,
+  submitDeliveryFeedback
 } = require('../controllers/orderController');
 const { protect } = require('../middleware/auth');
 
@@ -24,5 +25,6 @@ router.put('/:id/status', updateOrderStatus);
 router.put('/:id/items/:itemId/shipment', updateItemShipmentStatus);
 router.put('/:id/cancel', cancelOrder);
 router.put('/:id/return', requestReturn);
+router.post('/:id/delivery-feedback', submitDeliveryFeedback);
 
 module.exports = router;

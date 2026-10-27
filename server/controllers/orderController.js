@@ -2,6 +2,7 @@ const Order = require('../models/Order');
 const Product = require('../models/Product');
 const Cart = require('../models/Cart');
 const Coupon = require('../models/Coupon');
+const User = require('../models/User');
 const { getDBStatus } = require('../config/db');
 const dataStore = require('../services/dataStore');
 const {
@@ -803,3 +804,110 @@ exports.requestReturn = async (req, res, next) => {
     next(err);
   }
 };
+
+// @desc    Submit Customer Feedback for Delivery Partner
+// @route   POST /api/orders/:id/delivery-feedback
+// @access  Private
+exports.submitDeliveryFeedback = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { rating, tags = [], comment = '' } = req.body;
+
+    const numRating = Number(rating);
+    if (!numRating || numRating < 1 || numRating > 5) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid rating between 1 and 5 is required'
+      });
+    }
+
+    const feedbackObj = {
+      rating: numRating,
+      tags: Array.isArray(tags) ? tags : [],
+      comment: (comment || '').trim(),
+      createdAt: new Date(),
+      userName: req.user.name || 'Verified Customer'
+    };
+
+    if (getDBStatus()) {
+      const order = await Order.findById(id);
+      if (!order) {
+        return res.status(404).json({ success: false, message: 'Order not found' });
+      }
+
+      order.deliveryFeedback = feedbackObj;
+      await order.save();
+
+      // If delivery partner exists, add feedback to delivery user document
+      if (order.assignedDeliveryPartner) {
+        try {
+          const deliveryUser = await User.findById(order.assignedDeliveryPartner);
+          if (deliveryUser) {
+            deliveryUser.deliveryDetails = deliveryUser.deliveryDetails || {};
+            deliveryUser.deliveryDetails.feedbacks = deliveryUser.deliveryDetails.feedbacks || [];
+            deliveryUser.deliveryDetails.feedbacks.unshift({
+              customerName: req.user.name || 'Verified Customer',
+              rating: numRating,
+              comment: feedbackObj.comment,
+              tags: feedbackObj.tags,
+              orderNumber: order.orderNumber,
+              date: new Date()
+            });
+
+            // Recalculate partner rating
+            const allRatings = deliveryUser.deliveryDetails.feedbacks.map(f => f.rating);
+            const avgRating = (allRatings.reduce((a, b) => a + b, 0) / allRatings.length).toFixed(2);
+            deliveryUser.rating = parseFloat(avgRating);
+            await deliveryUser.save();
+          }
+        } catch (uErr) {
+          console.warn('Failed to update delivery partner rating:', uErr.message);
+        }
+      }
+
+      try {
+        socketService.emitOrderStatusUpdate(order);
+      } catch (sErr) {}
+
+      return res.status(200).json({
+        success: true,
+        message: 'Feedback for delivery partner submitted successfully!',
+        data: order
+      });
+    } else {
+      const order = (dataStore.orders || []).find(o => o._id === id || o.orderNumber === id);
+      if (!order) {
+        return res.status(404).json({ success: false, message: 'Order not found' });
+      }
+
+      order.deliveryFeedback = feedbackObj;
+
+      // Update in dataStore if delivery user exists
+      const deliveryUser = (dataStore.users || []).find(u => u.role === 'delivery' || u.role === 'delivery_partner');
+      if (deliveryUser) {
+        deliveryUser.deliveryDetails = deliveryUser.deliveryDetails || {};
+        deliveryUser.deliveryDetails.feedbacks = deliveryUser.deliveryDetails.feedbacks || [];
+        deliveryUser.deliveryDetails.feedbacks.unshift({
+          customerName: req.user.name || 'Verified Customer',
+          rating: numRating,
+          comment: feedbackObj.comment,
+          tags: feedbackObj.tags,
+          orderNumber: order.orderNumber,
+          date: new Date().toISOString()
+        });
+        const allRatings = deliveryUser.deliveryDetails.feedbacks.map(f => f.rating);
+        const avg = (allRatings.reduce((a, b) => a + b, 0) / allRatings.length).toFixed(2);
+        deliveryUser.rating = parseFloat(avg);
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: 'Feedback for delivery partner submitted successfully!',
+        data: order
+      });
+    }
+  } catch (err) {
+    next(err);
+  }
+};
+

@@ -21,6 +21,7 @@ import { orderService } from '../services/orderService';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { formatINR, formatDateTime, formatDate } from '../utils/formatters';
+import DeliveryFeedbackCard from '../components/delivery/DeliveryFeedbackCard';
 
 const TRACKING_STEPS = [
   { key: 'Confirmed', label: 'Order Confirmed', desc: 'Verified and payment approved' },
@@ -575,6 +576,14 @@ const TrackOrderPage = () => {
                   </div>
                 ))}
               </div>
+
+              {/* Delivery Partner Rating & Feedback Card */}
+              {trackingData.status === 'Delivered' && (
+                <DeliveryFeedbackCard
+                  order={trackingData}
+                  onFeedbackSubmitted={(updated) => setTrackingData((prev) => ({ ...prev, ...updated }))}
+                />
+              )}
 
               {/* Order total & bottom shortcuts */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #f1f5f9', flexWrap: 'wrap', gap: '12px' }}>

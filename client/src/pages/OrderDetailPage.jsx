@@ -17,6 +17,7 @@ import { orderService } from '../services/orderService';
 import { useToast } from '../context/ToastContext';
 import { getSocket, joinOrderRoom, leaveOrderRoom } from '../services/socketService';
 import { formatINR, formatDateTime, formatDate } from '../utils/formatters';
+import DeliveryFeedbackCard from '../components/delivery/DeliveryFeedbackCard';
 
 const standardSteps = ['Confirmed', 'Processing', 'Packed', 'Shipped', 'Out for delivery', 'Delivered'];
 
@@ -276,6 +277,14 @@ const OrderDetailPage = () => {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Customer Feedback for Delivery Partner */}
+        {order.orderStatus === 'Delivered' && (
+          <DeliveryFeedbackCard
+            order={order}
+            onFeedbackSubmitted={(updated) => setOrder((prev) => ({ ...prev, ...updated }))}
+          />
         )}
       </div>
 

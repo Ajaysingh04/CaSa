@@ -190,8 +190,8 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
   }, [user]);
 
   // Load backend or mock data
-  const loadData = async () => {
-    setLoading(true);
+  const loadData = async (isPolling = false) => {
+    if (!isPolling) setLoading(true);
     try {
       const [statsData, myData, poolData, finData] = await Promise.all([
         deliveryService.getStats().catch(() => null),
@@ -369,6 +369,10 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
 
   useEffect(() => {
     loadData();
+    const timer = setInterval(() => {
+      loadData(true);
+    }, 5000);
+    return () => clearInterval(timer);
   }, [user]);
 
   // Duty Toggle
@@ -393,7 +397,7 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
     }
   };
 
-  // Accept available order
+  // Accept available order / booking
   const handleAcceptDelivery = async (orderId) => {
     if (!onDuty) {
       error('You are currently OFF DUTY. Please switch to ONLINE first.');
@@ -402,15 +406,13 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
     setUpdatingId(orderId);
     try {
       await deliveryService.acceptDelivery(orderId).catch(() => null);
-      success('Shipment claimed! Added to your active delivery runs.');
+      success('🎉 Booking accepted! Added to active runs. Click "Go to location" to begin.');
       // Move from pool to active in local state
       const target = availableOrders.find((o) => o._id === orderId);
       if (target) {
-        const addedOrder = { ...target, orderStatus: 'Packed', distanceKm: 3.2, etaMins: 14 };
+        const addedOrder = { ...target, orderStatus: 'Shipped', distanceKm: target.distanceKm || 2.8, etaMins: target.etaMins || 12 };
         setAvailableOrders(availableOrders.filter((o) => o._id !== orderId));
         setActiveOrders([addedOrder, ...activeOrders]);
-        // Automatically prompt live map
-        setMapModalOrder(addedOrder);
       }
       setActiveTab('active-runs');
     } catch (err) {
@@ -459,6 +461,13 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
   const handleSubmitOtp = async (e) => {
     e.preventDefault();
     if (!otpModalOrder) return;
+
+    const expectedOtp = otpModalOrder.deliveryProofOtp || otpModalOrder.deliveryOTP;
+    if (expectedOtp && enteredOtp.trim() !== expectedOtp.trim()) {
+      error(`Incorrect OTP. Please enter the valid 4-digit code (${expectedOtp})`);
+      return;
+    }
+
     setSubmittingOtp(true);
     try {
       await deliveryService.updateDeliveryStatus(
@@ -466,9 +475,9 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
         'Delivered',
         'Delivered at doorstep with OTP verification',
         enteredOtp.trim()
-      ).catch(() => null);
+      );
 
-      success(`🎉 Delivery Completed for #${otpModalOrder.orderNumber}! Payout ₹65 credited.`);
+      success(`🎉 Delivery Completed for #${otpModalOrder.orderNumber || otpModalOrder._id}! Payout ₹65 credited.`);
       setActiveOrders(activeOrders.filter((o) => o._id !== otpModalOrder._id));
       if (mapModalOrder?._id === otpModalOrder._id) {
         setMapModalOrder(null);
@@ -476,7 +485,6 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
       setOtpModalOrder(null);
       setEnteredOtp('');
 
-      // Update earnings
       if (earningsData) {
         setEarningsData({
           ...earningsData,
@@ -485,8 +493,19 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
           codInHand: otpModalOrder.paymentMethod === 'cod' ? earningsData.codInHand + (otpModalOrder.totalPrice || 0) : earningsData.codInHand
         });
       }
+      loadData(true);
     } catch (err) {
-      error('OTP verification failed. Please re-check with customer.');
+      if (!err.response) {
+        success(`🎉 Delivery Completed for #${otpModalOrder.orderNumber || otpModalOrder._id}! Payout ₹65 credited.`);
+        setActiveOrders(activeOrders.filter((o) => o._id !== otpModalOrder._id));
+        if (mapModalOrder?._id === otpModalOrder._id) {
+          setMapModalOrder(null);
+        }
+        setOtpModalOrder(null);
+        setEnteredOtp('');
+      } else {
+        error(err.response?.data?.message || 'OTP verification failed. Please re-check with customer.');
+      }
     } finally {
       setSubmittingOtp(false);
     }
@@ -1710,31 +1729,7 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
                         <MapIcon size={13} /> Live Route GPS
                       </button>
 
-                      {isPacked && (
-                        <button
-                          type="button"
-                          disabled={updatingId === order._id}
-                          onClick={() => handleConfirmPickup(order._id)}
-                          className="delivery-action-btn"
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '5px',
-                            padding: '6px 14px',
-                            borderRadius: '8px',
-                            background: '#eff6ff',
-                            border: '1.5px solid #2563eb',
-                            color: '#1d4ed8',
-                            fontSize: '0.76rem',
-                            fontWeight: 800,
-                            cursor: 'pointer'
-                          }}
-                        >
-                          <Boxes size={13} /> Confirm Hub Pickup
-                        </button>
-                      )}
-
-                      {isShipped && (
+                      {!isOutForDelivery && (
                         <button
                           type="button"
                           disabled={updatingId === order._id}
@@ -1743,19 +1738,20 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
                           style={{
                             display: 'inline-flex',
                             alignItems: 'center',
-                            gap: '5px',
-                            padding: '6px 14px',
-                            borderRadius: '8px',
-                            background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                            gap: '6px',
+                            padding: '8px 18px',
+                            borderRadius: '10px',
+                            background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
                             border: 'none',
                             color: '#ffffff',
-                            fontSize: '0.76rem',
+                            fontSize: '0.82rem',
                             fontWeight: 800,
                             cursor: 'pointer',
-                            boxShadow: '0 2px 8px rgba(5, 150, 105, 0.25)'
+                            boxShadow: '0 3px 10px rgba(37, 99, 235, 0.35)',
+                            transition: 'all 0.2s ease',
                           }}
                         >
-                          <Truck size={13} /> Start Delivery Run
+                          <Navigation size={14} /> Go to location
                         </button>
                       )}
 
@@ -1766,12 +1762,12 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
                             onClick={() => setFailedModalOrder(order)}
                             className="delivery-action-btn"
                             style={{
-                              padding: '6px 10px',
-                              borderRadius: '8px',
+                              padding: '8px 12px',
+                              borderRadius: '10px',
                               background: '#fff1f2',
                               border: '1px solid #fecdd3',
                               color: '#e11d48',
-                              fontSize: '0.74rem',
+                              fontSize: '0.76rem',
                               fontWeight: 700,
                               cursor: 'pointer'
                             }}
@@ -1781,24 +1777,27 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
 
                           <button
                             type="button"
-                            onClick={() => setOtpModalOrder(order)}
+                            onClick={() => {
+                              setMapModalOrder(null);
+                              setOtpModalOrder(order);
+                            }}
                             className="delivery-action-btn"
                             style={{
                               display: 'inline-flex',
                               alignItems: 'center',
                               gap: '6px',
-                              padding: '6px 16px',
-                              borderRadius: '8px',
-                              background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                              padding: '8px 20px',
+                              borderRadius: '10px',
+                              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                               border: 'none',
                               color: '#ffffff',
-                              fontSize: '0.78rem',
+                              fontSize: '0.82rem',
                               fontWeight: 800,
                               cursor: 'pointer',
-                              boxShadow: '0 3px 10px rgba(5, 150, 105, 0.35)'
+                              boxShadow: '0 4px 12px rgba(16, 185, 129, 0.4)',
                             }}
                           >
-                            <KeyRound size={14} /> Deliver with OTP
+                            <MapPin size={15} /> I am arrived
                           </button>
                         </>
                       )}
@@ -1998,7 +1997,7 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
                       boxShadow: onDuty ? '0 2px 8px rgba(37, 99, 235, 0.25)' : 'none'
                     }}
                   >
-                    <Check size={14} /> Accept & Start Route
+                    <Check size={14} /> Accept Booking
                   </button>
                 </div>
               </div>
@@ -2905,7 +2904,7 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
                     boxShadow: '0 4px 14px rgba(5, 150, 105, 0.3)'
                   }}
                 >
-                  <KeyRound size={16} /> Arrived at Doorstep ➔ Verify OTP
+                  <MapPin size={16} /> I am arrived ➔ Verify OTP
                 </button>
               </div>
             </div>
@@ -3287,6 +3286,47 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
                 <div style={{ fontSize: '0.72rem', color: '#9a3412', marginTop: '2px' }}>
                   Confirm cash received before entering OTP
                 </div>
+              </div>
+            )}
+
+            {(otpModalOrder.deliveryProofOtp || otpModalOrder.deliveryOTP) && (
+              <div
+                style={{
+                  background: '#f0fdf4',
+                  border: '1.5px dashed #22c55e',
+                  borderRadius: '12px',
+                  padding: '10px 14px',
+                  marginBottom: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '8px'
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#166534', textTransform: 'uppercase' }}>
+                    Demo Mode Helper
+                  </div>
+                  <div style={{ fontSize: '0.82rem', color: '#15803d', marginTop: '2px' }}>
+                    Customer OTP: <strong style={{ fontSize: '0.95rem', letterSpacing: '1px' }}>{otpModalOrder.deliveryProofOtp || otpModalOrder.deliveryOTP}</strong>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEnteredOtp(otpModalOrder.deliveryProofOtp || otpModalOrder.deliveryOTP)}
+                  style={{
+                    background: '#15803d',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '6px 12px',
+                    fontSize: '0.74rem',
+                    fontWeight: 800,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Auto Fill
+                </button>
               </div>
             )}
 

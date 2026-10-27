@@ -288,11 +288,17 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
 
   const handleUpdateOrderStatus = async (orderId, newStatus) => {
     try {
+      setOrders((prev) => prev.map((o) => (o._id === orderId ? { ...o, orderStatus: newStatus } : o)));
       await vendorService.updateOrderStatus(orderId, newStatus, `Vendor handled milestone: ${newStatus}`);
-      success(`Order updated to ${newStatus}! Dispatch SLA confirmed.`);
-      loadData();
+      if (newStatus === 'Packed') {
+        success('🎉 Booking Accepted! Dispatched directly to CaSa Delivery Partner.');
+      } else {
+        success(`Order updated to ${newStatus}! Dispatch SLA confirmed.`);
+      }
+      loadData(true);
     } catch (err) {
       error('Could not update order status.');
+      loadData(true);
     }
   };
 
@@ -3518,56 +3524,80 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                               type="button"
                               onClick={() => handleUpdateOrderStatus(ord._id, 'Packed')}
                               style={{
-                                background: '#1e1e24',
+                                background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
                                 color: '#ffffff',
                                 border: 'none',
-                                padding: '8px 14px',
+                                padding: '8px 16px',
                                 borderRadius: '8px',
-                                fontSize: '0.76rem',
+                                fontSize: '0.78rem',
                                 fontWeight: 800,
                                 cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                boxShadow: '0 2px 8px rgba(22, 163, 74, 0.3)',
+                                transition: 'all 0.2s ease',
                               }}
                             >
-                              Pack Order
+                              <CheckCircle2 size={14} /> Accept Booking (No OTP)
                             </button>
                           )}
 
                           {ord.orderStatus === 'Packed' && (
-                            <button
-                              type="button"
-                              onClick={() => handleUpdateOrderStatus(ord._id, 'Shipped')}
+                            <span
                               style={{
-                                background: '#2563eb',
-                                color: '#ffffff',
-                                border: 'none',
-                                padding: '8px 14px',
+                                background: '#eff6ff',
+                                color: '#1d4ed8',
+                                border: '1px solid #bfdbfe',
+                                padding: '6px 12px',
                                 borderRadius: '8px',
-                                fontSize: '0.76rem',
+                                fontSize: '0.74rem',
                                 fontWeight: 800,
-                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '5px'
                               }}
                             >
-                              Dispatch / Ship
-                            </button>
+                              <Truck size={13} /> Dispatched to Delivery Fleet
+                            </span>
                           )}
 
-                          {ord.orderStatus === 'Shipped' && (
-                            <button
-                              type="button"
-                              onClick={() => handleUpdateOrderStatus(ord._id, 'Delivered')}
+                          {['Shipped', 'Out for delivery'].includes(ord.orderStatus) && (
+                            <span
                               style={{
-                                background: '#10b981',
-                                color: '#ffffff',
-                                border: 'none',
-                                padding: '8px 14px',
+                                background: '#f0fdf4',
+                                color: '#15803d',
+                                border: '1px solid #bbf7d0',
+                                padding: '6px 12px',
                                 borderRadius: '8px',
-                                fontSize: '0.76rem',
+                                fontSize: '0.74rem',
                                 fontWeight: 800,
-                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '5px'
                               }}
                             >
-                              Mark Delivered
-                            </button>
+                              <Truck size={13} /> With Delivery Rider ({ord.orderStatus})
+                            </span>
+                          )}
+
+                          {ord.orderStatus === 'Delivered' && (
+                            <span
+                              style={{
+                                background: '#ecfdf5',
+                                color: '#059669',
+                                border: '1px solid #a7f3d0',
+                                padding: '6px 12px',
+                                borderRadius: '8px',
+                                fontSize: '0.74rem',
+                                fontWeight: 800,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '5px'
+                              }}
+                            >
+                              <CheckCircle2 size={13} /> Completed (OTP Verified)
+                            </span>
                           )}
                         </div>
                       </div>

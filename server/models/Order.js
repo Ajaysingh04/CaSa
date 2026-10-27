@@ -209,7 +209,14 @@ const orderSchema = new mongoose.Schema(
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Shipment'
       }
-    ]
+    ],
+    deliveryFeedback: {
+      rating: { type: Number, min: 1, max: 5 },
+      tags: [{ type: String }],
+      comment: { type: String, default: '' },
+      createdAt: { type: Date, default: Date.now },
+      userName: { type: String, default: '' }
+    }
   },
   {
     timestamps: true
