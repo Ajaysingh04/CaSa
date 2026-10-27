@@ -342,27 +342,66 @@ const AdminProductsPage = () => {
     setShowAddModal(true);
   };
 
-  const handleFileSelect = (file) => {
+  const compressImage = (file) => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const rawData = event.target.result;
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+            const maxDim = 800;
+            if (width > maxDim || height > maxDim) {
+              if (width > height) {
+                height = Math.round((height * maxDim) / width);
+                width = maxDim;
+              } else {
+                width = Math.round((width * maxDim) / height);
+                height = maxDim;
+              }
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            const compressed = canvas.toDataURL('image/jpeg', 0.82);
+            resolve(compressed);
+          } catch (e) {
+            resolve(rawData);
+          }
+        };
+        img.onerror = () => resolve(rawData);
+        img.src = rawData;
+      };
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleFileSelect = async (file) => {
     if (!file) return;
     if (!file.type.startsWith('image/')) {
       error('Please select an image file (PNG, JPG, WEBP, etc.)');
       return;
     }
-    if (file.size > 8 * 1024 * 1024) {
-      error('Image size exceeds 8MB limit. Please upload a smaller image.');
+    if (file.size > 15 * 1024 * 1024) {
+      error('Image size exceeds 15MB limit. Please upload a smaller image.');
       return;
     }
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const dataUrl = event.target.result;
-      setImagePreview(dataUrl);
-      setFormData((prev) => ({ ...prev, imageUrl: dataUrl }));
-      setImageFileInfo({
-        name: file.name,
-        size: (file.size / 1024).toFixed(1) + ' KB',
-      });
-    };
-    reader.readAsDataURL(file);
+    const optimizedDataUrl = await compressImage(file);
+    if (!optimizedDataUrl) {
+      error('Failed to read image file');
+      return;
+    }
+    setImagePreview(optimizedDataUrl);
+    setFormData((prev) => ({ ...prev, imageUrl: optimizedDataUrl }));
+    setImageFileInfo({
+      name: file.name,
+      size: (file.size / 1024).toFixed(1) + ' KB (Optimized)',
+    });
   };
 
   const handleDragOver = (e) => {
@@ -455,8 +494,9 @@ const AdminProductsPage = () => {
       categories.find((c) => c.slug === formData.categorySlug)?.name ||
       'General';
 
+    const { imageUrl: _unusedImg, ...cleanFormData } = formData;
     const payload = {
-      ...formData,
+      ...cleanFormData,
       subcategory: finalSub,
       price: mrp,
       discountPrice: disc,
@@ -475,7 +515,14 @@ const AdminProductsPage = () => {
       setShowAddModal(false);
       fetchProducts();
     } catch (err) {
-      error(err.response?.data?.message || 'Failed to save product');
+      console.error('Save product error:', err);
+      const msg =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        (typeof err.response?.data === 'string' && err.response.data) ||
+        err.message ||
+        'Failed to save product';
+      error(msg);
     } finally {
       setIsSubmitting(false);
     }

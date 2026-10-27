@@ -115,7 +115,13 @@ const SuperAdminEditModal = ({ isOpen, onClose, product, onProductSaved }) => {
       }
       onClose();
     } catch (err) {
-      error(err.response?.data?.message || 'Failed to save product changes.');
+      const msg =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        (typeof err.response?.data === 'string' && err.response.data) ||
+        err.message ||
+        'Failed to save product changes.';
+      error(msg);
     } finally {
       setSaving(false);
     }

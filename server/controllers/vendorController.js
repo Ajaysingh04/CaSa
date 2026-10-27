@@ -310,12 +310,30 @@ exports.createVendorProduct = async (req, res, next) => {
     ];
 
     if (getDBStatus()) {
+      let categoryDoc = null;
+      if (category && mongoose.Types.ObjectId.isValid(category)) {
+        categoryDoc = await Category.findById(category);
+      }
+      if (!categoryDoc) {
+        categoryDoc = (await Category.findOne({ slug: finalCategorySlug })) || (await Category.findOne());
+      }
+      if (!categoryDoc) {
+        categoryDoc = await Category.create({
+          name: 'General',
+          slug: 'general',
+          description: 'General category',
+          image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30'
+        });
+      }
+
+      const validVendorId = req.user._id && mongoose.Types.ObjectId.isValid(req.user._id) ? req.user._id : undefined;
+
       const product = await Product.create({
         name,
         slug,
         brand: brand || req.user.vendorStoreName || 'CASA Merchant',
-        category: category || undefined,
-        categorySlug: finalCategorySlug,
+        category: categoryDoc._id,
+        categorySlug: categoryDoc.slug || finalCategorySlug,
         subcategory: finalSubcategory,
         description: description || `${name} offered by verified CASA marketplace partner.`,
         price: Number(price),
@@ -324,7 +342,7 @@ exports.createVendorProduct = async (req, res, next) => {
         sku: sku || `SKU-${Date.now().toString().slice(-6)}`,
         images: productImages,
         tags: tags || [],
-        vendor: req.user._id,
+        vendor: validVendorId,
         vendorName: req.user.vendorStoreName || req.user.name,
         approvalStatus: 'approved'
       });
