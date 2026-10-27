@@ -54,6 +54,8 @@ import {
   Trash2,
   AlertTriangle,
   Layers,
+  UploadCloud,
+  ImageIcon,
 } from 'lucide-react';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
@@ -176,6 +178,11 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
   // Add Product Modal & Form State
   const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
   const [isCreatingProduct, setIsCreatingProduct] = useState(false);
+  const [vendorImageMode, setVendorImageMode] = useState('upload'); // 'upload' | 'url'
+  const [vendorImageFileInfo, setVendorImageFileInfo] = useState(null);
+  const [isVendorDragging, setIsVendorDragging] = useState(false);
+  const vendorFileInputRef = useRef(null);
+
   const [newProductData, setNewProductData] = useState({
     name: '',
     price: '',
@@ -185,6 +192,83 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
     description: '',
     image: '',
   });
+
+  const compressVendorImage = (file) => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const rawData = event.target.result;
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+            const maxDim = 800;
+            if (width > maxDim || height > maxDim) {
+              if (width > height) {
+                height = Math.round((height * maxDim) / width);
+                width = maxDim;
+              } else {
+                width = Math.round((width * maxDim) / height);
+                height = maxDim;
+              }
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            const compressed = canvas.toDataURL('image/jpeg', 0.82);
+            resolve(compressed);
+          } catch {
+            resolve(rawData);
+          }
+        };
+        img.onerror = () => resolve(rawData);
+        img.src = rawData;
+      };
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleVendorFileSelect = async (file) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      error('Please select an image file (PNG, JPG, WEBP, etc.)');
+      return;
+    }
+    if (file.size > 15 * 1024 * 1024) {
+      error('Image size exceeds 15MB limit. Please upload a smaller image.');
+      return;
+    }
+    const optimizedDataUrl = await compressVendorImage(file);
+    if (!optimizedDataUrl) {
+      error('Failed to read image file');
+      return;
+    }
+    setNewProductData((prev) => ({ ...prev, image: optimizedDataUrl }));
+    setVendorImageFileInfo({
+      name: file.name,
+      size: (file.size / 1024).toFixed(1) + ' KB (Optimized)',
+    });
+  };
+
+  const handleVendorRemoveImage = () => {
+    setNewProductData((prev) => ({ ...prev, image: '' }));
+    setVendorImageFileInfo(null);
+    if (vendorFileInputRef.current) {
+      vendorFileInputRef.current.value = '';
+    }
+  };
+
+  const closeAddProductModal = () => {
+    setIsAddProductModalOpen(false);
+    setVendorImageFileInfo(null);
+    if (vendorFileInputRef.current) {
+      vendorFileInputRef.current.value = '';
+    }
+  };
 
   // Merchant Store Details
   const initialDetails = {
@@ -315,6 +399,9 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
     }
     try {
       setIsCreatingProduct(true);
+      const chosenImage =
+        newProductData.image ||
+        'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80';
       const payload = {
         name: newProductData.name,
         price: Number(newProductData.price),
@@ -322,13 +409,14 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
         category: newProductData.category,
         stock: Number(newProductData.stock) || 1,
         description: newProductData.description || `${newProductData.name} - Official listing by ${savedData.storeName}`,
-        image: newProductData.image || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&auto=format&fit=crop&q=80',
+        image: chosenImage,
+        images: [chosenImage],
       };
       const created = await vendorService.createProduct(payload);
       if (created) {
         setProducts((prev) => [created, ...prev]);
         success(`"${payload.name}" published to CaSa Marketplace!`);
-        setIsAddProductModalOpen(false);
+        closeAddProductModal();
         setNewProductData({
           name: '',
           price: '',
@@ -341,7 +429,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
         loadData();
       }
     } catch (err) {
-      error(err.response?.data?.message || 'Failed to publish new product.');
+      error(err.response?.data?.message || err.message || 'Failed to publish new product.');
     } finally {
       setIsCreatingProduct(false);
     }
@@ -4862,7 +4950,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
               </div>
               <button
                 type="button"
-                onClick={() => setIsAddProductModalOpen(false)}
+                onClick={closeAddProductModal}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}
               >
                 <X size={20} />
@@ -4944,17 +5032,199 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                 </div>
               </div>
 
+              {/* Product Imagery & Photo with File Upload Option */}
               <div>
-                <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748b', display: 'block', marginBottom: '4px' }}>
-                  Image URL
-                </label>
-                <input
-                  type="url"
-                  placeholder="https://images.unsplash.com/..."
-                  value={newProductData.image}
-                  onChange={(e) => setNewProductData({ ...newProductData, image: e.target.value })}
-                  style={{ width: '100%', padding: '9px 12px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '0.86rem', boxSizing: 'border-box' }}
-                />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748b', margin: 0 }}>
+                    Product Imagery & Photo
+                  </label>
+                  <div style={{ display: 'flex', gap: '4px', background: '#f1f5f9', padding: '3px', borderRadius: '8px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setVendorImageMode('upload')}
+                      style={{
+                        padding: '4px 10px',
+                        fontSize: '0.74rem',
+                        fontWeight: 700,
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        background: vendorImageMode === 'upload' ? '#ffffff' : 'transparent',
+                        color: vendorImageMode === 'upload' ? '#2563eb' : '#64748b',
+                        boxShadow: vendorImageMode === 'upload' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <UploadCloud size={13} /> Upload File
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setVendorImageMode('url')}
+                      style={{
+                        padding: '4px 10px',
+                        fontSize: '0.74rem',
+                        fontWeight: 700,
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        background: vendorImageMode === 'url' ? '#ffffff' : 'transparent',
+                        color: vendorImageMode === 'url' ? '#2563eb' : '#64748b',
+                        boxShadow: vendorImageMode === 'url' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <ImageIcon size={13} /> Image URL
+                    </button>
+                  </div>
+                </div>
+
+                {vendorImageMode === 'upload' ? (
+                  <div>
+                    {newProductData.image ? (
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '10px 14px',
+                          border: '1.5px solid #e2e8f0',
+                          borderRadius: '12px',
+                          background: '#f8fafc',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+                          <img
+                            src={newProductData.image}
+                            alt="Preview"
+                            style={{
+                              width: '52px',
+                              height: '52px',
+                              borderRadius: '8px',
+                              objectFit: 'cover',
+                              border: '1px solid #cbd5e1',
+                              flexShrink: 0,
+                            }}
+                          />
+                          <div style={{ minWidth: 0 }}>
+                            <p style={{ margin: 0, fontSize: '0.82rem', fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {vendorImageFileInfo?.name || 'Uploaded Photo'}
+                            </p>
+                            <span style={{ fontSize: '0.72rem', color: '#16a34a', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <CheckCircle2 size={12} /> {vendorImageFileInfo?.size || 'Ready to publish'}
+                            </span>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                          <button
+                            type="button"
+                            onClick={() => vendorFileInputRef.current?.click()}
+                            style={{
+                              padding: '5px 10px',
+                              fontSize: '0.74rem',
+                              fontWeight: 700,
+                              borderRadius: '7px',
+                              border: '1px solid #cbd5e1',
+                              background: '#ffffff',
+                              color: '#2563eb',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            Change Photo
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleVendorRemoveImage}
+                            style={{
+                              padding: '5px 10px',
+                              fontSize: '0.74rem',
+                              fontWeight: 700,
+                              borderRadius: '7px',
+                              border: '1px solid #fee2e2',
+                              background: '#fff1f2',
+                              color: '#ef4444',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        onDragOver={(e) => { e.preventDefault(); setIsVendorDragging(true); }}
+                        onDragLeave={(e) => { e.preventDefault(); setIsVendorDragging(false); }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          setIsVendorDragging(false);
+                          if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                            handleVendorFileSelect(e.dataTransfer.files[0]);
+                          }
+                        }}
+                        onClick={() => vendorFileInputRef.current?.click()}
+                        style={{
+                          border: `2px dashed ${isVendorDragging ? '#2563eb' : '#cbd5e1'}`,
+                          borderRadius: '14px',
+                          padding: '20px 16px',
+                          textAlign: 'center',
+                          background: isVendorDragging ? '#eff6ff' : '#f8fafc',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                        }}
+                      >
+                        <UploadCloud size={28} style={{ color: isVendorDragging ? '#2563eb' : '#94a3b8', margin: '0 auto 6px' }} />
+                        <p style={{ margin: '0 0 2px', fontSize: '0.84rem', fontWeight: 800, color: '#1e293b' }}>
+                          Click to upload or drag & drop photo
+                        </p>
+                        <p style={{ margin: 0, fontSize: '0.72rem', color: '#64748b' }}>
+                          SVG, PNG, JPG, WEBP (Auto-optimized for ultra-fast loading)
+                        </p>
+                      </div>
+                    )}
+                    <input
+                      ref={vendorFileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleVendorFileSelect(e.target.files?.[0])}
+                      style={{ display: 'none' }}
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <input
+                      type="url"
+                      placeholder="https://images.unsplash.com/photo-..."
+                      value={newProductData.image}
+                      onChange={(e) => setNewProductData({ ...newProductData, image: e.target.value })}
+                      style={{
+                        width: '100%',
+                        padding: '9px 12px',
+                        borderRadius: '10px',
+                        border: '1px solid #e2e8f0',
+                        fontSize: '0.86rem',
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                    {newProductData.image && (
+                      <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <img
+                          src={newProductData.image}
+                          alt="Preview"
+                          onError={(e) => { e.target.style.display = 'none'; }}
+                          style={{ width: '40px', height: '40px', borderRadius: '6px', objectFit: 'cover', border: '1px solid #e2e8f0' }}
+                        />
+                        <span style={{ fontSize: '0.74rem', color: '#10b981', fontWeight: 700 }}>
+                          ✓ Image URL preview loaded
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div>
@@ -4973,7 +5243,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
                 <button
                   type="button"
-                  onClick={() => setIsAddProductModalOpen(false)}
+                  onClick={closeAddProductModal}
                   style={{ padding: '8px 16px', borderRadius: '10px', background: '#f4f6fa', border: 'none', cursor: 'pointer', fontWeight: 700, color: '#64748b' }}
                 >
                   Cancel
