@@ -223,7 +223,6 @@ const orderSchema = new mongoose.Schema(
   }
 );
 
-orderSchema.index({ orderNumber: 1 });
 orderSchema.index({ user: 1, createdAt: -1 });
 orderSchema.index({ orderStatus: 1 });
 orderSchema.index({ 'items.vendor': 1 });

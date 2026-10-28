@@ -1544,24 +1544,26 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
         }
         .pro-fin-kpi-grid {
           display: grid;
-          grid-template-columns: repeat(4, 1fr);
+          grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
           gap: 16px;
         }
         .pro-bank-card-grid {
           display: grid;
-          grid-template-columns: 1fr 1fr;
+          grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
           gap: 18px;
         }
 
         /* Responsive Table Container with sleek custom scrollbar */
         .pro-table-wrapper {
           width: 100%;
+          max-width: 100%;
           overflow-x: auto;
           -webkit-overflow-scrolling: touch;
           border-radius: 12px;
           border: 1px solid #e2e8f0;
           scrollbar-width: thin;
           scrollbar-color: #cbd5e1 #f8fafc;
+          display: block;
         }
         .pro-table-wrapper::-webkit-scrollbar {
           height: 6px;
@@ -1721,12 +1723,19 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
             grid-template-columns: 1fr !important;
             gap: 10px !important;
           }
+          .pro-bank-card-grid {
+            grid-template-columns: 1fr !important;
+            gap: 12px !important;
+          }
           .pro-form-row-2 {
             grid-template-columns: 1fr !important;
           }
           .pro-card {
             padding: 16px 14px !important;
             border-radius: 14px !important;
+            min-width: 0 !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
           }
           .pro-modal-box {
             padding: 18px 14px !important;
@@ -4185,6 +4194,8 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                     style={{
                       display: 'flex',
                       alignItems: 'center',
+                      justifyContent: 'center',
+                      flex: '1 1 auto',
                       gap: '6px',
                       background: '#ffffff',
                       color: '#0f172a',
@@ -4195,6 +4206,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                       fontWeight: 700,
                       cursor: 'pointer',
                       transition: 'all 0.15s ease',
+                      whiteSpace: 'nowrap',
                     }}
                   >
                     <Download size={14} />
@@ -4207,6 +4219,8 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                     style={{
                       display: 'flex',
                       alignItems: 'center',
+                      justifyContent: 'center',
+                      flex: '1 1 auto',
                       gap: '6px',
                       background: 'linear-gradient(135deg, #0f172a 0%, #2563eb 100%)',
                       color: '#ffffff',
@@ -4218,6 +4232,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                       cursor: 'pointer',
                       boxShadow: '0 4px 12px rgba(37,99,235,0.25)',
                       transition: 'all 0.15s ease',
+                      whiteSpace: 'nowrap',
                     }}
                   >
                     <Zap size={14} />
@@ -4261,7 +4276,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                     <div style={{ fontSize: '1.65rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
                       {formatINR(financials?.settledAmount || Math.round((stats?.totalRevenue || 65575) * 0.91))}
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', fontSize: '0.72rem', color: '#64748b' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '4px', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', fontSize: '0.72rem', color: '#64748b' }}>
                       <span>Destination Bank:</span>
                       <strong style={{ color: '#0f172a' }}>HDFC Bank (•••• 4921)</strong>
                     </div>
@@ -4301,7 +4316,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                     <div style={{ fontSize: '1.65rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
                       {formatINR(financials?.pendingSettlement || Math.round((stats?.totalRevenue || 65575) * 0.22))}
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', fontSize: '0.72rem', color: '#64748b' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '4px', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', fontSize: '0.72rem', color: '#64748b' }}>
                       <span>Transfer Date:</span>
                       <strong style={{ color: '#2563eb' }}>{financials?.summary?.nextSettlementDate || 'Friday, 24 Oct 2026'}</strong>
                     </div>
@@ -4341,7 +4356,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                     <div style={{ fontSize: '1.65rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
                       {formatINR(financials?.grossSales || stats?.totalRevenue || 65575)}
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', fontSize: '0.72rem', color: '#64748b' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '4px', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', fontSize: '0.72rem', color: '#64748b' }}>
                       <span>Avg Fulfillment Basket:</span>
                       <strong style={{ color: '#0f172a' }}>{formatINR(Math.round((stats?.totalRevenue || 65575) / (orders.length || 48)))}</strong>
                     </div>
@@ -4381,7 +4396,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                     <div style={{ fontSize: '1.65rem', fontWeight: 900, color: '#e11d48', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
                       - {formatINR(financials?.platformCommission || Math.round((stats?.totalRevenue || 65575) * 0.09))}
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', fontSize: '0.72rem', color: '#64748b' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '4px', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', fontSize: '0.72rem', color: '#64748b' }}>
                       <span>TDS u/s 194-O (1%):</span>
                       <strong style={{ color: '#059669' }}>Auto-Remitted to PAN</strong>
                     </div>
@@ -4425,10 +4440,10 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                     </div>
 
                     <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '14px', border: '1px solid #e2e8f0' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
                         <span style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 700 }}>Account Number:</span>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#0f172a', fontSize: '0.88rem' }}>
+                          <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#0f172a', fontSize: '0.88rem', wordBreak: 'break-all' }}>
                             {savedData.accountNumber || '50200084920194'}
                           </span>
                           <button
@@ -4442,23 +4457,23 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                         </div>
                       </div>
 
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
                         <span style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 700 }}>IFSC Code:</span>
                         <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#0f172a', fontSize: '0.84rem' }}>
                           {savedData.ifscCode || 'HDFC0000412'}
                         </span>
                       </div>
 
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
                         <span style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 700 }}>Beneficiary Name:</span>
-                        <span style={{ fontWeight: 800, color: '#0f172a', fontSize: '0.82rem' }}>
+                        <span style={{ fontWeight: 800, color: '#0f172a', fontSize: '0.82rem', textAlign: 'right', wordBreak: 'break-word', maxWidth: '100%' }}>
                           {savedData.legalEntityName || 'Aarav Handlooms Pvt Ltd'}
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.72rem', color: '#64748b' }}>
+                  <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', fontSize: '0.72rem', color: '#64748b' }}>
                     <span>IMPS Transfer Speed: <strong style={{ color: '#059669' }}>Instant (Real-Time)</strong></span>
                     <button
                       type="button"
@@ -4473,7 +4488,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                 {/* Right Card: Automated Settlement Rules & Schedule */}
                 <div className="pro-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                   <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px', marginBottom: '14px' }}>
                       <div>
                         <div style={{ fontSize: '0.96rem', fontWeight: 800, color: '#0f172a' }}>
                           Automated Payout Rules & SLA
@@ -4488,35 +4503,35 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      <div style={{ padding: '10px 12px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
+                      <div style={{ padding: '10px 12px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                        <div style={{ flex: '1 1 180px' }}>
                           <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#0f172a' }}>Daily Settlement Cutoff</div>
                           <div style={{ fontSize: '0.68rem', color: '#64748b' }}>Orders completed before 11:00 AM settled same-day</div>
                         </div>
-                        <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#2563eb' }}>11:00 AM IST</span>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#2563eb', whiteSpace: 'nowrap' }}>11:00 AM IST</span>
                       </div>
 
-                      <div style={{ padding: '10px 12px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
+                      <div style={{ padding: '10px 12px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                        <div style={{ flex: '1 1 180px' }}>
                           <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#0f172a' }}>Merchant Rolling Reserve</div>
                           <div style={{ fontSize: '0.68rem', color: '#64748b' }}>Zero security deposit withheld from sales</div>
                         </div>
-                        <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#059669' }}>₹0.00 (0% Hold)</span>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#059669', whiteSpace: 'nowrap' }}>₹0.00 (0% Hold)</span>
                       </div>
 
-                      <div style={{ padding: '10px 12px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
+                      <div style={{ padding: '10px 12px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                        <div style={{ flex: '1 1 180px' }}>
                           <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#0f172a' }}>Minimum Transfer Threshold</div>
                           <div style={{ fontSize: '0.68rem', color: '#64748b' }}>Threshold for automated bank trigger</div>
                         </div>
-                        <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#0f172a' }}>₹500.00</span>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap' }}>₹500.00</span>
                       </div>
                     </div>
                   </div>
 
-                  <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.72rem', color: '#64748b' }}>
+                  <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', fontSize: '0.72rem', color: '#64748b' }}>
                     <span>Disbursement Protocol: <strong style={{ color: '#0f172a' }}>RBI Regulated IMPS / NEFT</strong></span>
-                    <span style={{ color: '#059669', fontWeight: 700 }}>99.9% Success SLA</span>
+                    <span style={{ color: '#059669', fontWeight: 700, whiteSpace: 'nowrap' }}>99.9% Success SLA</span>
                   </div>
                 </div>
               </div>
@@ -4575,7 +4590,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                   </div>
 
                   {/* Search Input with Clear Button */}
-                  <div style={{ position: 'relative', minWidth: '220px', flex: '1', maxWidth: '320px' }}>
+                  <div style={{ position: 'relative', minWidth: 'min(100%, 200px)', flex: '1 1 200px', maxWidth: '360px' }}>
                     <Search size={14} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
                     <input
                       type="text"
@@ -4612,28 +4627,28 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
 
                 {/* Settlements Table Container */}
                 <div className="pro-table-wrapper">
-                  <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '750px', textAlign: 'left', fontSize: '0.8rem' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '780px', textAlign: 'left', fontSize: '0.8rem' }}>
                     <thead>
-                      <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                        <th style={{ padding: '12px 14px', fontSize: '0.72rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                      <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>
+                        <th style={{ padding: '12px 14px', fontSize: '0.72rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.03em', whiteSpace: 'nowrap' }}>
                           Settlement ID & UTR
                         </th>
-                        <th style={{ padding: '12px 14px', fontSize: '0.72rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                        <th style={{ padding: '12px 14px', fontSize: '0.72rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.03em', whiteSpace: 'nowrap' }}>
                           Fulfillment Period
                         </th>
-                        <th style={{ padding: '12px 14px', fontSize: '0.72rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                        <th style={{ padding: '12px 14px', fontSize: '0.72rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.03em', whiteSpace: 'nowrap' }}>
                           Gross GMV
                         </th>
-                        <th style={{ padding: '12px 14px', fontSize: '0.72rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                        <th style={{ padding: '12px 14px', fontSize: '0.72rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.03em', whiteSpace: 'nowrap' }}>
                           Commission & TDS
                         </th>
-                        <th style={{ padding: '12px 14px', fontSize: '0.72rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                        <th style={{ padding: '12px 14px', fontSize: '0.72rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.03em', whiteSpace: 'nowrap' }}>
                           Net Disbursed
                         </th>
-                        <th style={{ padding: '12px 14px', fontSize: '0.72rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                        <th style={{ padding: '12px 14px', fontSize: '0.72rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.03em', whiteSpace: 'nowrap' }}>
                           Status
                         </th>
-                        <th style={{ padding: '12px 14px', fontSize: '0.72rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.03em', textAlign: 'right' }}>
+                        <th style={{ padding: '12px 14px', fontSize: '0.72rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.03em', textAlign: 'right', whiteSpace: 'nowrap' }}>
                           Statement Slip
                         </th>
                       </tr>
@@ -4649,7 +4664,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                       ) : (
                         paginatedSettlements.map((item, idx) => (
                           <tr key={item.id || idx} style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 0.15s ease' }}>
-                            <td style={{ padding: '12px 14px' }}>
+                            <td style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>
                               <div style={{ fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 <CreditCard size={14} color="#2563eb" />
                                 <span>{item.id}</span>
@@ -4666,26 +4681,26 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                                 </button>
                               </div>
                             </td>
-                            <td style={{ padding: '12px 14px' }}>
-                              <div style={{ fontWeight: 700, color: '#0f172a' }}>{item.period}</div>
-                              <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '2px' }}>
+                            <td style={{ padding: '12px 14px', minWidth: '150px' }}>
+                              <div style={{ fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap' }}>{item.period}</div>
+                              <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '2px', whiteSpace: 'nowrap' }}>
                                 <span>{item.ordersCount} Customer Orders Fulfilled</span>
                               </div>
                             </td>
-                            <td style={{ padding: '12px 14px', fontWeight: 800, color: '#0f172a' }}>
+                            <td style={{ padding: '12px 14px', fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap' }}>
                               {formatINR(item.gross)}
                             </td>
-                            <td style={{ padding: '12px 14px' }}>
+                            <td style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>
                               <div style={{ color: '#e11d48', fontWeight: 800 }}>- {formatINR(item.commission)}</div>
                               <div style={{ fontSize: '0.68rem', color: '#64748b', marginTop: '1px' }}>TDS: - {formatINR(item.tds)}</div>
                             </td>
-                            <td style={{ padding: '12px 14px' }}>
+                            <td style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>
                               <div style={{ fontSize: '0.96rem', fontWeight: 900, color: '#059669', letterSpacing: '-0.01em' }}>
                                 {formatINR(item.net)}
                               </div>
                               <div style={{ fontSize: '0.68rem', color: '#64748b', marginTop: '1px' }}>{item.bank}</div>
                             </td>
-                            <td style={{ padding: '12px 14px' }}>
+                            <td style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>
                               <span
                                 style={{
                                   display: 'inline-flex',
@@ -4706,7 +4721,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                               </span>
                               <div style={{ fontSize: '0.68rem', color: '#94a3b8', marginTop: '3px' }}>{item.date}</div>
                             </td>
-                            <td style={{ padding: '12px 14px', textAlign: 'right' }}>
+                            <td style={{ padding: '12px 14px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                               <button
                                 type="button"
                                 onClick={() => setSelectedSettlementAdvice(item)}
@@ -4714,9 +4729,9 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                                   background: '#ffffff',
                                   border: '1px solid #cbd5e1',
                                   color: '#0f172a',
-                                  padding: '5px 10px',
+                                  padding: '6px 10px',
                                   borderRadius: '6px',
-                                  fontSize: '0.74rem',
+                                  fontSize: '0.72rem',
                                   fontWeight: 700,
                                   cursor: 'pointer',
                                   display: 'inline-flex',
@@ -4812,7 +4827,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
               </div>
 
               {/* SECTION 4: TAX COMPLIANCE & GST STATEMENTS DOWNLOAD STRIP */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))', gap: '16px' }}>
                 <div
                   className="pro-card"
                   style={{ cursor: 'pointer', transition: 'all 0.15s ease' }}
