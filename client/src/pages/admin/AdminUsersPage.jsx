@@ -42,6 +42,8 @@ import {
   ThumbsUp,
   MessageSquare,
   Package,
+  LayoutGrid,
+  List,
 } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
@@ -62,6 +64,7 @@ const AdminUsersPage = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [copiedKey, setCopiedKey] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [mobileViewMode, setMobileViewMode] = useState('cards'); // 'cards' | 'table'
   const itemsPerPage = 8;
 
   // Sync roleFilter with URL query param if URL changes
@@ -432,14 +435,30 @@ const AdminUsersPage = () => {
   const HeaderIcon = headerMeta.icon;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', paddingBottom: '40px' }}>
+    <div className="admin-users-page-container anim-fade-up">
       <style>{`
         @keyframes fadeInUp {
           from { opacity: 0; transform: translateY(12px); }
           to { opacity: 1; transform: translateY(0); }
         }
+        @keyframes pulseLive {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.3); opacity: 0.6; }
+        }
+        @keyframes adminPulseGlow {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.25); }
+          50% { box-shadow: 0 0 0 8px rgba(37, 99, 235, 0); }
+        }
         .anim-fade-up {
           animation: fadeInUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+        .live-pulse-dot {
+          display: inline-block;
+          width: 7px;
+          height: 7px;
+          border-radius: 50%;
+          background: #16a34a;
+          animation: pulseLive 2s infinite ease-in-out;
         }
         .user-row-hover {
           transition: all 0.18s ease;
@@ -460,6 +479,191 @@ const AdminUsersPage = () => {
         }
         @keyframes spin {
           100% { transform: rotate(360deg); }
+        }
+
+        /* Container & Layout */
+        .admin-users-page-container {
+          display: flex;
+          flex-direction: column;
+          gap: 22px;
+          padding-bottom: 40px;
+        }
+        .admin-users-kpi-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 16px;
+        }
+        .admin-kpi-card {
+          background: #ffffff;
+          border-radius: 16px;
+          border: 1.5px solid #e2e8f0;
+          padding: 16px 18px;
+          box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03);
+          display: flex;
+          flex-direction: column;
+          justifyContent: space-between;
+          gap: 12px;
+          transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+          cursor: pointer;
+          position: relative;
+          overflow: hidden;
+        }
+        .admin-kpi-card:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 12px 28px -6px rgba(15, 23, 42, 0.08) !important;
+        }
+        .admin-kpi-card:active {
+          transform: scale(0.98);
+        }
+
+        .admin-role-tabs-scroll {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+          scrollbar-width: none;
+        }
+        .admin-role-tabs-scroll::-webkit-scrollbar {
+          display: none;
+        }
+        .admin-role-tabs-scroll button {
+          flex-shrink: 0;
+          white-space: nowrap;
+        }
+
+        /* Table & Mobile Cards */
+        .table-responsive {
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+          width: 100%;
+          scrollbar-width: thin;
+          scrollbar-color: #cbd5e1 transparent;
+        }
+        .table-responsive::-webkit-scrollbar {
+          height: 6px;
+        }
+        .table-responsive::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 999px;
+        }
+        .table-responsive th,
+        .table-responsive td {
+          white-space: nowrap;
+        }
+
+        .admin-mobile-cards-list {
+          display: none;
+          padding: 14px;
+          flex-direction: column;
+          gap: 12px;
+        }
+        .admin-mobile-card {
+          background: #ffffff;
+          border: 1.5px solid #e2e8f0;
+          border-radius: 16px;
+          padding: 16px;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03);
+          transition: all 0.2s ease;
+          animation: fadeInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+        .admin-mobile-card:active {
+          transform: scale(0.99);
+        }
+        .admin-desktop-table-container {
+          display: block;
+        }
+
+        @media (max-width: 1024px) {
+          .admin-users-kpi-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 12px !important;
+          }
+        }
+        @media (max-width: 768px) {
+          .admin-users-page-container {
+            gap: 16px !important;
+            padding-bottom: 95px !important;
+          }
+          .admin-desktop-table-container {
+            display: none;
+          }
+          .admin-mobile-cards-list {
+            display: flex;
+          }
+          .admin-desktop-table-container.force-show {
+            display: block !important;
+          }
+          .admin-mobile-cards-list.force-hide {
+            display: none !important;
+          }
+          .admin-users-header-actions {
+            width: 100% !important;
+            display: flex !important;
+            gap: 8px !important;
+          }
+          .admin-users-header-actions button {
+            flex: 1 1 50% !important;
+            justify-content: center !important;
+          }
+          .admin-search-sort-row {
+            width: 100% !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+          }
+          .admin-search-box {
+            max-width: 100% !important;
+            width: 100% !important;
+          }
+          .admin-sort-box {
+            width: 100% !important;
+            justify-content: space-between !important;
+          }
+          .admin-sort-box select {
+            flex: 1 !important;
+          }
+        }
+        @media (max-width: 520px) {
+          .admin-users-kpi-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 10px !important;
+          }
+          .admin-kpi-card {
+            padding: 12px 14px !important;
+            gap: 8px !important;
+          }
+          .admin-kpi-card .kpi-val {
+            font-size: 1.35rem !important;
+          }
+          .admin-kpi-card .kpi-lbl {
+            font-size: 0.68rem !important;
+          }
+        }
+        @media (min-width: 769px) {
+          .admin-view-toggle-bar-toggle {
+            display: none !important;
+          }
+        }
+        @media (max-width: 640px) {
+          .admin-modal-overlay {
+            padding: 10px !important;
+          }
+          .admin-modal-card {
+            border-radius: 18px !important;
+            max-height: 94vh !important;
+          }
+          .admin-modal-header {
+            padding: 14px 16px !important;
+            border-top-left-radius: 18px !important;
+            border-top-right-radius: 18px !important;
+          }
+          .admin-modal-body {
+            padding: 16px !important;
+            gap: 16px !important;
+          }
         }
       `}</style>
 
@@ -501,7 +705,7 @@ const AdminUsersPage = () => {
         </div>
 
         {/* Header CTA Buttons */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div className="admin-users-header-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <button
             onClick={() => loadData(true)}
             disabled={refreshing}
@@ -552,28 +756,21 @@ const AdminUsersPage = () => {
         </div>
       </div>
 
-      {/* 4 KPI Metrics Strip */}
-      <div
-        className="anim-fade-up"
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: '16px',
-        }}
-      >
+      {/* 4 KPI Metrics Strip - Responsive 4-col desktop, 2-col mobile */}
+      <div className="admin-users-kpi-grid anim-fade-up">
         {/* KPI 1: Total Platform Accounts */}
         <div
-          className="interactive-card-hover"
+          className="admin-kpi-card"
           onClick={() => handleTabChange('all')}
-          style={{ ...kpiCardStyle, cursor: 'pointer', borderColor: roleFilter === 'all' ? '#2563eb' : '#e2e8f0' }}
+          style={{ borderColor: roleFilter === 'all' ? '#2563eb' : '#e2e8f0' }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
-              <span style={kpiLabelStyle}>Total Accounts</span>
-              <div style={kpiValueStyle}>{metrics.total}</div>
+              <span className="kpi-lbl" style={kpiLabelStyle}>Total Accounts</span>
+              <div className="kpi-val" style={kpiValueStyle}>{metrics.total}</div>
             </div>
             <div style={{ ...kpiIconBox, background: '#e0e7ff', color: '#4f46e5' }}>
-              <Users size={22} />
+              <Users size={20} />
             </div>
           </div>
           <div style={kpiFooterStyle}>
@@ -584,17 +781,17 @@ const AdminUsersPage = () => {
 
         {/* KPI 2: Vendors & Verified Stores */}
         <div
-          className="interactive-card-hover"
+          className="admin-kpi-card"
           onClick={() => handleTabChange('vendor')}
-          style={{ ...kpiCardStyle, cursor: 'pointer', borderColor: roleFilter === 'vendor' ? '#7e22ce' : '#e2e8f0' }}
+          style={{ borderColor: roleFilter === 'vendor' ? '#7e22ce' : '#e2e8f0' }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
-              <span style={{ ...kpiLabelStyle, color: '#7e22ce' }}>Registered Stores</span>
-              <div style={{ ...kpiValueStyle, color: '#7e22ce' }}>{metrics.vendorsCount}</div>
+              <span className="kpi-lbl" style={{ ...kpiLabelStyle, color: '#7e22ce' }}>Registered Stores</span>
+              <div className="kpi-val" style={{ ...kpiValueStyle, color: '#7e22ce' }}>{metrics.vendorsCount}</div>
             </div>
             <div style={{ ...kpiIconBox, background: '#f3e8ff', color: '#7e22ce' }}>
-              <Store size={22} />
+              <Store size={20} />
             </div>
           </div>
           <div style={kpiFooterStyle}>
@@ -605,17 +802,17 @@ const AdminUsersPage = () => {
 
         {/* KPI 3: Delivery Fleet Riders */}
         <div
-          className="interactive-card-hover"
+          className="admin-kpi-card"
           onClick={() => handleTabChange('delivery')}
-          style={{ ...kpiCardStyle, cursor: 'pointer', borderColor: roleFilter === 'delivery' ? '#0284c7' : '#e2e8f0' }}
+          style={{ borderColor: roleFilter === 'delivery' ? '#0284c7' : '#e2e8f0' }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
-              <span style={{ ...kpiLabelStyle, color: '#0284c7' }}>Delivery Fleet</span>
-              <div style={{ ...kpiValueStyle, color: '#0284c7' }}>{metrics.ridersCount}</div>
+              <span className="kpi-lbl" style={{ ...kpiLabelStyle, color: '#0284c7' }}>Delivery Fleet</span>
+              <div className="kpi-val" style={{ ...kpiValueStyle, color: '#0284c7' }}>{metrics.ridersCount}</div>
             </div>
             <div style={{ ...kpiIconBox, background: '#e0f2fe', color: '#0284c7' }}>
-              <Truck size={22} />
+              <Truck size={20} />
             </div>
           </div>
           <div style={kpiFooterStyle}>
@@ -625,14 +822,14 @@ const AdminUsersPage = () => {
         </div>
 
         {/* KPI 4: Customer GMV & LTV */}
-        <div className="interactive-card-hover" style={kpiCardStyle}>
+        <div className="admin-kpi-card" style={{ borderColor: '#e2e8f0' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
-              <span style={kpiLabelStyle}>Gross Customer Spend</span>
-              <div style={{ ...kpiValueStyle, color: '#059669' }}>{formatINR(metrics.totalLTV)}</div>
+              <span className="kpi-lbl" style={kpiLabelStyle}>Gross Customer Spend</span>
+              <div className="kpi-val" style={{ ...kpiValueStyle, color: '#059669' }}>{formatINR(metrics.totalLTV)}</div>
             </div>
             <div style={{ ...kpiIconBox, background: '#d1fae5', color: '#059669' }}>
-              <TrendingUp size={22} />
+              <TrendingUp size={20} />
             </div>
           </div>
           <div style={kpiFooterStyle}>
@@ -658,8 +855,8 @@ const AdminUsersPage = () => {
           boxShadow: '0 2px 6px rgba(15, 23, 42, 0.03)',
         }}
       >
-        {/* Left: Role Filter Pills */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+        {/* Left: Role Filter Pills (Smooth Horizontal Scroll on mobile) */}
+        <div className="admin-role-tabs-scroll" style={{ flex: '1 1 auto' }}>
           {[
             { id: 'all', label: 'All Accounts', count: metrics.total, icon: Users },
             { id: 'vendor', label: 'Vendors & Stores', count: metrics.vendorsCount, icon: Store },
@@ -709,9 +906,10 @@ const AdminUsersPage = () => {
         </div>
 
         {/* Right: Search Input & Sort Dropdown */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', flex: '1 1 300px', justifyContent: 'flex-end' }}>
+        <div className="admin-search-sort-row" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', flex: '1 1 300px', justifyContent: 'flex-end' }}>
           {/* Search Box */}
           <div
+            className="admin-search-box"
             style={{
               position: 'relative',
               display: 'flex',
@@ -771,7 +969,7 @@ const AdminUsersPage = () => {
           </div>
 
           {/* Sort Dropdown */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div className="admin-sort-box" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <ArrowUpDown size={14} color="#64748b" />
             <select
               value={sortBy}
@@ -866,8 +1064,386 @@ const AdminUsersPage = () => {
             </button>
           </div>
         ) : (
-          <div className="table-responsive" style={{ overflowX: 'auto', width: '100%' }}>
-            <table style={{ width: '100%', minWidth: '860px', borderCollapse: 'collapse', textAlign: 'left' }}>
+          <>
+            {/* View Toggle Bar (Responsive summary + Card/Table Switcher) */}
+            <div
+              className="admin-view-toggle-bar"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '12px 18px',
+                background: '#f8fafc',
+                borderBottom: '1.5px solid #e2e8f0',
+                flexWrap: 'wrap',
+                gap: '10px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#1e293b' }}>
+                  {filteredUsers.length} Directory Records
+                </span>
+                <span style={{ fontSize: '0.74rem', color: '#64748b' }}>
+                  • Page {currentPage} of {totalPages}
+                </span>
+              </div>
+
+              <div className="admin-view-toggle-bar-toggle" style={{ display: 'flex', background: '#e2e8f0', padding: '3px', borderRadius: '8px', gap: '2px' }}>
+                <button
+                  type="button"
+                  onClick={() => setMobileViewMode('cards')}
+                  style={{
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '5px 12px',
+                    fontSize: '0.76rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    background: mobileViewMode === 'cards' ? '#0f172a' : 'transparent',
+                    color: mobileViewMode === 'cards' ? '#ffffff' : '#475569',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <LayoutGrid size={13} />
+                  <span>Cards</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMobileViewMode('table')}
+                  style={{
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '5px 12px',
+                    fontSize: '0.76rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    background: mobileViewMode === 'table' ? '#0f172a' : 'transparent',
+                    color: mobileViewMode === 'table' ? '#ffffff' : '#475569',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <List size={13} />
+                  <span>Table</span>
+                </button>
+              </div>
+            </div>
+
+            {/* 1. MOBILE INTERACTIVE CARDS VIEW (< 768px default) */}
+            <div className={`admin-mobile-cards-list ${mobileViewMode === 'table' ? 'force-hide' : ''}`}>
+              {paginatedUsers.map((user) => {
+                const isVendor = roleFilter === 'vendor' || user.role === 'vendor';
+                const isDelivery = roleFilter === 'delivery' || user.role === 'delivery' || user.role === 'delivery_partner';
+                const initials = getAvatarInitials(user.name);
+                const gradient = getAvatarGradient(user.name || user.email);
+
+                return (
+                  <div
+                    key={user._id}
+                    className="admin-mobile-card"
+                    onClick={() => setSelectedUser(user)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    {/* Header */}
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+                        {isVendor ? (
+                          <div
+                            style={{
+                              width: '42px',
+                              height: '42px',
+                              borderRadius: '12px',
+                              background: 'linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%)',
+                              border: '1.5px solid #d8b4fe',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '1.25rem',
+                              flexShrink: 0,
+                            }}
+                          >
+                            🏪
+                          </div>
+                        ) : isDelivery ? (
+                          user.avatar ? (
+                            <img
+                              src={user.avatar}
+                              alt=""
+                              style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #0284c7', flexShrink: 0 }}
+                            />
+                          ) : (
+                            <div
+                              style={{
+                                width: '42px',
+                                height: '42px',
+                                borderRadius: '50%',
+                                background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                                color: '#ffffff',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontWeight: 800,
+                                fontSize: '0.85rem',
+                                flexShrink: 0,
+                              }}
+                            >
+                              {initials}
+                            </div>
+                          )
+                        ) : (
+                          <div
+                            style={{
+                              width: '42px',
+                              height: '42px',
+                              borderRadius: '50%',
+                              background: gradient,
+                              color: '#ffffff',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontWeight: 800,
+                              fontSize: '0.85rem',
+                              flexShrink: 0,
+                            }}
+                          >
+                            {initials}
+                          </div>
+                        )}
+
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                            <strong style={{ fontSize: '0.96rem', color: '#0f172a', fontWeight: 800, wordBreak: 'break-word' }}>
+                              {isVendor ? (user.vendorStoreName || `${user.name} Store`) : user.name}
+                            </strong>
+                            <span
+                              style={{
+                                background: '#dcfce7',
+                                color: '#15803d',
+                                fontSize: '0.66rem',
+                                fontWeight: 800,
+                                padding: '2px 6px',
+                                borderRadius: '6px',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '3px',
+                                border: '1px solid #bbf7d0',
+                                flexShrink: 0,
+                              }}
+                            >
+                              <CheckCircle size={10} /> Verified
+                            </span>
+                          </div>
+                          <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: '2px' }}>
+                            {isVendor
+                              ? `Vendor ID: #${user._id.slice(-6)} • 10% Fee`
+                              : isDelivery
+                              ? `Rider ID: #${user._id.slice(-6)} • Express Fleet`
+                              : `User ID: #${user._id.slice(-6)} • ${user.role?.toUpperCase() || 'USER'}`}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Status badge */}
+                      <span
+                        style={{
+                          padding: '3px 8px',
+                          borderRadius: '999px',
+                          fontSize: '0.68rem',
+                          fontWeight: 800,
+                          background: user.isActive !== false ? '#f0fdf4' : '#fef2f2',
+                          color: user.isActive !== false ? '#16a34a' : '#dc2626',
+                          border: `1px solid ${user.isActive !== false ? '#bbf7d0' : '#fecaca'}`,
+                          flexShrink: 0,
+                        }}
+                      >
+                        {user.isActive !== false ? '● Active' : '● Suspended'}
+                      </span>
+                    </div>
+
+                    {/* Contact details */}
+                    <div
+                      style={{
+                        background: '#f8fafc',
+                        padding: '10px 12px',
+                        borderRadius: '10px',
+                        border: '1px solid #f1f5f9',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '4px',
+                        fontSize: '0.78rem',
+                      }}
+                    >
+                      {isVendor && (
+                        <div style={{ fontWeight: 700, color: '#1e293b' }}>
+                          Owner: {user.name}
+                        </div>
+                      )}
+                      <div style={{ color: '#475569', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Mail size={12} color="#64748b" />
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {user.email}
+                        </span>
+                      </div>
+                      <div style={{ color: '#475569', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Phone size={12} color="#64748b" />
+                        <a
+                          href={user.phone ? `tel:${user.phone}` : undefined}
+                          onClick={(e) => e.stopPropagation()}
+                          style={{ color: '#2563eb', textDecoration: 'none', fontWeight: 600 }}
+                        >
+                          {user.phone || '+91 98112 34567'}
+                        </a>
+                      </div>
+                    </div>
+
+                    {/* Quick Metrics Strip */}
+                    <div
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(3, 1fr)',
+                        gap: '8px',
+                        background: '#ffffff',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '10px',
+                        padding: '8px 10px',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {isVendor ? (
+                        <>
+                          <div>
+                            <div style={{ fontSize: '0.88rem', fontWeight: 900, color: '#b45309', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px' }}>
+                              <Star size={12} fill="#b45309" color="#b45309" /> {user.vendorRating || 4.8}
+                            </div>
+                            <div style={{ fontSize: '0.68rem', color: '#64748b' }}>{user.vendorReviewsCount || 46} Reviews</div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '0.88rem', fontWeight: 900, color: '#2563eb' }}>
+                              {user.vendorProductsCount || 12}
+                            </div>
+                            <div style={{ fontSize: '0.68rem', color: '#64748b' }}>Live Products</div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '0.88rem', fontWeight: 900, color: '#16a34a' }}>
+                              Active
+                            </div>
+                            <div style={{ fontSize: '0.68rem', color: '#64748b' }}>CASA Store</div>
+                          </div>
+                        </>
+                      ) : isDelivery ? (
+                        <>
+                          <div>
+                            <div style={{ fontSize: '0.88rem', fontWeight: 900, color: '#b45309', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px' }}>
+                              <Star size={12} fill="#b45309" color="#b45309" /> {user.deliveryRating || 4.9}
+                            </div>
+                            <div style={{ fontSize: '0.68rem', color: '#64748b' }}>Rating</div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '0.88rem', fontWeight: 900, color: '#0284c7' }}>
+                              {user.completedDeliveries || 148}
+                            </div>
+                            <div style={{ fontSize: '0.68rem', color: '#64748b' }}>Trips Done</div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '0.88rem', fontWeight: 900, color: '#16a34a' }}>
+                              98.5%
+                            </div>
+                            <div style={{ fontSize: '0.68rem', color: '#64748b' }}>On-Time</div>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div>
+                            <div style={{ fontSize: '0.88rem', fontWeight: 900, color: '#2563eb' }}>
+                              {user.ordersCount || 0}
+                            </div>
+                            <div style={{ fontSize: '0.68rem', color: '#64748b' }}>Orders</div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '0.88rem', fontWeight: 900, color: '#059669' }}>
+                              {formatINR(user.totalSpent || 0)}
+                            </div>
+                            <div style={{ fontSize: '0.68rem', color: '#64748b' }}>Lifetime LTV</div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '0.88rem', fontWeight: 900, color: '#7c3aed' }}>
+                              {user.role === 'admin' ? 'Admin' : 'Shopper'}
+                            </div>
+                            <div style={{ fontSize: '0.68rem', color: '#64748b' }}>Role Level</div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Action Button */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedUser(user);
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: '10px',
+                        background: isVendor
+                          ? 'linear-gradient(135deg, #7e22ce 0%, #6b21a8 100%)'
+                          : isDelivery
+                          ? 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)'
+                          : 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+                        color: '#ffffff',
+                        border: 'none',
+                        fontSize: '0.84rem',
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        boxShadow: '0 2px 6px rgba(0,0,0,0.12)',
+                      }}
+                    >
+                      <Eye size={14} />
+                      <span>
+                        {isVendor
+                          ? 'View Store Details & Catalog →'
+                          : isDelivery
+                          ? 'View Rider Fleet Profile →'
+                          : 'View Account Details →'}
+                      </span>
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* 2. DESKTOP ENTERPRISE TABLE VIEW */}
+            <div className={`admin-desktop-table-container ${mobileViewMode === 'table' ? 'force-show' : ''}`}>
+              {/* Swipe hint when table is shown on mobile */}
+              <div
+                className="admin-view-toggle-bar-toggle"
+                style={{
+                  padding: '8px 16px',
+                  background: '#eff6ff',
+                  borderBottom: '1px solid #dbeafe',
+                  fontSize: '0.74rem',
+                  color: '#1d4ed8',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
+                <span>👉 Swipe horizontally to view full table details (Rating, Products, Status & Actions)</span>
+              </div>
+
+              <div className="table-responsive" style={{ overflowX: 'auto', width: '100%' }}>
+                <table style={{ width: '100%', minWidth: '860px', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead>
                 <tr style={{ background: '#f8fafc', borderBottom: '1.5px solid #e2e8f0' }}>
                   {roleFilter === 'vendor' ? (
@@ -1410,7 +1986,9 @@ const AdminUsersPage = () => {
                 })}
               </tbody>
             </table>
-          </div>
+              </div>
+            </div>
+          </>
         )}
 
         {/* Table Footer with Pagination */}
@@ -1510,6 +2088,7 @@ const AdminUsersPage = () => {
       {/* ========================================================================= */}
       {selectedUser && (
         <div
+          className="admin-modal-overlay"
           style={{
             position: 'fixed',
             inset: 0,
@@ -1524,7 +2103,7 @@ const AdminUsersPage = () => {
           onClick={() => setSelectedUser(null)}
         >
           <div
-            className="anim-fade-up"
+            className="anim-fade-up admin-modal-card"
             style={{
               background: '#ffffff',
               borderRadius: '24px',
@@ -1541,6 +2120,7 @@ const AdminUsersPage = () => {
           >
             {/* Modal Header */}
             <div
+              className="admin-modal-header"
               style={{
                 padding: '20px 24px',
                 borderBottom: '1px solid #e2e8f0',
@@ -1602,7 +2182,7 @@ const AdminUsersPage = () => {
             </div>
 
             {/* Modal Body */}
-            <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '22px' }}>
+            <div className="admin-modal-body" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '22px' }}>
               
               {/* Profile Top Banner */}
               <div
