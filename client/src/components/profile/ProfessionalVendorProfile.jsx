@@ -1148,7 +1148,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
           display: flex;
         }
 
-        /* Fixed Sidebar on Desktop - Extends full 100vh viewport, never leaves any empty gap! */
+        /* Fixed Sidebar on Desktop - Extends full 100vh viewport */
         .myshop-sidebar {
           width: 260px;
           min-width: 260px;
@@ -1206,21 +1206,22 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
           box-shadow: 0 4px 14px rgba(30, 30, 36, 0.25);
         }
 
-        /* Main Body Area - Seamlessly offset beside the fixed sidebar */
+        /* Main Body Area */
         .myshop-main {
           margin-left: 260px;
           width: calc(100% - 260px);
           min-width: 0;
-          padding: 28px 40px 60px;
+          padding: 28px 40px 80px;
           display: flex;
           flex-direction: column;
-          gap: 26px;
+          gap: 24px;
           background: #ffffff;
           min-height: 100vh;
           box-sizing: border-box;
+          overflow-x: hidden;
         }
 
-        /* Mobile Top Header Bar - Visible only on mobile/tablet */
+        /* Mobile Top Header Bar */
         .myshop-mobile-topbar {
           display: none;
           align-items: center;
@@ -1240,6 +1241,170 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
 
         .mobile-sidebar-close-btn {
           display: none;
+        }
+
+        /* Animations & Keyframes */
+        @keyframes proFadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(12px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes proPulseGlow {
+          0%, 100% {
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5);
+          }
+          50% {
+            box-shadow: 0 0 0 5px rgba(16, 185, 129, 0);
+          }
+        }
+
+        .pro-tab-content {
+          animation: proFadeInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+          width: 100%;
+          min-width: 0;
+        }
+
+        .pro-pulse-dot {
+          width: 7px;
+          height: 7px;
+          border-radius: 50%;
+          background: #10b981;
+          display: inline-block;
+          animation: proPulseGlow 2s infinite;
+          flex-shrink: 0;
+        }
+
+        /* Header Container & Elements */
+        .pro-header-wrap {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          flex-wrap: wrap;
+          gap: 16px;
+          width: 100%;
+        }
+
+        .pro-header-info {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          min-width: 0;
+          flex: 1;
+        }
+
+        .pro-header-title-row {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+
+        .pro-header-title {
+          font-size: clamp(1.3rem, 2.8vw, 1.75rem);
+          font-weight: 900;
+          color: #1e1e24;
+          margin: 0;
+          letter-spacing: -0.025em;
+          line-height: 1.2;
+        }
+
+        .pro-header-badges {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          flex-wrap: wrap;
+        }
+
+        .pro-live-badge {
+          background: #ecfdf5;
+          color: #059669;
+          font-size: 0.72rem;
+          font-weight: 800;
+          padding: 3px 9px;
+          border-radius: 9999px;
+          border: 1px solid #a7f3d0;
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          white-space: nowrap;
+        }
+
+        .pro-tier-badge {
+          background: #eff6ff;
+          color: #1d4ed8;
+          font-size: 0.72rem;
+          font-weight: 800;
+          padding: 3px 9px;
+          border-radius: 9999px;
+          border: 1px solid #bfdbfe;
+          white-space: nowrap;
+        }
+
+        .pro-header-subtitle {
+          font-size: 0.8rem;
+          color: #64748b;
+          font-weight: 600;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          flex-wrap: wrap;
+        }
+
+        .pro-portal-code {
+          color: #2563eb;
+          background: #eff6ff;
+          padding: 2px 7px;
+          border-radius: 6px;
+          font-weight: 700;
+          font-size: 0.75rem;
+          border: 1px solid #dbeafe;
+        }
+
+        .pro-header-actions {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+
+        .pro-search-box {
+          position: relative;
+          display: flex;
+          align-items: center;
+          min-width: 180px;
+        }
+
+        .pro-search-input {
+          padding: 8px 14px 8px 34px;
+          border-radius: 10px;
+          border: 1px solid #e2e8f0;
+          background: #f8fafc;
+          font-size: 0.82rem;
+          color: #1e1e24;
+          width: 180px;
+          outline: none;
+          transition: all 0.2s ease;
+          box-sizing: border-box;
+        }
+
+        .pro-search-input:focus {
+          border-color: #2563eb;
+          background: #ffffff;
+          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+          width: 210px;
+        }
+
+        .pro-header-btn-group {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex-wrap: wrap;
         }
 
         /* Enterprise Pro KPI Cards */
@@ -1280,12 +1445,13 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
           background: #ffffff;
           border: 1px solid #e2e8f0;
           border-radius: 16px;
-          padding: 24px;
+          padding: 22px;
           box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
-          transition: border-color 0.2s ease;
+          transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
         }
         .pro-card:hover {
           border-color: #cbd5e1;
+          box-shadow: 0 6px 20px -4px rgba(15, 23, 42, 0.06);
         }
 
         /* Pro Order Item Row */
@@ -1298,6 +1464,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
           border: 1px solid transparent;
           transition: all 0.15s ease;
           cursor: pointer;
+          gap: 12px;
         }
         .pro-order-row:hover {
           background: #f8fafc;
@@ -1338,10 +1505,21 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
         .pro-dashboard-chart-metrics {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
-          gap: 16px;
+          gap: 12px;
           margin-top: 18px;
           padding-top: 16px;
           border-top: 1px solid #f1f5f9;
+        }
+        .pro-metric-box {
+          background: #f8fafc;
+          border: 1px solid #f1f5f9;
+          border-radius: 10px;
+          padding: 10px 14px;
+          transition: all 0.18s ease;
+        }
+        .pro-metric-box:hover {
+          background: #f1f5f9;
+          border-color: #e2e8f0;
         }
         .pro-dashboard-grid-3 {
           display: grid;
@@ -1351,8 +1529,13 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
         }
         .pro-kpi-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-          gap: 18px;
+          grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+          gap: 16px;
+        }
+        .pro-catalog-kpi-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 14px;
         }
         .pro-form-row-2 {
           display: grid;
@@ -1361,7 +1544,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
         }
         .pro-fin-kpi-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+          grid-template-columns: repeat(4, 1fr);
           gap: 16px;
         }
         .pro-bank-card-grid {
@@ -1370,11 +1553,52 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
           gap: 18px;
         }
 
+        /* Responsive Table Container with sleek custom scrollbar */
+        .pro-table-wrapper {
+          width: 100%;
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+          border-radius: 12px;
+          border: 1px solid #e2e8f0;
+          scrollbar-width: thin;
+          scrollbar-color: #cbd5e1 #f8fafc;
+        }
+        .pro-table-wrapper::-webkit-scrollbar {
+          height: 6px;
+        }
+        .pro-table-wrapper::-webkit-scrollbar-track {
+          background: #f8fafc;
+        }
+        .pro-table-wrapper::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 9999px;
+        }
+
+        /* Responsive Modal Card */
+        .pro-modal-box {
+          max-width: 620px;
+          width: 100%;
+          max-height: 90vh;
+          overflow-y: auto;
+          background: #ffffff;
+          border-radius: 24px;
+          padding: 26px;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+          box-sizing: border-box;
+          animation: proFadeInUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
         /* Responsive Breakpoints */
         @media (max-width: 1200px) {
           .pro-dashboard-grid-3 {
             grid-template-columns: repeat(2, 1fr) !important;
             gap: 18px !important;
+          }
+          .pro-fin-kpi-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+          .pro-catalog-kpi-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
           }
         }
 
@@ -1410,8 +1634,9 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
           .myshop-main {
             margin-left: 0 !important;
             width: 100% !important;
-            padding: 18px 16px 60px !important;
+            padding: 18px 16px 100px !important;
             box-sizing: border-box !important;
+            overflow-x: hidden !important;
           }
           .myshop-mobile-topbar {
             display: flex !important;
@@ -1424,9 +1649,6 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
             backdrop-filter: blur(4px);
             z-index: 990;
           }
-          .cream-banner-card {
-            padding: 18px 16px !important;
-          }
         }
 
         @media (max-width: 768px) {
@@ -1436,24 +1658,66 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
           }
           .pro-dashboard-chart-metrics {
             grid-template-columns: repeat(2, 1fr) !important;
-            gap: 12px !important;
+            gap: 10px !important;
           }
           .pro-kpi-grid {
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)) !important;
             gap: 12px !important;
+          }
+          .pro-fin-kpi-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 12px !important;
+          }
+          .pro-bank-card-grid {
+            grid-template-columns: 1fr !important;
+            gap: 14px !important;
+          }
+          .pro-search-box {
+            width: 100% !important;
+            flex: 1 !important;
+          }
+          .pro-search-input {
+            width: 100% !important;
+          }
+          .pro-search-input:focus {
+            width: 100% !important;
           }
         }
 
         @media (max-width: 640px) {
           .myshop-main {
-            padding: 12px 10px 60px !important;
+            padding: 14px 10px 100px !important;
             gap: 16px !important;
           }
+          .pro-header-actions {
+            width: 100% !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 10px !important;
+          }
+          .pro-header-btn-group {
+            width: 100% !important;
+            justify-content: flex-start !important;
+            overflow-x: auto !important;
+            padding-bottom: 4px !important;
+            -webkit-overflow-scrolling: touch !important;
+          }
+          .pro-header-btn-group::-webkit-scrollbar {
+            display: none;
+          }
           .pro-dashboard-chart-metrics {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 8px !important;
+          }
+          .pro-kpi-grid {
             grid-template-columns: 1fr !important;
             gap: 10px !important;
           }
-          .pro-kpi-grid {
+          .pro-catalog-kpi-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 10px !important;
+          }
+          .pro-fin-kpi-grid {
             grid-template-columns: 1fr !important;
             gap: 10px !important;
           }
@@ -1462,7 +1726,12 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
           }
           .pro-card {
             padding: 16px 14px !important;
-            border-radius: 12px !important;
+            border-radius: 14px !important;
+          }
+          .pro-modal-box {
+            padding: 18px 14px !important;
+            border-radius: 18px !important;
+            width: 95vw !important;
           }
         }
       `}</style>
@@ -1788,209 +2057,220 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
           )}
 
           {/* TOP HEADER: GREETING & ICONS */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <h1 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#1e1e24', margin: 0, letterSpacing: '-0.025em' }}>
+          <div className="pro-header-wrap">
+            <div className="pro-header-info">
+              <div className="pro-header-title-row">
+                <h1 className="pro-header-title">
                   Hello, {savedData.contactPerson?.split(' ')[0] || user?.name || 'Aarav'}
                 </h1>
-                <span style={{ background: '#ecfdf5', color: '#059669', fontSize: '0.72rem', fontWeight: 800, padding: '3px 9px', borderRadius: '9999px', border: '1px solid #a7f3d0' }}>
-                  🟢 Live • 99.4% SLA
-                </span>
-                <span style={{ background: '#eff6ff', color: '#1d4ed8', fontSize: '0.72rem', fontWeight: 800, padding: '3px 9px', borderRadius: '9999px', border: '1px solid #bfdbfe' }}>
-                  CaSa Vendor Merchant
-                </span>
+                <div className="pro-header-badges">
+                  <span className="pro-live-badge">
+                    <span className="pro-pulse-dot" /> Live • 99.4% SLA
+                  </span>
+                  <span className="pro-tier-badge">
+                    CaSa Vendor Merchant
+                  </span>
+                </div>
               </div>
-              <div style={{ fontSize: '0.82rem', color: '#64748b', fontWeight: 600, marginTop: '2px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+              <div className="pro-header-subtitle">
                 <span>{savedData.storeName} • CaSa Verified Seller Center</span>
                 <span>•</span>
                 <span style={{ color: '#0f172a' }}>Portal URL:</span>
-                <code style={{ color: '#2563eb', background: '#eff6ff', padding: '1px 6px', borderRadius: '4px', fontWeight: 700 }}>
+                <code className="pro-portal-code">
                   /vendor/{activeTab}
                 </code>
               </div>
             </div>
 
             {/* Header Right Action Icons */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-              {/* Share Vendor Portal Link */}
-              <button
-                type="button"
-                onClick={() => {
-                  const fullUrl = `${window.location.origin}/vendor/${activeTab}`;
-                  navigator.clipboard.writeText(fullUrl);
-                  success(`📋 Vendor Link Copied: ${fullUrl}`);
-                }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
-                  border: '1px solid #bfdbfe',
-                  padding: '7px 13px',
-                  borderRadius: '10px',
-                  fontSize: '0.78rem',
-                  fontWeight: 800,
-                  color: '#1d4ed8',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                  boxShadow: '0 1px 3px rgba(37,99,235,0.08)',
-                }}
-                title="Copy official CaSa Vendor link to send to Sir/Team"
-              >
-                <Share2 size={14} color="#2563eb" />
-                <span>Share Vendor Link</span>
-              </button>
-
-              {/* + Add New Product Button */}
-              <button
-                type="button"
-                onClick={() => setIsAddProductModalOpen(true)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  background: '#1e1e24',
-                  color: '#ffffff',
-                  border: 'none',
-                  padding: '8px 14px',
-                  borderRadius: '10px',
-                  fontSize: '0.8rem',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 12px rgba(30, 30, 36, 0.2)',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                <Plus size={15} />
-                <span>Add Product</span>
-              </button>
-
+            <div className="pro-header-actions">
               {/* Quick Search */}
-              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <div className="pro-search-box">
                 <Search size={15} color="#94a3b8" style={{ position: 'absolute', left: '12px', pointerEvents: 'none' }} />
                 <input
                   type="text"
                   placeholder="Search orders, SKUs..."
                   value={productSearch}
                   onChange={(e) => setProductSearch(e.target.value)}
-                  style={{
-                    padding: '8px 14px 8px 34px',
-                    borderRadius: '10px',
-                    border: '1px solid #e2e8f0',
-                    background: '#f8fafc',
-                    fontSize: '0.82rem',
-                    color: '#1e1e24',
-                    width: '180px',
-                    outline: 'none',
-                  }}
+                  className="pro-search-input"
                 />
+                {productSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setProductSearch('')}
+                    style={{ position: 'absolute', right: '10px', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: '2px' }}
+                    aria-label="Clear search"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
               </div>
 
-              {/* View Storefront Pill Button */}
-              <button
-                type="button"
-                onClick={() => navigate('/')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  background: '#f4f6fa',
-                  border: '1px solid #e2e8f0',
-                  padding: '7px 13px',
-                  borderRadius: '10px',
-                  fontSize: '0.78rem',
-                  fontWeight: 700,
-                  color: '#475569',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                }}
-                title="View customer marketplace view"
-              >
-                <ShoppingBag size={14} color="#6366f1" />
-                <span>Storefront View</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => success('All merchant messages up-to-date.')}
-                style={{
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: '50%',
-                  background: '#f4f6fa',
-                  border: 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  color: '#64748b',
-                }}
-                title="Messages"
-              >
-                <Mail size={17} />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => success('No unread policy alerts.')}
-                style={{
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: '50%',
-                  background: '#f4f6fa',
-                  border: 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  color: '#64748b',
-                  position: 'relative',
-                }}
-                title="Notifications"
-              >
-                <Bell size={17} />
-                <span
-                  style={{
-                    position: 'absolute',
-                    top: '8px',
-                    right: '9px',
-                    width: '7px',
-                    height: '7px',
-                    borderRadius: '50%',
-                    background: '#ef4444',
+              <div className="pro-header-btn-group">
+                {/* Share Vendor Portal Link */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const fullUrl = `${window.location.origin}/vendor/${activeTab}`;
+                    navigator.clipboard.writeText(fullUrl);
+                    success(`📋 Vendor Link Copied: ${fullUrl}`);
                   }}
-                />
-              </button>
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+                    border: '1px solid #bfdbfe',
+                    padding: '7px 13px',
+                    borderRadius: '10px',
+                    fontSize: '0.78rem',
+                    fontWeight: 800,
+                    color: '#1d4ed8',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    boxShadow: '0 1px 3px rgba(37,99,235,0.08)',
+                    whiteSpace: 'nowrap',
+                  }}
+                  title="Copy official CaSa Vendor link to send to Sir/Team"
+                >
+                  <Share2 size={14} color="#2563eb" />
+                  <span>Share Link</span>
+                </button>
 
-              {/* User Avatar with mint ring */}
-              <div
-                style={{
-                  width: '42px',
-                  height: '42px',
-                  borderRadius: '50%',
-                  border: '2.5px solid #2dd4bf',
-                  padding: '2px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                }}
-                onClick={() => setActiveTab('kyc')}
-                title="View Store Profile"
-              >
-                <img
-                  src={user?.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80'}
-                  alt="Avatar"
-                  style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
-                />
+                {/* + Add New Product Button */}
+                <button
+                  type="button"
+                  onClick={() => setIsAddProductModalOpen(true)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: '#1e1e24',
+                    color: '#ffffff',
+                    border: 'none',
+                    padding: '8px 14px',
+                    borderRadius: '10px',
+                    fontSize: '0.8rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(30, 30, 36, 0.2)',
+                    transition: 'all 0.15s ease',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  <Plus size={15} />
+                  <span>Add Product</span>
+                </button>
+
+                {/* View Storefront Pill Button */}
+                <button
+                  type="button"
+                  onClick={() => navigate('/')}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: '#f4f6fa',
+                    border: '1px solid #e2e8f0',
+                    padding: '7px 13px',
+                    borderRadius: '10px',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    color: '#475569',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    whiteSpace: 'nowrap',
+                  }}
+                  title="View customer marketplace view"
+                >
+                  <ShoppingBag size={14} color="#6366f1" />
+                  <span>Storefront</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => success('All merchant messages up-to-date.')}
+                  style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '50%',
+                    background: '#f4f6fa',
+                    border: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    color: '#64748b',
+                    flexShrink: 0,
+                  }}
+                  title="Messages"
+                >
+                  <Mail size={16} />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => success('No unread policy alerts.')}
+                  style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '50%',
+                    background: '#f4f6fa',
+                    border: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    color: '#64748b',
+                    position: 'relative',
+                    flexShrink: 0,
+                  }}
+                  title="Notifications"
+                >
+                  <Bell size={16} />
+                  <span
+                    style={{
+                      position: 'absolute',
+                      top: '7px',
+                      right: '8px',
+                      width: '7px',
+                      height: '7px',
+                      borderRadius: '50%',
+                      background: '#ef4444',
+                    }}
+                  />
+                </button>
+
+                {/* User Avatar with mint ring */}
+                <div
+                  style={{
+                    width: '38px',
+                    height: '38px',
+                    borderRadius: '50%',
+                    border: '2px solid #2dd4bf',
+                    padding: '2px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    flexShrink: 0,
+                  }}
+                  onClick={() => setActiveTab('kyc')}
+                  title="View Store Profile"
+                >
+                  <img
+                    src={user?.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80'}
+                    alt="Avatar"
+                    style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+                  />
+                </div>
               </div>
             </div>
           </div>
 
           {/* ================= TAB 1: ENTERPRISE MERCHANT COMMAND CENTER ================= */}
           {activeTab === 'dashboard' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <div className="pro-tab-content" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
               {/* SECTION 1: EXECUTIVE FINTECH & PERFORMANCE KPI METRIC CARDS */}
               <div className="pro-kpi-grid">
                 {/* KPI 1: Gross Sales MTD */}
@@ -2259,25 +2539,25 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
 
                     {/* Operational Strip Below Chart */}
                     <div className="pro-dashboard-chart-metrics">
-                      <div style={{ borderRight: '1px solid #f1f5f9', paddingRight: '12px' }}>
+                      <div className="pro-metric-box">
                         <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>Today's Dispatch</div>
                         <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '3px' }}>₹65,575</div>
                         <div style={{ fontSize: '0.68rem', color: '#10b981', fontWeight: 700, marginTop: '2px' }}>18 Shipments</div>
                       </div>
 
-                      <div style={{ borderRight: '1px solid #f1f5f9', paddingRight: '12px' }}>
+                      <div className="pro-metric-box">
                         <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>COD In-Transit</div>
                         <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '3px' }}>₹24,800</div>
                         <div style={{ fontSize: '0.68rem', color: '#2563eb', fontWeight: 700, marginTop: '2px' }}>Auto-Remitted T+2</div>
                       </div>
 
-                      <div style={{ borderRight: '1px solid #f1f5f9', paddingRight: '12px' }}>
+                      <div className="pro-metric-box">
                         <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>Return / RTO Ratio</div>
                         <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#059669', marginTop: '3px' }}>0.4%</div>
                         <div style={{ fontSize: '0.68rem', color: '#059669', fontWeight: 700, marginTop: '2px' }}>Best in Class</div>
                       </div>
 
-                      <div>
+                      <div className="pro-metric-box">
                         <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>Next Courier Cutoff</div>
                         <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '3px' }}>4:30 PM</div>
                         <div style={{ fontSize: '0.68rem', color: '#f59e0b', fontWeight: 700, marginTop: '2px' }}>1h 24m remaining</div>
@@ -2643,7 +2923,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
 
           {/* ================= TAB 2: ENTERPRISE PRODUCTS & STOCK MANAGEMENT ================= */}
           {activeTab === 'products' && (
-            <div id="catalog-top-anchor" style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
+            <div id="catalog-top-anchor" className="pro-tab-content" style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
               {/* TOP HEADER & ADD PRODUCT ACTION */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
                 <div>
@@ -2709,7 +2989,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
               </div>
 
               {/* INVENTORY METRIC KPI STRIP (4 METRIC PILLS) */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
+              <div className="pro-catalog-kpi-grid">
                 <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div>
                     <div style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 700 }}>Total Catalog SKUs</div>
@@ -2993,7 +3273,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                 </div>
               ) : productViewMode === 'grid' ? (
                 /* GRID CARDS VIEW */
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '18px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', gap: '18px' }}>
                   {paginatedProducts.map((prod) => {
                     const stockNum = Number(prod.stock || 0);
                     const isOutOfStock = stockNum === 0;
@@ -3180,7 +3460,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
               ) : (
                 /* SPREADSHEET TABLE VIEW */
                 <div className="pro-card" style={{ padding: 0, overflow: 'hidden' }}>
-                  <div style={{ overflowX: 'auto' }}>
+                  <div className="pro-table-wrapper" style={{ border: 'none', borderRadius: 0 }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '700px' }}>
                       <thead>
                         <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
@@ -3439,7 +3719,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
 
           {/* ================= TAB 3: CUSTOMERS & ORDERS VIEW ================= */}
           {activeTab === 'orders' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+            <div className="pro-tab-content" style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
                 <div>
                   <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#1e1e24', margin: 0 }}>
@@ -3869,7 +4149,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
 
           {/* ================= TAB 4: TRANSACTIONS & PAYOUTS ================= */}
           {activeTab === 'transactions' && (
-            <div id="payouts-top-anchor" style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
+            <div id="payouts-top-anchor" className="pro-tab-content" style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
               {/* HEADER WITH TITLE, STATUS BADGES & QUICK ACTIONS */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
                 <div>
@@ -4331,7 +4611,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                 </div>
 
                 {/* Settlements Table Container */}
-                <div style={{ overflowX: 'auto', width: '100%', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                <div className="pro-table-wrapper">
                   <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '750px', textAlign: 'left', fontSize: '0.8rem' }}>
                     <thead>
                       <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
@@ -4598,13 +4878,15 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
 
           {/* ================= TAB 5: SETTINGS ================= */}
           {activeTab === 'settings' && (
-            <VendorStoreSettings user={user} onSettingsSaved={onProfileUpdated} />
+            <div className="pro-tab-content">
+              <VendorStoreSettings user={user} onSettingsSaved={onProfileUpdated} />
+            </div>
           )}
 
           {/* ================= TAB 6: STORE PROFILE & KYC ================= */}
           {activeTab === 'kyc' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="pro-tab-content" style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
                 <div>
                   <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#1e1e24', margin: 0 }}>
                     Store Credentials & Pickup Hub
@@ -4628,6 +4910,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                     fontSize: '0.82rem',
                     fontWeight: 800,
                     cursor: 'pointer',
+                    transition: 'all 0.15s ease',
                   }}
                 >
                   <Edit3 size={14} style={{ display: 'inline', marginRight: '6px' }} />
@@ -4635,7 +4918,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                 </button>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '14px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: '14px' }}>
                 <div style={{ background: '#f8fafc', border: '1px solid #eef2f6', borderRadius: '16px', padding: '18px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748b' }}>GSTIN NUMBER</span>
@@ -4662,7 +4945,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
                   <span style={{ fontSize: '0.72rem', color: '#6366f1', fontWeight: 700 }}>Corporate Entity</span>
                 </div>
 
-                <div style={{ background: '#f8fafc', border: '1px solid #eef2f6', borderRadius: '16px', padding: '18px', gridColumn: 'span 2' }}>
+                <div style={{ background: '#f8fafc', border: '1px solid #eef2f6', borderRadius: '16px', padding: '18px', gridColumn: '1 / -1' }}>
                   <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748b' }}>WAREHOUSE & PICKUP HUB</span>
                   <div style={{ fontSize: '1rem', fontWeight: 900, color: '#1e1e24', marginTop: '4px' }}>
                     {savedData.warehouseName}
@@ -4677,7 +4960,9 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
 
           {/* ================= TAB 7: CATEGORIES & DEPARTMENTS MANAGEMENT ================= */}
           {activeTab === 'categories' && (
-            <VendorCategoriesSection />
+            <div className="pro-tab-content">
+              <VendorCategoriesSection />
+            </div>
           )}
         </main>
       </div>
@@ -4698,15 +4983,9 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
           }}
         >
           <div
+            className="pro-modal-box"
             style={{
               maxWidth: '680px',
-              width: '100%',
-              maxHeight: '90vh',
-              overflowY: 'auto',
-              background: '#ffffff',
-              borderRadius: '24px',
-              padding: '26px',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #eef2f6', paddingBottom: '14px', marginBottom: '16px' }}>
@@ -4813,15 +5092,9 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
           }}
         >
           <div
+            className="pro-modal-box"
             style={{
               maxWidth: '620px',
-              width: '100%',
-              maxHeight: '90vh',
-              overflowY: 'auto',
-              background: '#ffffff',
-              borderRadius: '24px',
-              padding: '26px',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #eef2f6', paddingBottom: '14px', marginBottom: '16px' }}>
@@ -4928,15 +5201,9 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
           }}
         >
           <div
+            className="pro-modal-box"
             style={{
               maxWidth: '620px',
-              width: '100%',
-              maxHeight: '90vh',
-              overflowY: 'auto',
-              background: '#ffffff',
-              borderRadius: '24px',
-              padding: '26px',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #eef2f6', paddingBottom: '14px', marginBottom: '16px' }}>
@@ -5276,13 +5543,9 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
           }}
         >
           <div
+            className="pro-modal-box"
             style={{
               maxWidth: '480px',
-              width: '100%',
-              background: '#ffffff',
-              borderRadius: '20px',
-              padding: '24px',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
@@ -5386,6 +5649,7 @@ const ProfessionalVendorProfile = ({ user, onProfileUpdated }) => {
           }}
         >
           <div
+            className="pro-modal-box"
             style={{
               maxWidth: '560px',
               width: '100%',
