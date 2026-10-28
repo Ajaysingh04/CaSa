@@ -9,7 +9,6 @@ import LanguageModal from '../components/common/LanguageModal';
 import Footer from '../components/common/Footer';
 import FloatingDock from '../components/common/FloatingDock';
 import SuperAdminStoreToolbar from '../components/common/SuperAdminStoreToolbar';
-import DemoFlowQuickSwitcher from '../components/common/DemoFlowQuickSwitcher';
 import { categoryService } from '../services/categoryService';
 import { useStore } from '../context/StoreContext';
 import { useAuth } from '../context/AuthContext';
@@ -79,7 +78,6 @@ const MainLayout = () => {
     return (
       <div style={{ minHeight: '100vh', width: '100%', maxWidth: '100vw', background: '#f4f6fa', overflowX: 'hidden' }}>
         <Outlet context={{ categories }} />
-        <DemoFlowQuickSwitcher />
       </div>
     );
   }
@@ -107,7 +105,6 @@ const MainLayout = () => {
       />
       <FloatingDock />
       <SuperAdminStoreToolbar />
-      <DemoFlowQuickSwitcher />
     </div>
   );
 };
