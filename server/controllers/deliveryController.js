@@ -156,7 +156,7 @@ exports.getMyDeliveries = async (req, res, next) => {
       let orders = await Order.find({
         $or: [
           { assignedDeliveryPartner: userId },
-          { orderStatus: { $in: ['Packed', 'Shipped', 'Out for delivery', 'Delivery Attempt Failed', 'RTO - Return to Hub'] } }
+          { orderStatus: { $in: ['Packed', 'Shipped', 'Out for delivery', 'Delivered', 'Delivery Attempt Failed', 'RTO - Return to Hub'] } }
         ]
       })
         .populate('user', 'name email phone')
@@ -170,7 +170,7 @@ exports.getMyDeliveries = async (req, res, next) => {
     } else {
       const orders = (dataStore.orders || []).filter(o =>
         o.assignedDeliveryPartner === userId ||
-        ['Packed', 'Shipped', 'Out for delivery', 'Delivery Attempt Failed', 'RTO - Return to Hub'].includes(o.orderStatus)
+        ['Packed', 'Shipped', 'Out for delivery', 'Delivered', 'Delivery Attempt Failed', 'RTO - Return to Hub'].includes(o.orderStatus)
       );
       return res.status(200).json({
         success: true,

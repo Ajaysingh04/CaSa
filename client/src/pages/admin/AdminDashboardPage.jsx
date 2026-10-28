@@ -469,29 +469,33 @@ const AdminDashboardPage = () => {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '22px', paddingBottom: '40px' }}>
+    <div className="admin-page-container" style={{ display: 'flex', flexDirection: 'column', gap: '22px', paddingBottom: '40px' }}>
       <style>{`
-        /* Smooth Fade In Up Animation */
+        /* Smooth Modern Fade In & Float Keyframes */
         @keyframes fadeInUp {
           from {
             opacity: 0;
-            transform: translateY(14px);
+            transform: translateY(12px);
           }
           to {
             opacity: 1;
             transform: translateY(0);
           }
         }
-        .anim-card {
-          animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
-        }
-        .chart-point-pulse {
-          animation: chartPulse 2s infinite;
+        @keyframes adminPulseGlow {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.25); }
+          50% { box-shadow: 0 0 0 8px rgba(37, 99, 235, 0); }
         }
         @keyframes chartPulse {
           0% { r: 5px; opacity: 1; }
           50% { r: 8px; opacity: 0.6; }
           100% { r: 5px; opacity: 1; }
+        }
+        .anim-card {
+          animation: fadeInUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+        .chart-point-pulse {
+          animation: chartPulse 2s infinite;
         }
         .pro-metric-card {
           background: #ffffff;
@@ -537,7 +541,61 @@ const AdminDashboardPage = () => {
           align-items: center;
           gap: 6px;
         }
-        /* Mobile and Tablet Responsiveness */
+
+        /* Responsive Layout Grids */
+        .admin-kpi-grid-4 {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 16px;
+        }
+        .admin-recon-grid-6 {
+          display: grid;
+          grid-template-columns: repeat(6, 1fr);
+          gap: 12px;
+        }
+        .admin-charts-grid-two-col {
+          display: grid;
+          grid-template-columns: minmax(0, 1.7fr) minmax(min(100%, 300px), 1fr);
+          gap: 20px;
+        }
+        .admin-dashboard-bottom-grid {
+          display: grid;
+          grid-template-columns: minmax(0, 2.3fr) minmax(min(100%, 300px), 1fr);
+          gap: 20px;
+        }
+        .admin-orders-table-scroll {
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+          width: 100%;
+          scrollbar-width: thin;
+          scrollbar-color: #cbd5e1 transparent;
+        }
+        .admin-orders-table-scroll::-webkit-scrollbar {
+          height: 6px;
+        }
+        .admin-orders-table-scroll::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 999px;
+        }
+        .admin-orders-table-scroll table {
+          min-width: 680px;
+          width: 100%;
+          border-collapse: collapse;
+        }
+        .admin-orders-table-scroll th,
+        .admin-orders-table-scroll td {
+          white-space: nowrap;
+        }
+
+        /* Breakpoints */
+        @media (max-width: 1200px) {
+          .admin-kpi-grid-4 {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+          .admin-recon-grid-6 {
+            grid-template-columns: repeat(3, 1fr) !important;
+          }
+        }
         @media (max-width: 1024px) {
           .admin-charts-grid-two-col {
             grid-template-columns: 1fr !important;
@@ -549,14 +607,38 @@ const AdminDashboardPage = () => {
             grid-template-columns: 1fr !important;
           }
         }
-        @media (max-width: 640px) {
+        @media (max-width: 768px) {
+          .admin-page-container {
+            gap: 16px !important;
+            padding-bottom: 95px !important;
+          }
+          .admin-recon-grid-6 {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
           .admin-header-actions {
             width: 100% !important;
-            justify-content: flex-start !important;
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 8px !important;
           }
-          .admin-header-actions > div,
+          .admin-header-actions > div {
+            flex: 1 1 100% !important;
+          }
+          .admin-header-actions > div input {
+            width: 100% !important;
+            box-sizing: border-box !important;
+          }
           .admin-header-actions > button {
-            flex: 1 1 auto;
+            flex: 1 1 auto !important;
+            justify-content: center !important;
+          }
+        }
+        @media (max-width: 520px) {
+          .admin-kpi-grid-4 {
+            grid-template-columns: 1fr !important;
+          }
+          .admin-recon-grid-6 {
+            grid-template-columns: 1fr !important;
           }
         }
       `}</style>
@@ -790,12 +872,7 @@ const AdminDashboardPage = () => {
 
       {/* 4 PRIMARY EXECUTIVE KPI CARDS WITH INTEGRATED SPARKLINE GRAPHS */}
       <div
-        className="anim-card"
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(235px, 1fr))',
-          gap: '16px',
-        }}
+        className="admin-kpi-grid-4 anim-card"
       >
         {/* KPI 1: Total Revenue */}
         <div className="pro-metric-card">
@@ -1368,11 +1445,7 @@ const AdminDashboardPage = () => {
         </div>
 
         <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
-            gap: '12px',
-          }}
+          className="admin-recon-grid-6"
         >
           <div style={{ background: '#f8fafc', padding: '12px 14px', borderRadius: '14px', border: '1px solid #f1f5f9' }}>
             <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 800 }}>GROSS GMV</span>
@@ -1427,11 +1500,6 @@ const AdminDashboardPage = () => {
       {/* GRAPHICAL CHARTS STUDIO: INTERACTIVE AREA CURVE + CATEGORY DONUT */}
       <div
         className="admin-charts-grid-two-col anim-card"
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'minmax(0, 1.7fr) minmax(320px, 1fr)',
-          gap: '20px',
-        }}
       >
         {/* CHART 1: INTERACTIVE SMOOTH SPLINE REVENUE AREA CHART */}
         <div
@@ -1810,26 +1878,6 @@ const AdminDashboardPage = () => {
       </div>
 
       {/* RECENT ORDERS LIVE TABLE + TOP SELLING PRODUCTS SIDEBAR */}
-      <style>{`
-        .admin-dashboard-bottom-grid {
-          display: grid;
-          grid-template-columns: minmax(0, 2.3fr) minmax(320px, 1fr);
-          gap: 20px;
-        }
-        .admin-orders-table-scroll {
-          overflow-x: auto;
-          width: 100%;
-          scrollbar-width: thin;
-          scrollbar-color: #cbd5e1 transparent;
-        }
-        .admin-orders-table-scroll::-webkit-scrollbar {
-          height: 6px;
-        }
-        .admin-orders-table-scroll::-webkit-scrollbar-thumb {
-          background: #cbd5e1;
-          border-radius: 999px;
-        }
-      `}</style>
       <div className="admin-dashboard-bottom-grid anim-card">
         {/* Left Column: Recent Orders Live Table */}
         <div
@@ -1916,7 +1964,7 @@ const AdminDashboardPage = () => {
 
           {/* Orders Table */}
           <div className="admin-orders-table-scroll">
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.825rem' }}>
+            <table style={{ width: '100%', minWidth: '680px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.825rem' }}>
               <thead>
                 <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#64748b' }}>
                   <th style={{ padding: '12px 18px', fontWeight: 800 }}>ORDER ID</th>

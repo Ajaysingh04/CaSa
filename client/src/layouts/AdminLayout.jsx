@@ -122,6 +122,14 @@ const AdminLayout = () => {
             display: flex !important;
           }
         }
+        @media (max-width: 768px) {
+          .admin-main-content-viewport {
+            padding: 16px 12px 110px !important;
+          }
+          .admin-header-bar {
+            padding: 10px 14px !important;
+          }
+        }
         @media (min-width: 1025px) {
           .admin-mobile-backdrop {
             display: none !important;
@@ -203,7 +211,7 @@ const AdminLayout = () => {
       {/* ================= RIGHT MAIN AREA ================= */}
       <div className="admin-right-content" style={rightContentWrapper}>
         {/* Top Navbar */}
-        <header style={adminHeaderStyle}>
+        <header className="admin-header-bar" style={adminHeaderStyle}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <button
               type="button"
@@ -249,7 +257,7 @@ const AdminLayout = () => {
         </header>
 
         {/* Main Content Viewport */}
-        <main style={mainContentArea}>
+        <main className="admin-main-content-viewport" style={mainContentArea}>
           <Outlet />
         </main>
       </div>

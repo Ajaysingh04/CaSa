@@ -478,7 +478,18 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
       );
 
       success(`🎉 Delivery Completed for #${otpModalOrder.orderNumber || otpModalOrder._id}! Payout ₹65 credited.`);
-      setActiveOrders(activeOrders.filter((o) => o._id !== otpModalOrder._id));
+      const updatedOrders = activeOrders.map((o) =>
+        o._id === otpModalOrder._id
+          ? {
+              ...o,
+              orderStatus: 'Delivered',
+              deliveredAt: new Date().toISOString(),
+              deliveryOTPVerified: true,
+              payoutCredited: true,
+            }
+          : o
+      );
+      setActiveOrders(updatedOrders);
       if (mapModalOrder?._id === otpModalOrder._id) {
         setMapModalOrder(null);
       }
@@ -497,7 +508,18 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
     } catch (err) {
       if (!err.response) {
         success(`🎉 Delivery Completed for #${otpModalOrder.orderNumber || otpModalOrder._id}! Payout ₹65 credited.`);
-        setActiveOrders(activeOrders.filter((o) => o._id !== otpModalOrder._id));
+        const fallbackUpdated = activeOrders.map((o) =>
+          o._id === otpModalOrder._id
+            ? {
+                ...o,
+                orderStatus: 'Delivered',
+                deliveredAt: new Date().toISOString(),
+                deliveryOTPVerified: true,
+                payoutCredited: true,
+              }
+            : o
+        );
+        setActiveOrders(fallbackUpdated);
         if (mapModalOrder?._id === otpModalOrder._id) {
           setMapModalOrder(null);
         }
@@ -1370,9 +1392,16 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
             <div>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>
-                Live Delivery Runs Queue ({activeOrders.length})
-              </h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>
+                  Live Delivery Runs Queue ({activeOrders.length})
+                </h3>
+                {activeOrders.some(o => o.orderStatus === 'Delivered') && (
+                  <span style={{ fontSize: '0.74rem', background: '#ecfdf5', color: '#059669', border: '1px solid #a7f3d0', padding: '3px 8px', borderRadius: '6px', fontWeight: 800 }}>
+                    ✅ {activeOrders.filter(o => o.orderStatus === 'Delivered').length} Delivered / Complete
+                  </span>
+                )}
+              </div>
               <p style={{ fontSize: '0.82rem', color: '#64748b', margin: '4px 0 0 0' }}>
                 Follow 3 steps: Collect from Merchant Hub ➔ Open Live GPS Route ➔ Verify OTP & Collect COD at Doorstep.
               </p>
@@ -1448,6 +1477,7 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
             </div>
           ) : (
             activeOrders.map((order, idx) => {
+              const isDelivered = order.orderStatus === 'Delivered';
               const isCod = order.paymentMethod === 'cod';
               const isOutForDelivery = order.orderStatus === 'Out for delivery';
               const isPacked = order.orderStatus === 'Packed';
@@ -1458,9 +1488,11 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
               return (
                 <div
                   key={order._id}
-                  className={`delivery-compact-card ${isOutForDelivery ? 'active-run' : ''}`}
+                  className={`delivery-compact-card ${isOutForDelivery ? 'active-run' : ''} ${isDelivered ? 'completed-run' : ''}`}
                   style={{
-                    animationDelay: `${idx * 0.05}s`
+                    animationDelay: `${idx * 0.05}s`,
+                    borderColor: isDelivered ? '#10b981' : undefined,
+                    background: isDelivered ? 'linear-gradient(180deg, #f0fdf4 0%, #ffffff 100%)' : undefined,
                   }}
                 >
                   {/* Top Bar: Order ID, Status, COD/Prepaid & Quick Payout */}
@@ -1490,13 +1522,14 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
                           borderRadius: '8px',
                           fontSize: '0.72rem',
                           fontWeight: 800,
-                          background: isOutForDelivery ? '#ecfdf5' : isShipped ? '#eff6ff' : isPacked ? '#fef3c7' : '#fff1f2',
-                          color: isOutForDelivery ? '#047857' : isShipped ? '#1d4ed8' : isPacked ? '#b45309' : '#e11d48',
-                          border: `1px solid ${isOutForDelivery ? '#a7f3d0' : isShipped ? '#bfdbfe' : isPacked ? '#fde68a' : '#fecdd3'}`
+                          background: isDelivered ? '#ecfdf5' : isOutForDelivery ? '#ecfdf5' : isShipped ? '#eff6ff' : isPacked ? '#fef3c7' : '#fff1f2',
+                          color: isDelivered ? '#059669' : isOutForDelivery ? '#047857' : isShipped ? '#1d4ed8' : isPacked ? '#b45309' : '#e11d48',
+                          border: `1px solid ${isDelivered ? '#6ee7b7' : isOutForDelivery ? '#a7f3d0' : isShipped ? '#bfdbfe' : isPacked ? '#fde68a' : '#fecdd3'}`
                         }}
                       >
+                        {isDelivered && '🎉'}
                         {isOutForDelivery && <span className="live-pulse-dot" />}
-                        {!isOutForDelivery && '●'} {order.orderStatus}
+                        {!isOutForDelivery && !isDelivered && '●'} {isDelivered ? 'Delivered / Completed' : order.orderStatus}
                       </span>
 
                       {/* Payment Pill */}
@@ -1708,72 +1741,71 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
 
                     {/* Action Buttons */}
                     <div className="delivery-action-btn-group" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                      <button
-                        type="button"
-                        onClick={() => setMapModalOrder(order)}
-                        className="delivery-action-btn"
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '5px',
-                          padding: '6px 12px',
-                          borderRadius: '8px',
-                          background: '#eff6ff',
-                          border: '1px solid #bfdbfe',
-                          color: '#1d4ed8',
-                          fontSize: '0.76rem',
-                          fontWeight: 800,
-                          cursor: 'pointer'
-                        }}
-                      >
-                        <MapIcon size={13} /> Live Route GPS
-                      </button>
-
-                      {!isOutForDelivery && (
-                        <button
-                          type="button"
-                          disabled={updatingId === order._id}
-                          onClick={() => handleStartDeliveryRun(order._id)}
-                          className="delivery-action-btn"
+                      {isDelivered ? (
+                        <div
                           style={{
                             display: 'inline-flex',
                             alignItems: 'center',
                             gap: '6px',
                             padding: '8px 18px',
                             borderRadius: '10px',
-                            background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-                            border: 'none',
+                            background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
                             color: '#ffffff',
-                            fontSize: '0.82rem',
-                            fontWeight: 800,
-                            cursor: 'pointer',
-                            boxShadow: '0 3px 10px rgba(37, 99, 235, 0.35)',
-                            transition: 'all 0.2s ease',
+                            fontSize: '0.8rem',
+                            fontWeight: 900,
+                            boxShadow: '0 2px 8px rgba(5, 150, 105, 0.25)',
                           }}
                         >
-                          <Navigation size={14} /> Go to location
-                        </button>
-                      )}
-
-                      {isOutForDelivery && (
+                          <CheckCircle2 size={16} /> Completed (OTP Verified)
+                        </div>
+                      ) : (
                         <>
                           <button
                             type="button"
-                            onClick={() => setFailedModalOrder(order)}
+                            onClick={() => setMapModalOrder(order)}
                             className="delivery-action-btn"
                             style={{
-                              padding: '8px 12px',
-                              borderRadius: '10px',
-                              background: '#fff1f2',
-                              border: '1px solid #fecdd3',
-                              color: '#e11d48',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '5px',
+                              padding: '6px 12px',
+                              borderRadius: '8px',
+                              background: '#eff6ff',
+                              border: '1px solid #bfdbfe',
+                              color: '#1d4ed8',
                               fontSize: '0.76rem',
-                              fontWeight: 700,
+                              fontWeight: 800,
                               cursor: 'pointer'
                             }}
                           >
-                            Issue
+                            <MapIcon size={13} /> Live Route GPS
                           </button>
+
+                          {!isOutForDelivery && (
+                            <button
+                              type="button"
+                              disabled={updatingId === order._id}
+                              onClick={() => handleStartDeliveryRun(order._id)}
+                              className="delivery-action-btn"
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                padding: '8px 16px',
+                                borderRadius: '10px',
+                                background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                                border: 'none',
+                                color: '#ffffff',
+                                fontSize: '0.8rem',
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                                boxShadow: '0 3px 10px rgba(37, 99, 235, 0.35)',
+                                transition: 'all 0.2s ease',
+                              }}
+                            >
+                              <Navigation size={14} /> Go to location
+                            </button>
+                          )}
 
                           <button
                             type="button"
@@ -1786,19 +1818,39 @@ const ProfessionalDeliveryProfile = ({ user: initialUser, onProfileUpdated }) =>
                               display: 'inline-flex',
                               alignItems: 'center',
                               gap: '6px',
-                              padding: '8px 20px',
+                              padding: '8px 18px',
                               borderRadius: '10px',
                               background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                               border: 'none',
                               color: '#ffffff',
-                              fontSize: '0.82rem',
+                              fontSize: '0.8rem',
                               fontWeight: 800,
                               cursor: 'pointer',
                               boxShadow: '0 4px 12px rgba(16, 185, 129, 0.4)',
                             }}
                           >
-                            <MapPin size={15} /> I am arrived
+                            <ShieldCheck size={15} /> Enter OTP & Complete
                           </button>
+
+                          {isOutForDelivery && (
+                            <button
+                              type="button"
+                              onClick={() => setFailedModalOrder(order)}
+                              className="delivery-action-btn"
+                              style={{
+                                padding: '8px 12px',
+                                borderRadius: '10px',
+                                background: '#fff1f2',
+                                border: '1px solid #fecdd3',
+                                color: '#e11d48',
+                                fontSize: '0.76rem',
+                                fontWeight: 700,
+                                cursor: 'pointer'
+                              }}
+                            >
+                              Issue
+                            </button>
+                          )}
                         </>
                       )}
                     </div>
