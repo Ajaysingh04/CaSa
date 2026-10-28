@@ -1,11 +1,14 @@
-import React, { lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import React, { lazy, Suspense, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { ToastProvider } from './context/ToastContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { CartProvider } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
 import { StoreProvider } from './context/StoreContext';
+
+// Native Mobile App Integration Bridge
+import { initNativeSystemUI, getAppInfo } from './utils/mobileAppBridge';
 
 // Layouts
 import MainLayout from './layouts/MainLayout';
@@ -98,9 +101,31 @@ const CustomerCheckoutRoute = ({ children }) => {
   return children;
 };
 
+// Native App Portal Dispatcher (Routes CaSa Vendor app to /vendor & Delivery app to /delivery)
+const NativeAppDispatcher = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    initNativeSystemUI();
+    getAppInfo().then((info) => {
+      if (location.pathname === '/') {
+        if (info.appMode === 'vendor') {
+          navigate('/vendor', { replace: true });
+        } else if (info.appMode === 'delivery') {
+          navigate('/delivery', { replace: true });
+        }
+      }
+    });
+  }, [location.pathname, navigate]);
+
+  return null;
+};
+
 function App() {
   return (
     <BrowserRouter>
+      <NativeAppDispatcher />
       <ScrollToTop />
       <ToastProvider>
         <AuthProvider>

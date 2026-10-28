@@ -1,0 +1,23 @@
+{
+  "appId": "com.casa.vendor",
+  "appName": "CaSa Vendor",
+  "webDir": "dist",
+  "android": {
+    "path": "android-vendor"
+  },
+  "server": {
+    "androidScheme": "https",
+    "cleartext": true
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1200,
+      "backgroundColor": "#7e22ce",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#7e22ce"
+    }
+  }
+}

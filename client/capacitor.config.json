@@ -1,0 +1,23 @@
+{
+  "appId": "com.casa.customer",
+  "appName": "CaSa Shopping",
+  "webDir": "dist",
+  "android": {
+    "path": "android-customer"
+  },
+  "server": {
+    "androidScheme": "https",
+    "cleartext": true
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1200,
+      "backgroundColor": "#ffffff",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#0f172a"
+    }
+  }
+}

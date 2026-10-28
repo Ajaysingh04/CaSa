@@ -1,0 +1,23 @@
+{
+  "appId": "com.casa.delivery",
+  "appName": "CaSa Delivery",
+  "webDir": "dist",
+  "android": {
+    "path": "android-delivery"
+  },
+  "server": {
+    "androidScheme": "https",
+    "cleartext": true
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1200,
+      "backgroundColor": "#0284c7",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#0284c7"
+    }
+  }
+}

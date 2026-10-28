@@ -10,7 +10,14 @@
     "install:all": "npm install && npm install --prefix server && npm install --prefix client",
     "build": "npm --prefix client run build",
     "build:vercel": "npm install --prefix client && npm --prefix client run build",
-    "seed": "npm run seed --prefix server"
+    "seed": "npm run seed --prefix server",
+    "mobile:sync": "powershell -ExecutionPolicy Bypass -File ./scripts/sync-all-apps.ps1",
+    "mobile:customer:run": "cd client && copy capacitor.customer.json capacitor.config.json /y && npx cap run android",
+    "mobile:customer:build": "cd client/android-customer && gradlew assembleDebug",
+    "mobile:vendor:run": "cd client && copy capacitor.vendor.json capacitor.config.json /y && npx cap run android",
+    "mobile:vendor:build": "cd client/android-vendor && gradlew assembleDebug",
+    "mobile:delivery:run": "cd client && copy capacitor.delivery.json capacitor.config.json /y && npx cap run android",
+    "mobile:delivery:build": "cd client/android-delivery && gradlew assembleDebug"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

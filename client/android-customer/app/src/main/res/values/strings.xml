@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">CaSa Shopping</string>
+    <string name="title_activity_main">CaSa Shopping</string>
+    <string name="package_name">com.casa.customer</string>
+    <string name="custom_url_scheme">com.casa.customer</string>
+</resources>

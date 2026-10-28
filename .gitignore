@@ -25,3 +25,13 @@ lerna-debug.log*
 Thumbs.db
 .vscode/
 .idea/
+
+# Android build cache & artifacts
+.gradle/
+**/build/
+**/app/build/
+*.apk
+*.aab
+local.properties
+.cxx/
+
